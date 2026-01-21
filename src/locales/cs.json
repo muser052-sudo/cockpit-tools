@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "Potvrdit",
+    "cancel": "Zrušit",
+    "save": "Uložit",
+    "saving": "Ukládání...",
+    "delete": "Smazat",
+    "refresh": "Obnovit",
+    "loading": "Načítání...",
+    "success": "Úspěch",
+    "failed": "Chyba",
+    "enabled": "Povoleno",
+    "disabled": "Zakázáno",
+    "close": "Zavřít",
+    "open": "Otevřít",
+    "copy": "Kopírovat",
+    "add": "Přidat",
+    "enable": "Povolit",
+    "disable": "Zakázat",
+    "none": "Žádné",
+    "detail": "Detaily",
+    "editable": "Upravitelné",
+    "preview": "Náhled"
+  },
+  "nav": {
+    "overview": "Přehled",
+    "accounts": "Účty",
+    "wakeup": "Úlohy probuzení",
+    "fingerprints": "Otisky",
+    "settings": "Nastavení"
+  },
+  "settings": {
+    "title": "Nastavení aplikace",
+    "subtitle": "Přizpůsobte si prostředí Cockpit Tools.",
+    "tabs": {
+      "general": "Obecné",
+      "network": "Síť",
+      "about": "O aplikaci"
+    },
+    "general": {
+      "appearance": "Vzhled",
+      "language": "Jazyk",
+      "languageDesc": "Vyberte jazyk rozhraní",
+      "theme": "Motiv",
+      "themeDesc": "Přepněte mezi tmavým a světlým režimem",
+      "themeLight": "Světlý",
+      "themeDark": "Tmavý",
+      "themeSystem": "Systémový",
+      "accountManagement": "Správa účtů",
+      "autoRefresh": "Automatické obnovení kvóty",
+      "autoRefreshDesc": "Frekvence aktualizace na pozadí",
+      "autoRefreshDisabled": "Zakázáno",
+      "autoRefreshCustom": "Vlastní...",
+      "every15min": "Každých 15 minut",
+      "every30min": "Každých 30 minut",
+      "every1hour": "Každou hodinu",
+      "minutes": "min",
+      "storageTitle": "Adresáře a úložiště",
+      "dataDir": "Datový adresář",
+      "dataDirDesc": "Umístění pro uložení účtů a konfiguračních souborů.",
+      "fpDir": "Úložiště otisků",
+      "fpDirDesc": "Umístění pro soubory otisků zařízení."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "Služba WebSocket",
+      "wsServiceDesc": "Povolit připojení externím programům (např. rozšíření VS Code)",
+      "preferredPort": "Preferovaný port",
+      "preferredPortDesc": "Výchozí je {{port}}, po změně je nutný restart",
+      "currentPort": "Aktuální port",
+      "portNormal": "Služba běží normálně",
+      "portFallback": "Port {{configured}} je obsazen, místo něj se používá {{actual}}",
+      "restartRequired": "Konfigurace byla změněna, restartujte prosím aplikaci",
+      "saveSuccess": "Nastavení uloženo!",
+      "saveSuccessRestart": "Nastavení uloženo! Restatujte prosím aplikaci, aby se změny portu projevily.",
+      "saveFailed": "Uložení selhalo: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "Profesionální řešení pro správu účtů",
+      "author": "Autor",
+      "wechat": "WeChat",
+      "github": "GitHub repozitář",
+      "sponsor": "Sponzorovat",
+      "supportDev": "Podpořit vývoj"
+    },
+    "saveSettings": "Uložit nastavení"
+  },
+  "accounts": {
+    "title": "Správa účtů",
+    "subtitle": "Spravujte svůj seznam účtů Antigravity.",
+    "total": "Počet účtů: {{count}}",
+    "search": "Hledat účty...",
+    "addAccount": "Přidat účet",
+    "refreshAll": "Obnovit vše",
+    "export": "Exportovat",
+    "import": "Importovat",
+    "switchLogin": "Přepnout přihlášení",
+    "refreshQuota": "Obnovit kvótu",
+    "copyToken": "Kopírovat token",
+    "deleteAccount": "Smazat účet",
+    "confirmDelete": "Opravdu chcete smazat účet {{email}}?",
+    "columns": {
+      "email": "E-mail",
+      "subscription": "Předplatné",
+      "quota": "Stav kvóty",
+      "fingerprint": "Otisk",
+      "lastUsed": "Naposledy použito",
+      "actions": "Akce"
+    },
+    "status": {
+      "current": "Aktuální",
+      "disabled": "Zakázáno",
+      "normal": "Normální",
+      "forbidden": "403",
+      "forbidden_tooltip": "API vrátilo 403 Forbidden, účet nemá přístup k Gemini Code Assist",
+      "forbidden_msg": "Účet zakázán, automatická aktualizace přeskočena"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "ZDARMA"
+    },
+    "empty": {
+      "title": "Žádné účty",
+      "desc": "Začněte kliknutím na „Přidat“",
+      "btn": "Přidat účet"
+    },
+    "noMatch": {
+      "title": "Žádné odpovídající účty",
+      "desc": "Žádné účty neodpovídají aktuálním filtrům"
+    },
+    "view": {
+      "list": "Seznam",
+      "grid": "Karty"
+    },
+    "filterLabel": "Filtrovat účty",
+    "filter": {
+      "all": "Vše ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "ZDARMA ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "Zobrazit detaily",
+      "fingerprint": "Otisk",
+      "switch": "Přepnout účet",
+      "switchTo": "Přepnout na tento účet",
+      "selectFingerprint": "Vybrat otisk"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "Refresh Token",
+      "import": "Import"
+    },
+    "oauth": {
+      "authorizing": "Probíhá autorizace OAuth...",
+      "success": "OAuth autorizováno",
+      "failed": "OAuth autorizace selhala: {{error}}",
+      "hint": "Doporučujeme dokončit Google OAuth v prohlížeči.",
+      "start": "Spustit OAuth autorizaci",
+      "continue": "Autorizováno, pokračovat",
+      "linkLabel": "Autorizační odkaz",
+      "generatingLink": "Generuji autorizační odkaz..."
+    },
+    "token": {
+      "desc": "Vložte refresh_token nebo JSON účtů pro hromadný import.",
+      "placeholder": "Podporovaný formát: [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] nebo vložte refresh_token přímo",
+      "importStart": "Spustit import",
+      "invalid": "Nebyl nalezen platný refresh_token",
+      "importProgress": "Importuji {{current}}/{{total}}...",
+      "importSuccess": "Importováno {{count}} účtů",
+      "importPartial": "Importováno {{success}} účtů, {{fail}} neúspěšných",
+      "importFailed": "Import selhal, zkontrolujte refresh_token"
+    }
+  },
+  "overview": {
+    "title": "Přehled účtů",
+    "subtitle": "Sledování kvót modelů všech účtů v reálném čase.",
+    "total": "Počet účtů: {{count}}",
+    "accountDisabled": "Účet je zakázán",
+    "noQuotaData": "Žádná data o kvótě",
+    "currentAccount": "Právě se používá",
+    "switchTo": "Přepnout na tento účet",
+    "switching": "Přepínání...",
+    "fingerprint": "Otisk",
+    "bound": "Vázáno"
+  },
+  "fingerprints": {
+    "title": "Otisky zařízení",
+    "subtitle": "Správa otisků zařízení vázaných k účtům.",
+    "toolbar": {
+      "generate": "Generovat nový",
+      "capture": "Zachytit aktuální",
+      "import": "Importovat",
+      "folder": "Složka",
+      "delete": "Smazat"
+    },
+    "table": {
+      "name": "Název otisku",
+      "machineId": "ID stroje",
+      "accounts": "Vázané účty",
+      "actions": "Akce"
+    },
+    "modals": {
+      "generate": {
+        "title": "Generovat otisk",
+        "btn": "Generovat"
+      },
+      "capture": {
+        "title": "Zachytit otisk",
+        "btn": "Zachytit"
+      },
+      "rename": {
+        "title": "Přejmenovat otisk",
+        "label": "Název otisku"
+      },
+      "import": {
+        "title": "Importovat otisky",
+        "fromTools": "Importovat z Antigravity Tools",
+        "desc": "Importovat z adresáře ~/.antigravity_tools/"
+      },
+      "bound": {
+        "title": "Vázané účty",
+        "add": "Přidat účty",
+        "empty": "Žádné vázané účty",
+        "emptyAll": "Všechny účty jsou již vázány",
+        "select": "Vyberte účty k přidání",
+        "from": "Zdroj: {{name}}"
+      },
+      "detail": {
+        "title": "Detaily otisku",
+        "created": "Vytvořeno {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "Smazat tento otisk? Účty na něj vázané se vrátí k původnímu otisku.",
+      "batchDeleteConfirm": "Smazat {{count}} otisků? Účty na ně vázané se vrátí k původnímu otisku.",
+      "generated": "Nový otisk byl vygenerován",
+      "captured": "Aktuální otisk byl zachycen",
+      "renamed": "Přejmenováno",
+      "deleted": "Otisk byl smazán",
+      "imported": "Bylo importováno {{count}} otisků",
+      "addedAccounts": "Přidány {{count}} účty",
+      "enterName": "Zadejte název otisku",
+      "previewNotReady": "Náhled není připraven, čekejte prosím",
+      "duplicate": "Tento otisk již existuje: {{name}}",
+      "readOnly": "Pouze pro čtení",
+      "current": "Aktuální"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "Přidat účet",
+      "desc": "Přidejte svůj účet Antigravity přes Google OAuth",
+      "loginBtn": "Přihlášení přes Google OAuth",
+      "waiting": "Čekání..."
+    },
+    "import": {
+      "title": "Importovat účty",
+      "desc": "Vyberte metodu importu",
+      "local": "Importovat místní účet",
+      "localDesc": "Importovat aktuálně přihlášený účet z klienta Antigravity",
+      "tools": "Importovat z Antigravity Tools",
+      "toolsDesc": "Importovat z adresáře ~/.antigravity_tools/",
+      "jsonDivider": "nebo vložit JSON",
+      "orJson": "nebo vložit JSON",
+      "jsonPlaceholder": "Vložte obsah JSON účtu",
+      "jsonBtn": "Importovat z JSON",
+      "importing": "Importování...",
+      "importBtn": "Importovat",
+      "oauthAction": "OAuth autorizace",
+      "fromExtension": "Import z pluginu",
+      "syncBadge": "Synchronizovat účty pluginu Antigravity Cockpit",
+      "fromLocalDB": "Import z lokální DB",
+      "localDBDesc": "Načte přihlašovací účty z Antigravity klienta v tomto zařízení",
+      "toolsDescMigrate": "Migrace účtů z ~/.antigravity_tools/",
+      "importingTools": "Importuji z Antigravity Tools...",
+      "importingLocal": "Importuji lokální účet...",
+      "importingExtension": "Importuji účet pluginu...",
+      "noAccountsFound": "Nenalezeny žádné účty k importu"
+    },
+    "fingerprint": {
+      "title": "Vybrat otisk",
+      "desc": "Vyberte otisk pro účet <1>{{email}}</1>",
+      "original": "Původní otisk",
+      "new": "Přidat nový otisk",
+      "bind": "Potvrdit vazbu",
+      "selectLabel": "Vybrat otisk",
+      "boundCount": "účtů"
+    },
+    "quota": {
+      "title": "Detaily kvóty",
+      "noData": "Žádná data o kvótě",
+      "close": "Zavřít",
+      "resetTime": "Čas resetu"
+    }
+  },
+  "pagination": {
+    "info": "Zobrazuji {{start}} - {{end}} z {{total}}",
+    "perPage": "{{count}} / strana",
+    "prev": "Předchozí",
+    "next": "Další",
+    "page": "Strana {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "Opravdu chcete smazat tento účet?",
+    "batchDeleteConfirm": "Opravdu chcete smazat {{count}} vybraných účtů?",
+    "switched": "Přepnuto na {{email}}",
+    "switchFailed": "Přepnutí selhalo: {{error}}",
+    "importSuccess": "Úspěšně importováno {{count}} účtů",
+    "importLocalSuccess": "Úspěšně importován účet: {{email}}",
+    "importFailed": "Import selhal: {{error}}",
+    "exportFailed": "Export selhal: {{error}}",
+    "bindFailed": "Vázání selhalo: {{error}}",
+    "jsonRequired": "Zadejte nebo vložte obsah JSON",
+    "example": "Příklad",
+    "actionRunning": "{{action}}...",
+    "actionSuccess": "{{action}} úspěšné",
+    "actionFailed": "{{action}} selhalo: {{error}}"
+  },
+  "wakeup": {
+    "title": "Úlohy probuzení",
+    "subtitle": "Spravujte více automatických úloh probuzení s nezávislým ovládáním.",
+    "globalToggle": "Globální přepínač probuzení",
+    "newTask": "Nová úloha",
+    "runTest": "Okamžitý test",
+    "history": "Historie spuštění",
+    "gotoAddAccount": "Přidat účty",
+    "emptyTitle": "Zatím žádné úlohy probuzení",
+    "emptyDesc": "Úlohy budou probouzet automaticky podle pravidel.",
+    "statusEnabled": "Zapnuto",
+    "statusDisabled": "Vypnuto",
+    "statusRunning": "Probíhá",
+    "edit": "Upravit",
+    "defaultTaskName": "Úloha probuzení",
+    "newTaskName": "Nová úloha probuzení",
+    "historyCount": "Historie spuštění ({{count}})",
+    "historyEmpty": "Zatím žádná historie",
+    "historyClear": "Vymazat historii",
+    "historyPromptLabel": "Výzva: {{prompt}}",
+    "format": {
+      "noReply": "(Bez odpovědi)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokeny={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "Dnes {{time}}",
+      "tomorrow": "Zítra {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "Nevybráno",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}} položek)",
+      "quotaReset": "Automatické probuzení při resetu kvóty",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "Denně {{times}}{{suffix}}",
+      "weekly": "Týdně {{days}} {{times}}{{suffix}}",
+      "interval": "Každých {{hours}}h ({{start}}-{{end}})",
+      "invalidCrontab": "Neplatný Crontab"
+    },
+    "weekdays": {
+      "sun": "Ne",
+      "mon": "Po",
+      "tue": "Út",
+      "wed": "St",
+      "thu": "Čt",
+      "fri": "Pá",
+      "sat": "So"
+    },
+    "notice": {
+      "modelsFetchFailed": "Nepodařilo se načíst modely, zkontrolujte stav účtu",
+      "featureDisabled": "Probuzení je vypnuto",
+      "taskMissingModels": "Úloha nemá vybraný model",
+      "taskMissingAccounts": "Úloha nemá vybraný účet",
+      "taskFailed": "Úloha \"{{name}}\" selhala pro {{count}} požadavků",
+      "taskCompleted": "Úloha \"{{name}}\" dokončena",
+      "testMissingModel": "Vyberte model pro test",
+      "testMissingAccount": "Vyberte účet pro test",
+      "testFailed": "Test selhal pro {{count}} požadavků",
+      "testCompleted": "Test dokončen",
+      "nameRequired": "Zadejte název úlohy",
+      "accountRequired": "Vyberte alespoň jeden účet",
+      "modelRequired": "Vyberte alespoň jeden model",
+      "crontabRequired": "Zadejte crontab výraz",
+      "taskSaved": "Úloha \"{{name}}\" uložena",
+      "featureOff": "Probuzení vypnuto",
+      "featureOn": "Probuzení zapnuto"
+    },
+    "triggerSource": {
+      "scheduled": "Plánováno",
+      "crontab": "Crontab",
+      "quotaReset": "Reset kvóty",
+      "manual": "Ruční test",
+      "unknown": "Neznámé"
+    },
+    "taskCard": {
+      "accountsCount": "Účty {{count}}",
+      "modelsCount": "Modely {{count}}",
+      "accountsLabel": "Účty: {{preview}}",
+      "modelsLabel": "Modely: {{preview}}",
+      "lastRun": "Poslední {{time}}",
+      "nextRun": "Další {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "Zapnout probuzení",
+      "enableDesc": "Zapnutím probuzení se vypne probouzení v pluginu. Pokračovat?",
+      "deleteConfirm": "Smazat úlohu \"{{name}}\"?",
+      "testTitle": "Okamžitý test",
+      "historyTitle": "Historie spuštění",
+      "taskTitleEdit": "Upravit úlohu probuzení",
+      "taskTitleNew": "Nová úloha probuzení"
+    },
+    "form": {
+      "taskName": "Název úlohy",
+      "taskStatus": "Stav úlohy",
+      "triggerMode": "Režim spouštění",
+      "triggerModeHint": "1. Plánováno: spouští se v nastavených časech.\\n2. Crontab: definujte výrazem.\\n3. Reset kvóty: spustí se jednou při plné kvótě.",
+      "modeScheduled": "📅 Plánováno",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 Reset kvóty",
+      "modelSelect": "Výběr modelu",
+      "modelHint": "V rámci stejné skupiny kvót vyberte jeden model. Více modelů se spouští postupně.",
+      "modelsEmpty": "Žádné doporučené modely",
+      "accountSelect": "Výběr účtů",
+      "accountHint": "Vyberte více účtů; probouzení je použije postupně.",
+      "accountsEmpty": "Žádné účty",
+      "customPrompt": "Vlastní výzva",
+      "promptPlaceholder": "Výchozí {{word}}",
+      "promptHint": "Ponechte prázdné pro výchozí výzvu {{word}}.",
+      "maxTokens": "Maximální počet tokenů",
+      "maxTokensHint": "Výchozí 0 (bez limitu).",
+      "repeatMode": "Režim opakování",
+      "repeatDaily": "Denně",
+      "repeatWeekly": "Týdně",
+      "repeatInterval": "Interval",
+      "selectTime": "Vyberte čas",
+      "customTime": "Vlastní čas",
+      "selectWeekday": "Vyberte den v týdnu",
+      "quickWorkdays": "Pracovní dny",
+      "quickWeekend": "Víkend",
+      "quickAll": "Vše",
+      "intervalSetting": "Nastavení intervalu",
+      "intervalEvery": "Každých",
+      "intervalHours": "hodin",
+      "intervalStart": "Začátek",
+      "intervalEnd": "Konec",
+      "nextRuns": "Nadcházející spuštění",
+      "nextRunsEmpty": "Vyberte časy spuštění",
+      "crontab": "Crontab výraz",
+      "crontabPlaceholder": "např. 0 8,12,17 * * *",
+      "crontabValidate": "Ověřit",
+      "crontabValidateHint": "Výraz bude ověřen při uložení",
+      "crontabPreviewEmpty": "Zadejte platný crontab výraz",
+      "timeWindowEnabled": "Povolit časové okno",
+      "timeWindowHint": "Je-li povoleno, reset kvóty se spouští jen v okně; mimo něj se použijí pevné časy.",
+      "timeWindow": "Okno resetu kvóty",
+      "timeWindowFrom": "Od",
+      "timeWindowTo": "Do",
+      "fallbackTimes": "Náhradní časy",
+      "saveTask": "Uložit úlohu"
+    },
+    "test": {
+      "modelsLabel": "Modely k probuzení",
+      "accountsLabel": "Testovací účty",
+      "accountsHint": "Vyberte více účtů pro test.",
+      "start": "Spustit test",
+      "testing": "Testování..."
+    }
+  }
+}

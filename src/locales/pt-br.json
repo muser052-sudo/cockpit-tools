@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "saving": "Salvando...",
+    "delete": "Excluir",
+    "refresh": "Atualizar",
+    "loading": "Carregando...",
+    "success": "Sucesso",
+    "failed": "Falha",
+    "enabled": "Ativado",
+    "disabled": "Desativado",
+    "close": "Fechar",
+    "open": "Abrir",
+    "copy": "Copiar",
+    "add": "Adicionar",
+    "enable": "Ativar",
+    "disable": "Desativar",
+    "none": "Nenhum",
+    "detail": "Detalhes",
+    "editable": "Editável",
+    "preview": "Prévia"
+  },
+  "nav": {
+    "overview": "Visão Geral",
+    "accounts": "Contas",
+    "wakeup": "Tarefas de despertar",
+    "fingerprints": "Impressões",
+    "settings": "Configurações"
+  },
+  "settings": {
+    "title": "Configurações do App",
+    "subtitle": "Personalize sua experiência no Cockpit Tools.",
+    "tabs": {
+      "general": "Geral",
+      "network": "Rede",
+      "about": "Sobre"
+    },
+    "general": {
+      "appearance": "Aparência",
+      "language": "Idioma",
+      "languageDesc": "Selecione o idioma da interface",
+      "theme": "Tema",
+      "themeDesc": "Alternar entre modo claro e escuro",
+      "themeLight": "Claro",
+      "themeDark": "Escuro",
+      "themeSystem": "Sistema",
+      "accountManagement": "Gerenciamento de Contas",
+      "autoRefresh": "Atualização Automática de Cota",
+      "autoRefreshDesc": "Frequência de atualização em segundo plano",
+      "autoRefreshDisabled": "Desativado",
+      "autoRefreshCustom": "Personalizado...",
+      "every15min": "A cada 15 minutos",
+      "every30min": "A cada 30 minutos",
+      "every1hour": "A cada hora",
+      "minutes": "min",
+      "storageTitle": "Directories & Storage",
+      "dataDir": "Data Directory",
+      "dataDirDesc": "Storage location for accounts and configuration files.",
+      "fpDir": "Fingerprint Storage",
+      "fpDirDesc": "Storage location for device fingerprint files."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "Serviço WebSocket",
+      "wsServiceDesc": "Permitir que programas externos (ex: extensão do VS Code) se conectem",
+      "preferredPort": "Porta Preferida",
+      "preferredPortDesc": "O padrão é {{port}}, requer reinicialização após a alteração",
+      "currentPort": "Porta Atual",
+      "portNormal": "Serviço funcionando normalmente",
+      "portFallback": "Porta {{configured}} em uso, usando {{actual}} em seu lugar",
+      "restartRequired": "Configuração alterada, reinicie o app para aplicar",
+      "saveSuccess": "Configurações salvas!",
+      "saveSuccessRestart": "Configurações salvas! Reinicie o app para que as alterações de porta tenham efeito.",
+      "saveFailed": "Falha ao salvar: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "Solução Profissional de Gerenciamento de Contas",
+      "author": "Autor",
+      "wechat": "WeChat",
+      "github": "Repositório GitHub",
+      "sponsor": "Patrocinar",
+      "supportDev": "Apoiar o Desenvolvimento"
+    },
+    "saveSettings": "Salvar Configurações"
+  },
+  "accounts": {
+    "title": "Gerenciamento de Contas",
+    "subtitle": "Gerencie sua lista de contas Antigravity.",
+    "total": "{{count}} contas",
+    "search": "Pesquisar contas...",
+    "addAccount": "Adicionar Conta",
+    "refreshAll": "Atualizar Tudo",
+    "export": "Exportar",
+    "import": "Importar",
+    "switchLogin": "Trocar Login",
+    "refreshQuota": "Atualizar Cota",
+    "copyToken": "Copiar Token",
+    "deleteAccount": "Excluir Conta",
+    "confirmDelete": "Tem certeza que deseja excluir a conta {{email}}?",
+    "columns": {
+      "email": "E-mail",
+      "subscription": "Assinatura",
+      "quota": "Status da Cota",
+      "fingerprint": "Impressão",
+      "lastUsed": "Último Uso",
+      "actions": "Ações"
+    },
+    "status": {
+      "current": "Atual",
+      "disabled": "Desativado",
+      "normal": "Normal",
+      "forbidden": "403",
+      "forbidden_tooltip": "API retornou 403 Forbidden, conta sem acesso ao Gemini Code Assist",
+      "forbidden_msg": "Conta proibida, atualização automática ignorada"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "GRÁTIS"
+    },
+    "empty": {
+      "title": "Sem Contas",
+      "desc": "Clique em \"Adicionar\" para começar",
+      "btn": "Adicionar Conta"
+    },
+    "noMatch": {
+      "title": "Nenhuma conta correspondente",
+      "desc": "Nenhuma conta corresponde aos filtros"
+    },
+    "view": {
+      "list": "Vista em lista",
+      "grid": "Vista em cartões"
+    },
+    "filterLabel": "Filtrar contas",
+    "filter": {
+      "all": "Todas ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "FREE ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "Ver detalhes",
+      "fingerprint": "Impressão digital",
+      "switch": "Trocar conta",
+      "switchTo": "Trocar para esta conta",
+      "selectFingerprint": "Selecionar impressão digital"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "Token de atualização",
+      "import": "Importar"
+    },
+    "oauth": {
+      "authorizing": "Autorizando OAuth...",
+      "success": "OAuth autorizado",
+      "failed": "Falha na autorização OAuth: {{error}}",
+      "hint": "Recomendamos concluir o Google OAuth no navegador.",
+      "start": "Iniciar autorização OAuth",
+      "continue": "Já autorizei, continuar",
+      "linkLabel": "Link de autorização",
+      "generatingLink": "Gerando link de autorização..."
+    },
+    "token": {
+      "desc": "Cole refresh_token ou JSON de contas para importar em lote.",
+      "placeholder": "Formato suportado: [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] ou cole refresh_token",
+      "importStart": "Iniciar importação",
+      "invalid": "Nenhum refresh_token válido encontrado",
+      "importProgress": "Importando {{current}}/{{total}}...",
+      "importSuccess": "Importadas {{count}} contas",
+      "importPartial": "Importadas {{success}} contas, falharam {{fail}}",
+      "importFailed": "Falha na importação, verifique refresh_token"
+    }
+  },
+  "overview": {
+    "title": "Visão Geral das Contas",
+    "subtitle": "Monitoramento em tempo real das cotas de todas as contas.",
+    "total": "{{count}} contas",
+    "accountDisabled": "Conta desativada",
+    "noQuotaData": "Sem dados de cota",
+    "currentAccount": "Atualmente em uso",
+    "switchTo": "Trocar para esta conta",
+    "switching": "Trocando...",
+    "fingerprint": "Impressão",
+    "bound": "Vinculado"
+  },
+  "fingerprints": {
+    "title": "Impressões de Dispositivo",
+    "subtitle": "Gerencie impressões de dispositivo vinculadas às contas.",
+    "toolbar": {
+      "generate": "Gerar Nova",
+      "capture": "Capturar Atual",
+      "import": "Importar",
+      "folder": "Pasta",
+      "delete": "Excluir"
+    },
+    "table": {
+      "name": "Nome da Impressão",
+      "machineId": "ID da Máquina",
+      "accounts": "Contas Vinculadas",
+      "actions": "Ações"
+    },
+    "modals": {
+      "generate": {
+        "title": "Gerar Impressão",
+        "btn": "Gerar"
+      },
+      "capture": {
+        "title": "Capturar Impressão",
+        "btn": "Capturar"
+      },
+      "rename": {
+        "title": "Renomear Impressão",
+        "label": "Nome da Impressão"
+      },
+      "import": {
+        "title": "Importar Impressões",
+        "fromTools": "Importar do Antigravity Tools",
+        "desc": "Importar do diretório ~/.antigravity_tools/"
+      },
+      "bound": {
+        "title": "Contas Vinculadas",
+        "add": "Adicionar Contas",
+        "empty": "Nenhuma conta vinculada",
+        "emptyAll": "Todas as contas estão vinculadas",
+        "select": "Selecione as contas para adicionar",
+        "from": "De: {{name}}"
+      },
+      "detail": {
+        "title": "Detalhes da Impressão",
+        "created": "Criado em {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "Excluir esta impressão? Contas vinculadas a ela retornarão ao original.",
+      "batchDeleteConfirm": "Excluir {{count}} impressões? Contas vinculadas a elas retornarão ao original.",
+      "generated": "Nova impressão gerada",
+      "captured": "Impressão atual capturada",
+      "renamed": "Renomeado",
+      "deleted": "Impressão excluída",
+      "imported": "Importadas {{count}} impressões",
+      "addedAccounts": "{{count}} contas adicionadas",
+      "enterName": "Digite o nome da impressão",
+      "previewNotReady": "Visualização não pronta, aguarde",
+      "duplicate": "Impressão idêntica já existe: {{name}}",
+      "readOnly": "Somente leitura",
+      "current": "Atual"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "Adicionar Conta",
+      "desc": "Adicione sua conta Antigravity via Google OAuth",
+      "loginBtn": "Login com Google OAuth",
+      "waiting": "Aguardando..."
+    },
+    "import": {
+      "title": "Importar Contas",
+      "desc": "Escolha um método de importação",
+      "local": "Importar Conta Local",
+      "localDesc": "Importar conta atual do cliente Antigravity",
+      "tools": "Importar Antigravity Tools",
+      "toolsDesc": "Importar do diretório ~/.antigravity_tools/",
+      "jsonDivider": "ou Colar JSON",
+      "orJson": "ou Colar JSON",
+      "jsonPlaceholder": "Cole o conteúdo JSON da conta",
+      "jsonBtn": "Importar do JSON",
+      "importing": "Importando...",
+      "importBtn": "Importar",
+      "oauthAction": "Autorização OAuth",
+      "fromExtension": "Importar do Plugin",
+      "syncBadge": "Sincronizar contas do plugin Antigravity Cockpit",
+      "fromLocalDB": "Importar do BD Local",
+      "localDBDesc": "Ler contas de login do cliente Antigravity nesta máquina",
+      "toolsDescMigrate": "Migrar contas de ~/.antigravity_tools/",
+      "importingTools": "Importando do Antigravity Tools...",
+      "importingLocal": "Importando conta local...",
+      "importingExtension": "Importando conta do plugin...",
+      "noAccountsFound": "Nenhuma conta importável encontrada"
+    },
+    "fingerprint": {
+      "title": "Selecionar Impressão",
+      "desc": "Selecionar impressão para a conta <1>{{email}}</1>",
+      "original": "Impressão Original",
+      "new": "Adicionar Nova Impressão",
+      "bind": "Confirmar Vinculação",
+      "selectLabel": "Selecionar Impressão",
+      "boundCount": "contas"
+    },
+    "quota": {
+      "title": "Detalhes da Cota",
+      "noData": "Sem dados de cota",
+      "close": "Fechar",
+      "resetTime": "Tempo de redefinição"
+    }
+  },
+  "pagination": {
+    "info": "Exibindo {{start}} - {{end}} de {{total}}",
+    "perPage": "{{count}} / página",
+    "prev": "Anterior",
+    "next": "Próximo",
+    "page": "Página {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "Tem certeza que deseja excluir esta conta?",
+    "batchDeleteConfirm": "Tem certeza que deseja excluir as {{count}} contas selecionadas?",
+    "switched": "Trocado para {{email}}",
+    "switchFailed": "Falha ao trocar: {{error}}",
+    "importSuccess": "Importadas com sucesso {{count}} contas",
+    "importLocalSuccess": "Conta importada com sucesso: {{email}}",
+    "importFailed": "Falha na importação: {{error}}",
+    "exportFailed": "Falha na exportação: {{error}}",
+    "bindFailed": "Falha na vinculação: {{error}}",
+    "jsonRequired": "Por favor, digite ou cole o conteúdo JSON",
+    "example": "Exemplo",
+    "actionRunning": "{{action}}...",
+    "actionSuccess": "{{action}} concluído",
+    "actionFailed": "{{action}} falhou: {{error}}"
+  },
+  "wakeup": {
+    "title": "Tarefas de despertar",
+    "subtitle": "Gerencie várias tarefas de despertar automático com controles independentes.",
+    "globalToggle": "Interruptor global de despertar",
+    "newTask": "Nova tarefa",
+    "runTest": "Testar agora",
+    "history": "Histórico de disparos",
+    "gotoAddAccount": "Adicionar contas",
+    "emptyTitle": "Nenhuma tarefa de despertar",
+    "emptyDesc": "As tarefas serão disparadas automaticamente conforme as regras.",
+    "statusEnabled": "Ativado",
+    "statusDisabled": "Desativado",
+    "statusRunning": "Em execução",
+    "edit": "Editar",
+    "defaultTaskName": "Tarefa de despertar",
+    "newTaskName": "Nova tarefa de despertar",
+    "historyCount": "Histórico de disparos ({{count}})",
+    "historyEmpty": "Sem histórico",
+    "historyClear": "Limpar histórico",
+    "historyPromptLabel": "Palavra de despertar: {{prompt}}",
+    "format": {
+      "noReply": "(Sem resposta)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "Hoje {{time}}",
+      "tomorrow": "Amanhã {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "Não selecionado",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}} itens)",
+      "quotaReset": "Despertar ao reset de cota",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "Diário {{times}}{{suffix}}",
+      "weekly": "Semanal {{days}} {{times}}{{suffix}}",
+      "interval": "A cada {{hours}} h ({{start}}-{{end}})",
+      "invalidCrontab": "Crontab inválido"
+    },
+    "weekdays": {
+      "sun": "Dom",
+      "mon": "Seg",
+      "tue": "Ter",
+      "wed": "Qua",
+      "thu": "Qui",
+      "fri": "Sex",
+      "sat": "Sáb"
+    },
+    "notice": {
+      "modelsFetchFailed": "Não foi possível obter modelos, verifique o status da conta",
+      "featureDisabled": "Despertar desativado",
+      "taskMissingModels": "A tarefa não tem modelos selecionados",
+      "taskMissingAccounts": "A tarefa não tem contas selecionadas",
+      "taskFailed": "Tarefa \"{{name}}\" falhou em {{count}} solicitação(ões)",
+      "taskCompleted": "Tarefa \"{{name}}\" concluída",
+      "testMissingModel": "Selecione um modelo de teste",
+      "testMissingAccount": "Selecione uma conta de teste",
+      "testFailed": "Teste falhou em {{count}} solicitação(ões)",
+      "testCompleted": "Teste concluído",
+      "nameRequired": "Informe o nome da tarefa",
+      "accountRequired": "Selecione pelo menos uma conta",
+      "modelRequired": "Selecione pelo menos um modelo",
+      "crontabRequired": "Informe uma expressão crontab",
+      "taskSaved": "Tarefa \"{{name}}\" salva",
+      "featureOff": "Despertar desativado",
+      "featureOn": "Despertar ativado"
+    },
+    "triggerSource": {
+      "scheduled": "Agendado",
+      "crontab": "Crontab",
+      "quotaReset": "Reset de cota",
+      "manual": "Testar agora",
+      "unknown": "Desconhecido"
+    },
+    "taskCard": {
+      "accountsCount": "Contas {{count}}",
+      "modelsCount": "Modelos {{count}}",
+      "accountsLabel": "Contas: {{preview}}",
+      "modelsLabel": "Modelos: {{preview}}",
+      "lastRun": "Última {{time}}",
+      "nextRun": "Próxima {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "Ativar despertar",
+      "enableDesc": "Ativar o despertar irá desativar o despertar no plugin. Continuar?",
+      "deleteConfirm": "Excluir a tarefa \"{{name}}\"?",
+      "testTitle": "Testar agora",
+      "historyTitle": "Histórico de disparos",
+      "taskTitleEdit": "Editar tarefa de despertar",
+      "taskTitleNew": "Nova tarefa de despertar"
+    },
+    "form": {
+      "taskName": "Nome da tarefa",
+      "taskStatus": "Status da tarefa",
+      "triggerMode": "Modo de disparo",
+      "triggerModeHint": "1. Agendado: dispara nos horários definidos.\\n2. Crontab: defina por expressão.\\n3. Reset de cota: dispara uma vez quando a cota estiver cheia.",
+      "modeScheduled": "📅 Agendado",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 Reset de cota",
+      "modelSelect": "Seleção de modelos",
+      "modelHint": "No mesmo grupo de cota, escolha um modelo. Vários modelos disparam em sequência.",
+      "modelsEmpty": "Nenhum modelo recomendado",
+      "accountSelect": "Seleção de contas",
+      "accountHint": "Pode selecionar várias contas; serão usadas em sequência.",
+      "accountsEmpty": "Nenhuma conta",
+      "customPrompt": "Prompt personalizado",
+      "promptPlaceholder": "Padrão {{word}}",
+      "promptHint": "Deixe vazio para usar o prompt padrão {{word}}.",
+      "maxTokens": "Tokens máximos",
+      "maxTokensHint": "Padrão 0 (ilimitado).",
+      "repeatMode": "Modo de repetição",
+      "repeatDaily": "Diário",
+      "repeatWeekly": "Semanal",
+      "repeatInterval": "Intervalo",
+      "selectTime": "Selecionar horário",
+      "customTime": "Horário personalizado",
+      "selectWeekday": "Selecionar dia",
+      "quickWorkdays": "Dias úteis",
+      "quickWeekend": "Fim de semana",
+      "quickAll": "Todos",
+      "intervalSetting": "Configuração do intervalo",
+      "intervalEvery": "A cada",
+      "intervalHours": "horas",
+      "intervalStart": "Início",
+      "intervalEnd": "Fim",
+      "nextRuns": "Próximas execuções",
+      "nextRunsEmpty": "Selecione horários de disparo",
+      "crontab": "Expressão Crontab",
+      "crontabPlaceholder": "Ex.: 0 8,12,17 * * *",
+      "crontabValidate": "Validar",
+      "crontabValidateHint": "A expressão será validada ao salvar",
+      "crontabPreviewEmpty": "Informe uma expressão Crontab válida",
+      "timeWindowEnabled": "Ativar janela de tempo",
+      "timeWindowHint": "Quando ativado, o reset de cota só dispara dentro da janela; fora usa horários fixos.",
+      "timeWindow": "Janela ativa do reset de cota",
+      "timeWindowFrom": "De",
+      "timeWindowTo": "Até",
+      "fallbackTimes": "Horários fora da janela",
+      "saveTask": "Salvar tarefa"
+    },
+    "test": {
+      "modelsLabel": "Modelos para disparar",
+      "accountsLabel": "Contas de teste",
+      "accountsHint": "Selecione várias contas para testar.",
+      "start": "Iniciar teste",
+      "testing": "Testando..."
+    }
+  }
+}

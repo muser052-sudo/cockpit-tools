@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "Xác nhận",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "saving": "Đang lưu...",
+    "delete": "Xóa",
+    "refresh": "Làm mới",
+    "loading": "Đang tải...",
+    "success": "Thành công",
+    "failed": "Thất bại",
+    "enabled": "Đã bật",
+    "disabled": "Đã tắt",
+    "close": "Đóng",
+    "open": "Open",
+    "copy": "Copy",
+    "add": "Add",
+    "enable": "Enable",
+    "disable": "Disable",
+    "none": "None",
+    "detail": "Details",
+    "editable": "Editable",
+    "preview": "Preview"
+  },
+  "nav": {
+    "overview": "Tổng quan",
+    "accounts": "Quản lý tài khoản",
+    "wakeup": "Wakeup Tasks",
+    "fingerprints": "Vân tay thiết bị",
+    "settings": "Cài đặt"
+  },
+  "settings": {
+    "title": "Cài đặt ứng dụng",
+    "subtitle": "Cá nhân hóa trải nghiệm Antigravity Cockpit Tools của bạn.",
+    "tabs": {
+      "general": "Chung",
+      "network": "Dịch vụ mạng",
+      "about": "Giới thiệu"
+    },
+    "general": {
+      "appearance": "Giao diện",
+      "language": "Ngôn ngữ hiển thị",
+      "languageDesc": "Chọn ngôn ngữ hiển thị giao diện",
+      "theme": "Chủ đề ứng dụng",
+      "themeDesc": "Chuyển đổi chế độ sáng hoặc tối",
+      "themeLight": "Sáng (Light)",
+      "themeDark": "Tối (Dark)",
+      "themeSystem": "Theo hệ thống",
+      "accountManagement": "Quản lý tài khoản",
+      "autoRefresh": "Tự động làm mới hạn mức",
+      "autoRefreshDesc": "Tần suất cập nhật tự động dưới nền",
+      "autoRefreshDisabled": "Vô hiệu hóa",
+      "autoRefreshCustom": "Tùy chỉnh...",
+      "every15min": "Mỗi 15 phút",
+      "every30min": "Mỗi 30 phút",
+      "every1hour": "Mỗi 1 giờ",
+      "minutes": "phút",
+      "storageTitle": "Thư mục & Lưu trữ",
+      "dataDir": "Thư mục dữ liệu",
+      "dataDirDesc": "Vị trí lưu trữ tài khoản và cấu hình.",
+      "fpDir": "Thư mục dấu vân tay",
+      "fpDirDesc": "Vị trí lưu trữ dấu vân tay thiết bị."
+    },
+    "network": {
+      "apiTitle": "API Antigravity Cockpit",
+      "wsService": "Dịch vụ WebSocket",
+      "wsServiceDesc": "Cho phép các chương trình bên ngoài (như plugin VS Code) kết nối điều khiển",
+      "preferredPort": "Cổng ưu tiên",
+      "preferredPortDesc": "Mặc định là {{port}}, yêu cầu khởi động lại ứng dụng sau khi sửa đổi",
+      "currentPort": "Cổng đang chạy",
+      "portNormal": "Dịch vụ hoạt động bình thường",
+      "portFallback": "Cổng cấu hình {{configured}} bị chiếm dụng, tự động sử dụng {{actual}}",
+      "restartRequired": "Cấu hình đã thay đổi, vui lòng khởi động lại ứng dụng để có hiệu lực",
+      "saveSuccess": "Cài đặt đã được lưu!",
+      "saveSuccessRestart": "Cài đặt đã được lưu! Do cấu hình cổng đã thay đổi, vui lòng khởi động lại ứng dụng.",
+      "saveFailed": "Lưu thất bại: {{error}}"
+    },
+    "about": {
+      "appName": "Antigravity Cockpit Tools",
+      "slogan": "Giải pháp quản lý tài khoản chuyên nghiệp",
+      "author": "Tác giả chính",
+      "wechat": "Tài khoản WeChat chính thức",
+      "github": "Kho lưu trữ mã nguồn",
+      "sponsor": "Tài trợ dự án",
+      "supportDev": "Hỗ trợ phát triển"
+    },
+    "saveSettings": "Lưu cài đặt"
+  },
+  "accounts": {
+    "title": "Quản lý tài khoản",
+    "subtitle": "Quản lý danh sách tài khoản Antigravity của bạn.",
+    "total": "Tổng cộng {{count}} tài khoản",
+    "search": "Tìm kiếm tài khoản...",
+    "addAccount": "Thêm tài khoản",
+    "refreshAll": "Làm mới tất cả",
+    "export": "Xuất",
+    "import": "Nhập",
+    "switchLogin": "Chuyển đổi đăng nhập",
+    "refreshQuota": "Làm mới hạn mức",
+    "copyToken": "Sao chép Token",
+    "deleteAccount": "Xóa tài khoản",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa tài khoản {{email}} không?",
+    "columns": {
+      "email": "Email",
+      "subscription": "Loại đăng ký",
+      "quota": "Trạng thái hạn mức",
+      "fingerprint": "Vân tay",
+      "lastUsed": "Sử dụng lần cuối",
+      "actions": "Thao tác"
+    },
+    "status": {
+      "current": "Đang sử dụng",
+      "disabled": "Đã vô hiệu hóa",
+      "normal": "Bình thường",
+      "forbidden": "403",
+      "forbidden_tooltip": "API trả về 403 Forbidden, tài khoản không có quyền sử dụng Gemini Code Assist",
+      "forbidden_msg": "Tài khoản không có quyền, đã bỏ qua tự động làm mới"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "MIỄN PHÍ"
+    },
+    "empty": {
+      "title": "Chưa có tài khoản",
+      "desc": "Nhấn \"Thêm\" để bắt đầu",
+      "btn": "Thêm tài khoản"
+    },
+    "noMatch": {
+      "title": "Không tìm thấy tài khoản phù hợp",
+      "desc": "Không có tài khoản nào phù hợp với bộ lọc hiện tại"
+    },
+    "view": {
+      "list": "Chế độ danh sách",
+      "grid": "Chế độ lưới"
+    },
+    "filterLabel": "Lọc tài khoản",
+    "filter": {
+      "all": "Tất cả ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "MIỄN PHÍ ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "Xem chi tiết",
+      "fingerprint": "Vân tay",
+      "switch": "Chuyển tài khoản",
+      "switchTo": "Chuyển sang tài khoản này",
+      "selectFingerprint": "Chọn vân tay"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "Refresh Token",
+      "import": "Nhập"
+    },
+    "oauth": {
+      "authorizing": "Đang xác thực OAuth...",
+      "success": "Xác thực OAuth thành công",
+      "failed": "Xác thực OAuth thất bại: {{error}}",
+      "hint": "Chúng tôi khuyên bạn nên hoàn tất kết nối Google OAuth trong trình duyệt của mình.",
+      "start": "Bắt đầu xác thực OAuth",
+      "continue": "Tôi đã xác thực, tiếp tục",
+      "linkLabel": "Liên kết xác thực",
+      "generatingLink": "Đang tạo liên kết xác thực..."
+    },
+    "token": {
+      "desc": "Dán refresh_token hoặc JSON tài khoản để nhập hàng loạt.",
+      "placeholder": "Định dạng hỗ trợ: [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] hoặc dán trực tiếp refresh_token",
+      "importStart": "Bắt đầu nhập",
+      "invalid": "Không tìm thấy refresh_token hợp lệ",
+      "importProgress": "Đang nhập {{current}}/{{total}}...",
+      "importSuccess": "Đã nhập {{count}} tài khoản",
+      "importPartial": "Đã nhập thành công {{success}} tài khoản, thất bại {{fail}}",
+      "importFailed": "Nhập thất bại, vui lòng kiểm tra refresh_token"
+    }
+  },
+  "overview": {
+    "title": "Tổng quan tài khoản",
+    "subtitle": "Theo dõi trạng thái hạn mức mô hình của tất cả tài khoản theo thời gian thực.",
+    "total": "Tổng cộng {{count}} tài khoản",
+    "accountDisabled": "Tài khoản đã vô hiệu hóa",
+    "noQuotaData": "Chưa có dữ liệu hạn mức",
+    "currentAccount": "Đang trong phiên sử dụng",
+    "switchTo": "Chuyển sang tài khoản này",
+    "switching": "Đang chuyển...",
+    "fingerprint": "Vân tay",
+    "bound": "Đã liên kết"
+  },
+  "fingerprints": {
+    "title": "Vân tay thiết bị",
+    "subtitle": "Quản lý các vân tay thiết bị được liên kết với tài khoản.",
+    "toolbar": {
+      "generate": "Tạo vân tay mới",
+      "capture": "Chụp vân tay hiện tại",
+      "import": "Nhập",
+      "folder": "Thư mục",
+      "delete": "Xóa"
+    },
+    "table": {
+      "name": "Tên vân tay",
+      "machineId": "ID thiết bị",
+      "accounts": "Tài khoản liên kết",
+      "actions": "Thao tác"
+    },
+    "modals": {
+      "generate": {
+        "title": "Tạo vân tay mới",
+        "btn": "Tạo"
+      },
+      "capture": {
+        "title": "Chụp vân tay hiện tại",
+        "btn": "Chụp"
+      },
+      "rename": {
+        "title": "Đổi tên vân tay",
+        "label": "Tên vân tay"
+      },
+      "import": {
+        "title": "Nhập vân tay",
+        "fromTools": "Nhập vân tay Antigravity Tools",
+        "desc": "Nhập từ thư mục ~/.antigravity_tools/"
+      },
+      "bound": {
+        "title": "Quản lý tài khoản liên kết",
+        "add": "Thêm tài khoản",
+        "empty": "Chưa có tài khoản nào liên kết với vân tay này",
+        "emptyAll": "Tất cả tài khoản đều đã liên kết với vân tay này",
+        "select": "Chọn tài khoản muốn thêm",
+        "from": "Từ: {{name}}"
+      },
+      "detail": {
+        "title": "Thông tin chi tiết vân tay",
+        "created": "Được tạo lúc {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "Bạn có chắc chắn muốn xóa vân tay này không? Các tài khoản liên kết với vân tay này sẽ tự động chuyển về vân tay gốc.",
+      "batchDeleteConfirm": "Bạn có chắc chắn muốn xóa {{count}} vân tay đã chọn không? Các tài khoản liên kết sẽ tự động chuyển về vân tay gốc.",
+      "generated": "Đã tạo vân tay mới",
+      "captured": "Đã chụp vân tay hiện tại",
+      "renamed": "Đã đổi tên",
+      "deleted": "Đã xóa vân tay",
+      "imported": "Đã nhập {{count}} vân tay",
+      "addedAccounts": "Đã thêm {{count}} tài khoản",
+      "enterName": "Vui lòng nhập tên vân tay",
+      "previewNotReady": "Bản xem trước chưa sẵn sàng, vui lòng thử lại sau",
+      "duplicate": "Đã tồn tại vân tay tương tự: {{name}}, không cần thêm lại.",
+      "readOnly": "Chỉ đọc",
+      "current": "Hiện tại"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "Thêm tài khoản",
+      "desc": "Thêm tài khoản Antigravity của bạn qua ủy quyền Google OAuth",
+      "loginBtn": "Đăng nhập Google OAuth",
+      "waiting": "Đang chờ ủy quyền..."
+    },
+    "import": {
+      "title": "Nhập tài khoản",
+      "desc": "Vui lòng chọn phương thức nhập",
+      "local": "Nhập tài khoản cục bộ",
+      "localDesc": "Nhập tài khoản hiện đang đăng nhập từ Antigravity Client",
+      "tools": "Nhập Antigravity Tools",
+      "toolsDesc": "Nhập từ thư mục ~/.antigravity_tools/",
+      "jsonDivider": "hoặc dán JSON",
+      "orJson": "hoặc dán JSON",
+      "jsonPlaceholder": "Dán nội dung JSON tài khoản",
+      "jsonBtn": "Nhập từ JSON",
+      "importing": "Đang nhập...",
+      "importBtn": "Nhập",
+      "oauthAction": "Ủy quyền OAuth",
+      "fromExtension": "Nhập từ Plugin",
+      "syncBadge": "Đồng bộ tài khoản plugin Antigravity Cockpit",
+      "fromLocalDB": "Nhập từ DB cục bộ",
+      "localDBDesc": "Đọc tài khoản đăng nhập từ Antigravity Client trên máy này",
+      "toolsDescMigrate": "Di chuyển tài khoản từ ~/.antigravity_tools/",
+      "importingTools": "Đang nhập từ Antigravity Tools...",
+      "importingLocal": "Đang nhập tài khoản cục bộ...",
+      "importingExtension": "Đang nhập tài khoản plugin...",
+      "noAccountsFound": "Không tìm thấy tài khoản để nhập"
+    },
+    "fingerprint": {
+      "title": "Chọn vân tay",
+      "desc": "Chọn vân tay cho tài khoản <1>{{email}}</1>",
+      "original": "Vân tay gốc",
+      "new": "Thêm vân tay mới",
+      "bind": "Xác nhận liên kết",
+      "selectLabel": "Chọn vân tay",
+      "boundCount": "tài khoản"
+    },
+    "quota": {
+      "title": "Thông tin chi tiết hạn mức",
+      "noData": "Chưa có dữ liệu hạn mức",
+      "close": "Đóng",
+      "resetTime": "Thời gian đặt lại"
+    }
+  },
+  "pagination": {
+    "info": "Hiển thị {{start}} - {{end}} trong tổng số {{total}} bản ghi",
+    "perPage": "{{count}} bản ghi/trang",
+    "prev": "Trang trước",
+    "next": "Trang sau",
+    "page": "Trang {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "Bạn có chắc chắn muốn xóa tài khoản này không?",
+    "batchDeleteConfirm": "Bạn có chắc chắn muốn xóa {{count}} tài khoản đã chọn không?",
+    "switched": "Đã chuyển sang {{email}}",
+    "switchFailed": "Chuyển đổi thất bại: {{error}}",
+    "importSuccess": "Nhập thành công {{count}} tài khoản",
+    "importLocalSuccess": "Nhập thành công tài khoản: {{email}}",
+    "importFailed": "Nhập thất bại: {{error}}",
+    "exportFailed": "Xuất thất bại: {{error}}",
+    "bindFailed": "Liên kết thất bại: {{error}}",
+    "jsonRequired": "Vui lòng nhập hoặc dán nội dung JSON",
+    "example": "Ví dụ",
+    "actionRunning": "{{action}}...",
+    "actionSuccess": "{{action}} thành công",
+    "actionFailed": "{{action}} thất bại: {{error}}"
+  },
+  "wakeup": {
+    "title": "Nhiệm vụ đánh thức",
+    "subtitle": "Quản lý nhiều nhiệm vụ đánh thức tự động với điều khiển độc lập.",
+    "globalToggle": "Công tắc đánh thức chung",
+    "newTask": "Nhiệm vụ mới",
+    "runTest": "Chạy thử",
+    "history": "Lịch sử kích hoạt",
+    "gotoAddAccount": "Thêm tài khoản",
+    "emptyTitle": "Chưa có nhiệm vụ đánh thức nào",
+    "emptyDesc": "Nhiệm vụ sẽ tự động kích hoạt đánh thức dựa trên quy tắc.",
+    "statusEnabled": "Đã bật",
+    "statusDisabled": "Đã tắt",
+    "statusRunning": "Đang chạy",
+    "edit": "Chỉnh sửa",
+    "defaultTaskName": "Nhiệm vụ đánh thức",
+    "newTaskName": "Nhiệm vụ đánh thức mới",
+    "historyCount": "Lịch sử kích hoạt ({{count}})",
+    "historyEmpty": "Chưa có lịch sử",
+    "historyClear": "Xóa lịch sử",
+    "historyPromptLabel": "Từ đánh thức: {{prompt}}",
+    "format": {
+      "noReply": "(Không có phản hồi)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "Hôm nay {{time}}",
+      "tomorrow": "Ngày mai {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "Chưa chọn",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}} mục)",
+      "quotaReset": "Tự động đánh thức khi đặt lại hạn mức",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "Hàng ngày {{times}}{{suffix}}",
+      "weekly": "Hàng tuần {{days}} {{times}}{{suffix}}",
+      "interval": "Mỗi {{hours}} giờ ({{start}}-{{end}})",
+      "invalidCrontab": "Crontab không hợp lệ"
+    },
+    "weekdays": {
+      "sun": "Chủ Nhật",
+      "mon": "Thứ 2",
+      "tue": "Thứ 3",
+      "wed": "Thứ 4",
+      "thu": "Thứ 5",
+      "fri": "Thứ 6",
+      "sat": "Thứ 7"
+    },
+    "notice": {
+      "modelsFetchFailed": "Lấy danh sách mô hình thất bại, vui lòng kiểm tra trạng thái tài khoản",
+      "featureDisabled": "Chức năng đánh thức đã bị vô hiệu hóa",
+      "taskMissingModels": "Nhiệm vụ chưa chọn mô hình",
+      "taskMissingAccounts": "Nhiệm vụ chưa chọn tài khoản",
+      "taskFailed": "Nhiệm vụ \"{{name}}\" thất bại cho {{count}} yêu cầu",
+      "taskCompleted": "Nhiệm vụ \"{{name}}\" đã hoàn thành",
+      "testMissingModel": "Vui lòng chọn một mô hình thử nghiệm",
+      "testMissingAccount": "Vui lòng chọn một tài khoản thử nghiệm",
+      "testFailed": "Thử nghiệm thất bại cho {{count}} yêu cầu",
+      "testCompleted": "Thử nghiệm đã hoàn thành",
+      "nameRequired": "Vui lòng nhập tên nhiệm vụ",
+      "accountRequired": "Chọn ít nhất một tài khoản",
+      "modelRequired": "Chọn ít nhất một mô hình",
+      "crontabRequired": "Vui lòng nhập biểu thức crontab",
+      "taskSaved": "Nhiệm vụ \"{{name}}\" đã được lưu",
+      "featureOff": "Đã tắt đánh thức",
+      "featureOn": "Đã bật đánh thức"
+    },
+    "triggerSource": {
+      "scheduled": "Lịch trình",
+      "crontab": "Crontab",
+      "quotaReset": "Đặt lại hạn mức",
+      "manual": "Chạy thử",
+      "unknown": "Không xác định"
+    },
+    "taskCard": {
+      "accountsCount": "Tài khoản {{count}}",
+      "modelsCount": "Mô hình {{count}}",
+      "accountsLabel": "Tài khoản: {{preview}}",
+      "modelsLabel": "Mô hình: {{preview}}",
+      "lastRun": "Lần chạy cuối {{time}}",
+      "nextRun": "Lần chạy tiếp {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "Bật chức năng đánh thức",
+      "enableDesc": "Việc bật chức năng đánh thức sẽ vô hiệu hóa chức năng đánh thức trong plugin. Tiếp tục?",
+      "deleteConfirm": "Xóa nhiệm vụ \"{{name}}\"?",
+      "testTitle": "Chạy thử",
+      "historyTitle": "Lịch sử kích hoạt",
+      "taskTitleEdit": "Chỉnh sửa nhiệm vụ đánh thức",
+      "taskTitleNew": "Nhiệm vụ đánh thức mới"
+    },
+    "form": {
+      "taskName": "Tên nhiệm vụ",
+      "taskStatus": "Trạng thái",
+      "triggerMode": "Chế độ kích hoạt",
+      "triggerModeHint": "1. Lịch trình: kích hoạt vào các thời điểm đã thiết lập.\\n2. Crontab: định nghĩa bằng biểu thức.\\n3. Đặt lại hạn mức: kích hoạt một lần khi hạn mức đầy.",
+      "modeScheduled": "📅 Lịch trình",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 Đặt lại hạn mức",
+      "modelSelect": "Chọn mô hình",
+      "modelHint": "Đối với cùng một nhóm hạn mức, chỉ nên chọn một mô hình. Nhiều mô hình sẽ kích hoạt theo trình tự.",
+      "modelsEmpty": "Không có mô hình gợi ý",
+      "accountSelect": "Chọn tài khoản",
+      "accountHint": "Có thể chọn nhiều tài khoản; chức năng đánh thức sẽ sử dụng chúng theo trình tự.",
+      "accountsEmpty": "Không có tài khoản",
+      "customPrompt": "Từ đánh thức tùy chỉnh",
+      "promptPlaceholder": "Mặc định {{word}}",
+      "promptHint": "Để trống để sử dụng từ đánh thức mặc định {{word}}.",
+      "maxTokens": "Token đầu ra tối đa",
+      "maxTokensHint": "Mặc định 0 (không giới hạn).",
+      "repeatMode": "Chế độ lặp lại",
+      "repeatDaily": "Hàng ngày",
+      "repeatWeekly": "Hàng tuần",
+      "repeatInterval": "Khoảng thời gian",
+      "selectTime": "Chọn thời gian",
+      "customTime": "Thời gian tùy chỉnh",
+      "selectWeekday": "Chọn ngày trong tuần",
+      "quickWorkdays": "Ngày làm việc",
+      "quickWeekend": "Cuối tuần",
+      "quickAll": "Tất cả",
+      "intervalSetting": "Thiết lập khoảng thời gian",
+      "intervalEvery": "Mỗi",
+      "intervalHours": "giờ",
+      "intervalStart": "Bắt đầu",
+      "intervalEnd": "Kết thúc",
+      "nextRuns": "Lịch chạy tiếp theo",
+      "nextRunsEmpty": "Vui lòng chọn thời điểm kích hoạt",
+      "crontab": "Biểu thức Crontab",
+      "crontabPlaceholder": "ví dụ: 0 8,12,17 * * *",
+      "crontabValidate": "Xác thực",
+      "crontabValidateHint": "Biểu thức sẽ được xác thực khi lưu",
+      "crontabPreviewEmpty": "Vui lòng nhập biểu thức Crontab hợp lệ",
+      "timeWindowEnabled": "Bật khung giờ",
+      "timeWindowHint": "Khi được bật, việc kích hoạt khi đặt lại hạn mức chỉ diễn ra trong khung giờ; ngoài khung giờ sẽ sử dụng thời gian cố định.",
+      "timeWindow": "Khung giờ kích hoạt khi đặt lại hạn mức",
+      "timeWindowFrom": "Từ",
+      "timeWindowTo": "Đến",
+      "fallbackTimes": "Thời gian ngoài khung giờ",
+      "saveTask": "Lưu nhiệm vụ"
+    },
+    "test": {
+      "modelsLabel": "Mô hình kích hoạt",
+      "accountsLabel": "Tài khoản thử nghiệm",
+      "accountsHint": "Chọn nhiều tài khoản để thử nghiệm.",
+      "start": "Bắt đầu thử nghiệm",
+      "testing": "Đang thử nghiệm..."
+    }
+  }
+}

@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "確認",
+    "cancel": "取消",
+    "save": "儲存",
+    "saving": "儲存中...",
+    "delete": "刪除",
+    "refresh": "重新整理",
+    "loading": "載入中...",
+    "success": "成功",
+    "failed": "失敗",
+    "enabled": "已啟用",
+    "disabled": "已停用",
+    "close": "關閉",
+    "open": "打開",
+    "copy": "複製",
+    "add": "新增",
+    "enable": "啟用",
+    "disable": "停用",
+    "none": "暫無",
+    "detail": "詳情",
+    "editable": "可編輯",
+    "preview": "預覽"
+  },
+  "nav": {
+    "overview": "帳號總覽",
+    "accounts": "帳號管理",
+    "wakeup": "喚醒任務",
+    "fingerprints": "裝置指纹",
+    "settings": "設定"
+  },
+  "settings": {
+    "title": "應用程式設定",
+    "subtitle": "個性化您的 Cockpit Tools 體驗。",
+    "tabs": {
+      "general": "通用",
+      "network": "網路服務",
+      "about": "關於"
+    },
+    "general": {
+      "appearance": "介面外觀",
+      "language": "顯示語言",
+      "languageDesc": "選擇介面的顯示語言",
+      "theme": "應用程式主題",
+      "themeDesc": "切換深色或淺色模式",
+      "themeLight": "淺色 (Light)",
+      "themeDark": "深色 (Dark)",
+      "themeSystem": "跟隨系統",
+      "accountManagement": "帳號管理",
+      "autoRefresh": "自動更新配額",
+      "autoRefreshDesc": "背景自動更新頻率",
+      "autoRefreshDisabled": "停用",
+      "autoRefreshCustom": "自訂...",
+      "every15min": "每 15 分鐘",
+      "every30min": "每 30 分鐘",
+      "every1hour": "每 1 小時",
+      "minutes": "分",
+      "storageTitle": "Directories & Storage",
+      "dataDir": "Data Directory",
+      "dataDirDesc": "Storage location for accounts and configuration files.",
+      "fpDir": "Fingerprint Storage",
+      "fpDirDesc": "Storage location for device fingerprint files."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "WebSocket 服務",
+      "wsServiceDesc": "允許外部程式 (如 VS Code 擴充功能) 連接控制",
+      "preferredPort": "偏好連接埠",
+      "preferredPortDesc": "預設為 {{port}}，修改後需重啟應用程式",
+      "currentPort": "目前執行連接埠",
+      "portNormal": "服務執行正常",
+      "portFallback": "配置連接埠 {{configured}} 被佔用，已自動使用 {{actual}}",
+      "restartRequired": "設定已變更，請重啟應用程式以使新連接埠生效",
+      "saveSuccess": "設定已儲存！",
+      "saveSuccessRestart": "設定已儲存！由於連接埠設定已變更，請重啟應用程式以生效。",
+      "saveFailed": "儲存失敗: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "專業帳號管理解決方案",
+      "author": "主作者",
+      "wechat": "微信公眾號",
+      "github": "開源倉庫",
+      "sponsor": "贊助項目",
+      "supportDev": "支持開發"
+    },
+    "saveSettings": "儲存設定"
+  },
+  "accounts": {
+    "title": "帳號管理",
+    "subtitle": "管理您的 Antigravity 帳號清單。",
+    "total": "共 {{count}} 個帳號",
+    "search": "搜尋帳號...",
+    "addAccount": "新增帳號",
+    "refreshAll": "全部重新整理",
+    "export": "匯出",
+    "import": "匯入",
+    "switchLogin": "切換登入",
+    "refreshQuota": "重新整理配額",
+    "copyToken": "複製 Token",
+    "deleteAccount": "刪除帳號",
+    "confirmDelete": "確定要刪除帳號 {{email}} 嗎？",
+    "columns": {
+      "email": "電子郵件",
+      "subscription": "訂閱類型",
+      "quota": "配額狀態",
+      "fingerprint": "指紋",
+      "lastUsed": "最後使用",
+      "actions": "操作"
+    },
+    "status": {
+      "current": "目前使用",
+      "disabled": "已停用",
+      "normal": "正常",
+      "forbidden": "403",
+      "forbidden_tooltip": "API 返回 403 Forbidden，帳號無權使用 Gemini Code Assist",
+      "forbidden_msg": "帳號無權限，已跳過自動刷新"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "FREE"
+    },
+    "empty": {
+      "title": "暫無帳號",
+      "desc": "點擊 \"新增\" 開始使用",
+      "btn": "新增帳號"
+    },
+    "noMatch": {
+      "title": "無符合帳號",
+      "desc": "沒有找到符合篩選條件的帳號"
+    },
+    "view": {
+      "list": "列表檢視",
+      "grid": "卡片檢視"
+    },
+    "filterLabel": "篩選帳號",
+    "filter": {
+      "all": "全部 ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "FREE ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "查看詳情",
+      "fingerprint": "指紋",
+      "switch": "切換帳號",
+      "switchTo": "切換到此帳號",
+      "selectFingerprint": "點擊選擇指紋"
+    },
+    "tabs": {
+      "oauth": "OAuth 授權",
+      "token": "Refresh Token",
+      "import": "匯入"
+    },
+    "oauth": {
+      "authorizing": "OAuth 授權中...",
+      "success": "OAuth 授權成功",
+      "failed": "OAuth 授權失敗: {{error}}",
+      "hint": "建議使用瀏覽器完成 Google 授權",
+      "start": "開始 OAuth 授權",
+      "continue": "我已授權，繼續",
+      "linkLabel": "授權連結",
+      "generatingLink": "正在生成授權連結..."
+    },
+    "token": {
+      "desc": "貼上 refresh_token 或帳號 JSON，支援批量匯入。",
+      "placeholder": "支援格式：[{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] 或直接貼上 refresh_token",
+      "importStart": "開始匯入",
+      "invalid": "未找到有效 refresh_token",
+      "importProgress": "匯入中 {{current}}/{{total}}...",
+      "importSuccess": "匯入成功 {{count}} 個帳號",
+      "importPartial": "匯入成功 {{success}} 個，失敗 {{fail}} 個",
+      "importFailed": "匯入失敗，請檢查 refresh_token"
+    }
+  },
+  "overview": {
+    "title": "帳號總覽",
+    "subtitle": "即時監控所有帳號的模型配額狀態。",
+    "total": "共 {{count}} 個帳號",
+    "accountDisabled": "帳號已停用",
+    "noQuotaData": "暫無配額數據",
+    "currentAccount": "目前使用中",
+    "switchTo": "切換至該帳號",
+    "switching": "切換中...",
+    "fingerprint": "指紋",
+    "bound": "已綁定"
+  },
+  "fingerprints": {
+    "title": "裝置指紋",
+    "subtitle": "管理綁定到帳號的裝置指紋。",
+    "toolbar": {
+      "generate": "產生新指紋",
+      "capture": "擷取目前",
+      "import": "匯入",
+      "folder": "目錄",
+      "delete": "刪除"
+    },
+    "table": {
+      "name": "指紋名稱",
+      "machineId": "裝置 ID",
+      "accounts": "綁定帳號",
+      "actions": "操作"
+    },
+    "modals": {
+      "generate": {
+        "title": "產生新指紋",
+        "btn": "產生"
+      },
+      "capture": {
+        "title": "擷取目前指紋",
+        "btn": "擷取"
+      },
+      "rename": {
+        "title": "重新命名指紋",
+        "label": "指紋名稱"
+      },
+      "import": {
+        "title": "匯入指紋",
+        "fromTools": "匯入 Antigravity Tools 指紋",
+        "desc": "從 ~/.antigravity_tools/ 目錄匯入"
+      },
+      "bound": {
+        "title": "綁定帳號管理",
+        "add": "新增帳號",
+        "empty": "暫無帳號綁定此指紋",
+        "emptyAll": "所有帳號都已綁定此指紋",
+        "select": "選擇要新增的帳號",
+        "from": "來自: {{name}}"
+      },
+      "detail": {
+        "title": "指紋詳細資訊",
+        "created": "建立於 {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "確定要刪除這個指紋嗎？綁定此指紋的帳號將自動改為原始指紋。",
+      "batchDeleteConfirm": "確定要刪除選中的 {{count}} 個指紋嗎？綁定此指紋的帳號將自動改為原始指紋。",
+      "generated": "已產生新指紋",
+      "captured": "已擷取目前指紋",
+      "renamed": "已重新命名",
+      "deleted": "已刪除指紋",
+      "imported": "已匯入 {{count}} 個指紋",
+      "addedAccounts": "已新增 {{count}} 個帳號",
+      "enterName": "請輸入指紋名稱",
+      "previewNotReady": "預覽未就緒，請稍後重試",
+      "duplicate": "已存在相同指紋：{{name}}，無需重複新增。",
+      "readOnly": "唯讀",
+      "current": "目前"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "新增帳號",
+      "desc": "透過 Google OAuth 授權新增您的 Antigravity 帳號",
+      "loginBtn": "Google OAuth 登入",
+      "waiting": "等待授權..."
+    },
+    "import": {
+      "title": "匯入帳號",
+      "desc": "請選擇匯入方式",
+      "local": "匯入本地帳戶",
+      "localDesc": "從 Antigravity 用戶端匯入目前登入帳戶",
+      "tools": "匯入 Antigravity Tools",
+      "toolsDesc": "從 ~/.antigravity_tools/ 目錄匯入",
+      "jsonDivider": "或貼上 JSON",
+      "orJson": "或貼上 JSON",
+      "jsonPlaceholder": "貼上帳號 JSON 内容",
+      "jsonBtn": "從 JSON 匯入",
+      "importing": "匯入中...",
+      "importBtn": "匯入",
+      "oauthAction": "OAuth 授權",
+      "fromExtension": "從插件匯入",
+      "syncBadge": "同步 Antigravity Cockpit 插件帳號",
+      "fromLocalDB": "從本地資料庫匯入",
+      "localDBDesc": "從此機器的 Antigravity 客戶端讀取登入帳號",
+      "toolsDescMigrate": "從 ~/.antigravity_tools/ 遷移帳號",
+      "importingTools": "正從 Antigravity Tools 匯入...",
+      "importingLocal": "正在匯入本地帳號...",
+      "importingExtension": "正在匯入插件帳號...",
+      "noAccountsFound": "未找到可匯入的帳號"
+    },
+    "fingerprint": {
+      "title": "選擇指紋",
+      "desc": "為帳號 <1>{{email}}</1> 選擇指纹",
+      "original": "原始指紋",
+      "new": "新增新指紋",
+      "bind": "確認綁定",
+      "selectLabel": "選擇指紋",
+      "boundCount": "個帳號"
+    },
+    "quota": {
+      "title": "配額詳細資訊",
+      "noData": "無配額數據",
+      "close": "關閉",
+      "resetTime": "重置時間"
+    }
+  },
+  "pagination": {
+    "info": "顯示 {{start}} - {{end}} 條，共 {{total}} 條",
+    "perPage": "{{count}} 條/頁",
+    "prev": "上一頁",
+    "next": "下一页",
+    "page": "第 {{current}} / {{total}} 頁"
+  },
+  "messages": {
+    "deleteConfirm": "確定要刪除這個帳號嗎？",
+    "batchDeleteConfirm": "確定要刪除選中的 {{count}} 個帳號嗎？",
+    "switched": "已切換至 {{email}}",
+    "switchFailed": "切換失敗：{{error}}",
+    "importSuccess": "成功匯入 {{count}} 個帳號",
+    "importLocalSuccess": "成功匯入帳號: {{email}}",
+    "importFailed": "匯入失敗: {{error}}",
+    "exportFailed": "匯出失敗: {{error}}",
+    "bindFailed": "綁定失敗: {{error}}",
+    "jsonRequired": "請輸入或貼上 JSON 内容",
+    "example": "範例",
+    "actionRunning": "{{action}}中...",
+    "actionSuccess": "{{action}}成功",
+    "actionFailed": "{{action}}失敗: {{error}}"
+  },
+  "wakeup": {
+    "title": "喚醒任務",
+    "subtitle": "管理多個自動喚醒任務，支援獨立啟停與統一開關。",
+    "globalToggle": "喚醒總開關",
+    "newTask": "新建任務",
+    "runTest": "立即測試",
+    "history": "觸發歷史",
+    "gotoAddAccount": "去新增帳號",
+    "emptyTitle": "還沒有喚醒任務",
+    "emptyDesc": "建立任務後將按規則自動觸發喚醒。",
+    "statusEnabled": "啟用",
+    "statusDisabled": "停用",
+    "statusRunning": "執行中",
+    "edit": "編輯",
+    "defaultTaskName": "喚醒任務",
+    "newTaskName": "新喚醒任務",
+    "historyCount": "觸發歷史 ({{count}})",
+    "historyEmpty": "暫無紀錄",
+    "historyClear": "清空歷史",
+    "historyPromptLabel": "喚醒詞：{{prompt}}",
+    "format": {
+      "noReply": "(無回覆)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": "，",
+      "message": "[[{{model}}]]：{{reply}}{{suffix}}",
+      "none": "--",
+      "today": "今天 {{time}}",
+      "tomorrow": "明天 {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "未選擇",
+      "joiner": "、",
+      "moreItems": "{{items}} 等{{total}}項",
+      "quotaReset": "配額重置自動喚醒",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "每日 {{times}}{{suffix}}",
+      "weekly": "每週 {{days}} {{times}}{{suffix}}",
+      "interval": "間隔 {{hours}} 小時 ({{start}}-{{end}})",
+      "invalidCrontab": "無效 Crontab"
+    },
+    "weekdays": {
+      "sun": "週日",
+      "mon": "週一",
+      "tue": "週二",
+      "wed": "週三",
+      "thu": "週四",
+      "fri": "週五",
+      "sat": "週六"
+    },
+    "notice": {
+      "modelsFetchFailed": "取得模型列表失敗，請檢查帳號狀態",
+      "featureDisabled": "喚醒功能未開啟",
+      "taskMissingModels": "任務未選擇模型",
+      "taskMissingAccounts": "任務未選擇帳號",
+      "taskFailed": "任務「{{name}}」執行失敗 {{count}} 個請求",
+      "taskCompleted": "任務「{{name}}」已完成",
+      "testMissingModel": "請先選擇測試模型",
+      "testMissingAccount": "請先選擇測試帳號",
+      "testFailed": "測試失敗 {{count}} 個請求",
+      "testCompleted": "測試已完成",
+      "nameRequired": "請輸入任務名稱",
+      "accountRequired": "請至少選擇一個帳號",
+      "modelRequired": "請至少選擇一個模型",
+      "crontabRequired": "請輸入 crontab 表達式",
+      "taskSaved": "任務「{{name}}」已儲存",
+      "featureOff": "喚醒功能已關閉",
+      "featureOn": "喚醒功能已開啟"
+    },
+    "triggerSource": {
+      "scheduled": "定時",
+      "crontab": "Crontab",
+      "quotaReset": "配額重置",
+      "manual": "立即測試",
+      "unknown": "未知"
+    },
+    "taskCard": {
+      "accountsCount": "帳號 {{count}}",
+      "modelsCount": "模型 {{count}}",
+      "accountsLabel": "帳號：{{preview}}",
+      "modelsLabel": "模型：{{preview}}",
+      "lastRun": "上次 {{time}}",
+      "nextRun": "下次 {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "開啟喚醒功能",
+      "enableDesc": "開啟喚醒功能會自動關閉外掛內的喚醒功能，是否繼續？",
+      "deleteConfirm": "確定要刪除任務「{{name}}」嗎？",
+      "testTitle": "立即測試",
+      "historyTitle": "觸發歷史",
+      "taskTitleEdit": "編輯喚醒任務",
+      "taskTitleNew": "新建喚醒任務"
+    },
+    "form": {
+      "taskName": "任務名稱",
+      "taskStatus": "任務狀態",
+      "triggerMode": "喚醒方式",
+      "triggerModeHint": "1. 定時：依照設定時間觸發。\\n2. Crontab：使用表達式定義。\\n3. 配額重置：額度滿後觸發一次。",
+      "modeScheduled": "📅 定時觸發",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 配額重置",
+      "modelSelect": "模型選擇",
+      "modelHint": "同一配額組建議只選一個模型，多模型會依序觸發。",
+      "modelsEmpty": "暫無推薦模型",
+      "accountSelect": "帳號選擇",
+      "accountHint": "可多選，自動喚醒會依序使用這些帳號。",
+      "accountsEmpty": "暫無帳號",
+      "customPrompt": "自訂喚醒詞",
+      "promptPlaceholder": "預設 {{word}}",
+      "promptHint": "留空將使用預設喚醒詞 {{word}}。",
+      "maxTokens": "最大輸出 Token",
+      "maxTokensHint": "預設 0（不限）。",
+      "repeatMode": "重複方式",
+      "repeatDaily": "每日",
+      "repeatWeekly": "每週",
+      "repeatInterval": "間隔",
+      "selectTime": "選擇時間",
+      "customTime": "自訂時間",
+      "selectWeekday": "選擇星期",
+      "quickWorkdays": "工作日",
+      "quickWeekend": "週末",
+      "quickAll": "全部",
+      "intervalSetting": "間隔設定",
+      "intervalEvery": "每隔",
+      "intervalHours": "小時",
+      "intervalStart": "開始",
+      "intervalEnd": "結束",
+      "nextRuns": "下次觸發預覽",
+      "nextRunsEmpty": "請選擇觸發時間",
+      "crontab": "Crontab 表達式",
+      "crontabPlaceholder": "例如：0 8,12,17 * * *",
+      "crontabValidate": "驗證",
+      "crontabValidateHint": "儲存時將驗證表達式",
+      "crontabPreviewEmpty": "請輸入有效的 Crontab 表達式",
+      "timeWindowEnabled": "啟用時段策略",
+      "timeWindowHint": "啟用後，配額重置觸發僅在指定時段內執行；時段外使用固定時間觸發。",
+      "timeWindow": "配額重置活躍視窗",
+      "timeWindowFrom": "從",
+      "timeWindowTo": "到",
+      "fallbackTimes": "時段外觸發時間",
+      "saveTask": "儲存任務"
+    },
+    "test": {
+      "modelsLabel": "選擇要觸發的模型",
+      "accountsLabel": "測試帳號",
+      "accountsHint": "可多選，用這些帳號進行測試。",
+      "start": "開始測試",
+      "testing": "測試中..."
+    }
+  }
+}

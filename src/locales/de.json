@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "Bestätigen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "saving": "Speichern...",
+    "delete": "Löschen",
+    "refresh": "Aktualisieren",
+    "loading": "Lädt...",
+    "success": "Erfolgreich",
+    "failed": "Fehlgeschlagen",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "close": "Schließen",
+    "open": "Öffnen",
+    "copy": "Kopieren",
+    "add": "Hinzufügen",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "none": "Keine",
+    "detail": "Details",
+    "editable": "Bearbeitbar",
+    "preview": "Vorschau"
+  },
+  "nav": {
+    "overview": "Übersicht",
+    "accounts": "Konten",
+    "wakeup": "Weckaufgaben",
+    "fingerprints": "Fingerabdrücke",
+    "settings": "Einstellungen"
+  },
+  "settings": {
+    "title": "App-Einstellungen",
+    "subtitle": "Passen Sie Ihre Cockpit Tools Erfahrung an.",
+    "tabs": {
+      "general": "Allgemein",
+      "network": "Netzwerk",
+      "about": "Über"
+    },
+    "general": {
+      "appearance": "Erscheinungsbild",
+      "language": "Sprache",
+      "languageDesc": "Wählen Sie die Oberflächensprache",
+      "theme": "Design",
+      "themeDesc": "Zwischen hellem und dunklem Modus wechseln",
+      "themeLight": "Hell",
+      "themeDark": "Dunkel",
+      "themeSystem": "System",
+      "accountManagement": "Kontoverwaltung",
+      "autoRefresh": "Kontingent automatisch aktualisieren",
+      "autoRefreshDesc": "Hintergrundaktualisierungsfrequenz",
+      "autoRefreshDisabled": "Deaktiviert",
+      "autoRefreshCustom": "Benutzerdefiniert...",
+      "every15min": "Alle 15 Minuten",
+      "every30min": "Alle 30 Minuten",
+      "every1hour": "Jede Stunde",
+      "minutes": "Min.",
+      "storageTitle": "Directories & Storage",
+      "dataDir": "Data Directory",
+      "dataDirDesc": "Storage location for accounts and configuration files.",
+      "fpDir": "Fingerprint Storage",
+      "fpDirDesc": "Storage location for device fingerprint files."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "WebSocket Service",
+      "wsServiceDesc": "Externen Programmen (z. B. VS Code Erweiterung) die Verbindung erlauben",
+      "preferredPort": "Bevorzugter Port",
+      "preferredPortDesc": "Standard ist {{port}}, Neustart nach Änderung erforderlich",
+      "currentPort": "Aktueller Port",
+      "portNormal": "Service läuft normal",
+      "portFallback": "Port {{configured}} wird verwendet, stattdessen wird {{actual}} genutzt",
+      "restartRequired": "Konfiguration geändert, bitte starten Sie die App neu",
+      "saveSuccess": "Einstellungen gespeichert!",
+      "saveSuccessRestart": "Einstellungen gespeichert! Bitte starten Sie die App neu, damit die Portänderungen wirksam werden.",
+      "saveFailed": "Speichern fehlgeschlagen: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "Professionelle Lösung zur Kontoverwaltung",
+      "author": "Autor",
+      "wechat": "WeChat",
+      "github": "GitHub Repository",
+      "sponsor": "Sponsoren",
+      "supportDev": "Entwicklung unterstützen"
+    },
+    "saveSettings": "Einstellungen speichern"
+  },
+  "accounts": {
+    "title": "Kontoverwaltung",
+    "subtitle": "Verwalten Sie Ihre Antigravity-Kontenliste.",
+    "total": "{{count}} Konten",
+    "search": "Konten suchen...",
+    "addAccount": "Konto hinzufügen",
+    "refreshAll": "Alle aktualisieren",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "switchLogin": "Login wechseln",
+    "refreshQuota": "Kontingent aktualisieren",
+    "copyToken": "Token kopieren",
+    "deleteAccount": "Konto löschen",
+    "confirmDelete": "Sind Sie sicher, dass Sie das Konto {{email}} löschen möchten?",
+    "columns": {
+      "email": "E-Mail",
+      "subscription": "Abonnement",
+      "quota": "Kontingentstatus",
+      "fingerprint": "Fingerabdruck",
+      "lastUsed": "Zuletzt verwendet",
+      "actions": "Aktionen"
+    },
+    "status": {
+      "current": "Aktuell",
+      "disabled": "Deaktiviert",
+      "normal": "Normal",
+      "forbidden": "403",
+      "forbidden_tooltip": "API gab 403 Forbidden zurück, Konto hat keinen Zugriff auf Gemini Code Assist",
+      "forbidden_msg": "Konto verboten, automatische Aktualisierung übersprungen"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "KOSTENLOS"
+    },
+    "empty": {
+      "title": "Keine Konten",
+      "desc": "Klicken Sie auf „Hinzufügen“, um zu beginnen",
+      "btn": "Konto hinzufügen"
+    },
+    "noMatch": {
+      "title": "Keine passenden Konten",
+      "desc": "Keine Konten entsprechen den Filtern"
+    },
+    "view": {
+      "list": "Listenansicht",
+      "grid": "Kartenansicht"
+    },
+    "filterLabel": "Konten filtern",
+    "filter": {
+      "all": "Alle ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "FREE ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "Details anzeigen",
+      "fingerprint": "Fingerabdruck",
+      "switch": "Konto wechseln",
+      "switchTo": "Zu diesem Konto wechseln",
+      "selectFingerprint": "Fingerabdruck auswählen"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "Refresh Token",
+      "import": "Importieren"
+    },
+    "oauth": {
+      "authorizing": "OAuth wird autorisiert...",
+      "success": "OAuth autorisiert",
+      "failed": "OAuth-Autorisierung fehlgeschlagen: {{error}}",
+      "hint": "Empfohlen: Google OAuth im Browser abschließen.",
+      "start": "OAuth-Autorisierung starten",
+      "continue": "Ich habe autorisiert, weiter",
+      "linkLabel": "Autorisierungslink",
+      "generatingLink": "Autorisierungslink wird erstellt..."
+    },
+    "token": {
+      "desc": "refresh_token oder Konto-JSON einfügen, um gesammelt zu importieren.",
+      "placeholder": "Unterstütztes Format: [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] oder refresh_token direkt einfügen",
+      "importStart": "Import starten",
+      "invalid": "Kein gültiger refresh_token gefunden",
+      "importProgress": "Importiere {{current}}/{{total}}...",
+      "importSuccess": "{{count}} Konten importiert",
+      "importPartial": "{{success}} Konten importiert, {{fail}} fehlgeschlagen",
+      "importFailed": "Import fehlgeschlagen, refresh_token prüfen"
+    }
+  },
+  "overview": {
+    "title": "Kontoübersicht",
+    "subtitle": "Echtzeit-Überwachung aller Kontingente.",
+    "total": "{{count}} Konten",
+    "accountDisabled": "Konto deaktiviert",
+    "noQuotaData": "Keine Kontingentdaten",
+    "currentAccount": "Derzeit in Gebrauch",
+    "switchTo": "Zu diesem Konto wechseln",
+    "switching": "Wechselt...",
+    "fingerprint": "Fingerabdruck",
+    "bound": "Gebunden"
+  },
+  "fingerprints": {
+    "title": "Geräte-Fingerabdrücke",
+    "subtitle": "Verwalten Sie Fingerabdrücke, die Konten zugeordnet sind.",
+    "toolbar": {
+      "generate": "Neu generieren",
+      "capture": "Aktuelle erfassen",
+      "import": "Importieren",
+      "folder": "Ordner",
+      "delete": "Löschen"
+    },
+    "table": {
+      "name": "Fingerabdruck-Name",
+      "machineId": "Maschinen-ID",
+      "accounts": "Gebundene Konten",
+      "actions": "Aktionen"
+    },
+    "modals": {
+      "generate": {
+        "title": "Fingerabdruck generieren",
+        "btn": "Generieren"
+      },
+      "capture": {
+        "title": "Fingerabdruck erfassen",
+        "btn": "Erfassen"
+      },
+      "rename": {
+        "title": "Fingerabdruck umbenennen",
+        "label": "Fingerabdruck-Name"
+      },
+      "import": {
+        "title": "Fingerabdrücke importieren",
+        "fromTools": "Von Antigravity Tools importieren",
+        "desc": "Import aus dem Verzeichnis ~/.antigravity_tools/"
+      },
+      "bound": {
+        "title": "Gebundene Konten",
+        "add": "Konten hinzufügen",
+        "empty": "Keine Konten gebunden",
+        "emptyAll": "Alle Konten sind gebunden",
+        "select": "Wählen Sie Konten zum Hinzufügen aus",
+        "from": "Von: {{name}}"
+      },
+      "detail": {
+        "title": "Fingerabdruck-Details",
+        "created": "Erstellt am {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "Diesen Fingerabdruck löschen? Gebundene Konten werden zum Original zurückkehren.",
+      "batchDeleteConfirm": "{{count}} Fingerabdrücke löschen? Gebundene Konten werden zum Original zurückkehren.",
+      "generated": "Neuer Fingerabdruck generiert",
+      "captured": "Aktueller Fingerabdruck erfasst",
+      "renamed": "Umbenannt",
+      "deleted": "Fingerabdruck gelöscht",
+      "imported": "{{count}} Fingerabdrücke importiert",
+      "addedAccounts": "{{count}} Konten hinzugefügt",
+      "enterName": "Geben Sie einen Namen für den Fingerabdruck ein",
+      "previewNotReady": "Vorschau noch nicht bereit, bitte warten",
+      "duplicate": "Gleicher Fingerabdruck existiert bereits: {{name}}",
+      "readOnly": "Schreibgeschützt",
+      "current": "Aktuell"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "Konto hinzufügen",
+      "desc": "Fügen Sie Ihr Antigravity-Konto via Google OAuth hinzu",
+      "loginBtn": "Google OAuth Login",
+      "waiting": "Warten..."
+    },
+    "import": {
+      "title": "Konten importieren",
+      "desc": "Wählen Sie eine Importmethode",
+      "local": "Lokales Konto importieren",
+      "localDesc": "Importiere das aktuelle Konto vom Antigravity Client",
+      "tools": "Antigravity Tools importieren",
+      "toolsDesc": "Import aus dem Verzeichnis ~/.antigravity_tools/",
+      "jsonDivider": "oder JSON einfügen",
+      "orJson": "oder JSON einfügen",
+      "jsonPlaceholder": "Konto JSON-Inhalt einfügen",
+      "jsonBtn": "Aus JSON importieren",
+      "importing": "Importiert...",
+      "importBtn": "Importieren",
+      "oauthAction": "OAuth-Autorisierung",
+      "fromExtension": "Von Plugin importieren",
+      "syncBadge": "Antigravity Cockpit Plugin-Konten synchronisieren",
+      "fromLocalDB": "Aus lokaler Datenbank importieren",
+      "localDBDesc": "Login-Konten vom Antigravity-Client auf diesem Rechner lesen",
+      "toolsDescMigrate": "Konten von ~/.antigravity_tools/ migrieren",
+      "importingTools": "Importiere von Antigravity Tools...",
+      "importingLocal": "Lokales Konto wird importiert...",
+      "importingExtension": "Plugin-Konto wird importiert...",
+      "noAccountsFound": "Keine importierbaren Konten gefunden"
+    },
+    "fingerprint": {
+      "title": "Fingerabdruck wählen",
+      "desc": "Fingerabdruck für Konto <1>{{email}}</1> auswählen",
+      "original": "Originaler Fingerabdruck",
+      "new": "Neuen Fingerabdruck hinzufügen",
+      "bind": "Bindung bestätigen",
+      "selectLabel": "Fingerabdruck wählen",
+      "boundCount": "Konten"
+    },
+    "quota": {
+      "title": "Kontingentdetails",
+      "noData": "Keine Kontingentdaten",
+      "close": "Schließen",
+      "resetTime": "Reset-Zeit"
+    }
+  },
+  "pagination": {
+    "info": "Zeige {{start}} - {{end}} von {{total}}",
+    "perPage": "{{count}} / Seite",
+    "prev": "Vorherige",
+    "next": "Nächste",
+    "page": "Seite {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "Sind Sie sicher, dass Sie dieses Konto löschen möchten?",
+    "batchDeleteConfirm": "Sind Sie sicher, dass Sie die {{count}} ausgewählten Konten löschen möchten?",
+    "switched": "Zu {{email}} gewechselt",
+    "switchFailed": "Wechsel fehlgeschlagen: {{error}}",
+    "importSuccess": "{{count}} Konten erfolgreich importiert",
+    "importLocalSuccess": "Konto erfolgreich importiert: {{email}}",
+    "importFailed": "Import fehlgeschlagen: {{error}}",
+    "exportFailed": "Export fehlgeschlagen: {{error}}",
+    "bindFailed": "Verbindung fehlgeschlagen: {{error}}",
+    "jsonRequired": "Bitte geben Sie den JSON-Inhalt ein oder fügen Sie ihn ein",
+    "example": "Beispiel",
+    "actionRunning": "{{action}}...",
+    "actionSuccess": "{{action}} erfolgreich",
+    "actionFailed": "{{action}} fehlgeschlagen: {{error}}"
+  },
+  "wakeup": {
+    "title": "Weckaufgaben",
+    "subtitle": "Mehrere automatische Weckaufgaben mit unabhängigen Steuerungen verwalten.",
+    "globalToggle": "Globaler Weckschalter",
+    "newTask": "Neue Aufgabe",
+    "runTest": "Jetzt testen",
+    "history": "Auslöseverlauf",
+    "gotoAddAccount": "Konten hinzufügen",
+    "emptyTitle": "Noch keine Weckaufgaben",
+    "emptyDesc": "Aufgaben werden automatisch nach Regeln ausgelöst.",
+    "statusEnabled": "Aktiviert",
+    "statusDisabled": "Deaktiviert",
+    "statusRunning": "Läuft",
+    "edit": "Bearbeiten",
+    "defaultTaskName": "Weckaufgabe",
+    "newTaskName": "Neue Weckaufgabe",
+    "historyCount": "Auslöseverlauf ({{count}})",
+    "historyEmpty": "Kein Verlauf",
+    "historyClear": "Verlauf löschen",
+    "historyPromptLabel": "Weckwort: {{prompt}}",
+    "format": {
+      "noReply": "(Keine Antwort)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "Heute {{time}}",
+      "tomorrow": "Morgen {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "Nicht ausgewählt",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}} Elemente)",
+      "quotaReset": "Weckung bei Quoten-Reset",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "Täglich {{times}}{{suffix}}",
+      "weekly": "Wöchentlich {{days}} {{times}}{{suffix}}",
+      "interval": "Alle {{hours}} Std. ({{start}}-{{end}})",
+      "invalidCrontab": "Ungültiger Crontab"
+    },
+    "weekdays": {
+      "sun": "So",
+      "mon": "Mo",
+      "tue": "Di",
+      "wed": "Mi",
+      "thu": "Do",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "notice": {
+      "modelsFetchFailed": "Modelle konnten nicht geladen werden, bitte Kontostatus prüfen",
+      "featureDisabled": "Weckfunktion ist deaktiviert",
+      "taskMissingModels": "Aufgabe hat keine Modelle ausgewählt",
+      "taskMissingAccounts": "Aufgabe hat keine Konten ausgewählt",
+      "taskFailed": "Aufgabe „{{name}}“ fehlgeschlagen ({{count}} Anfrage(n))",
+      "taskCompleted": "Aufgabe „{{name}}“ abgeschlossen",
+      "testMissingModel": "Bitte ein Testmodell auswählen",
+      "testMissingAccount": "Bitte ein Testkonto auswählen",
+      "testFailed": "Test fehlgeschlagen ({{count}} Anfrage(n))",
+      "testCompleted": "Test abgeschlossen",
+      "nameRequired": "Bitte Aufgabenname eingeben",
+      "accountRequired": "Mindestens ein Konto auswählen",
+      "modelRequired": "Mindestens ein Modell auswählen",
+      "crontabRequired": "Bitte eine crontab-Ausdruck eingeben",
+      "taskSaved": "Aufgabe „{{name}}“ gespeichert",
+      "featureOff": "Weckfunktion deaktiviert",
+      "featureOn": "Weckfunktion aktiviert"
+    },
+    "triggerSource": {
+      "scheduled": "Geplant",
+      "crontab": "Crontab",
+      "quotaReset": "Quoten-Reset",
+      "manual": "Jetzt testen",
+      "unknown": "Unbekannt"
+    },
+    "taskCard": {
+      "accountsCount": "Konten {{count}}",
+      "modelsCount": "Modelle {{count}}",
+      "accountsLabel": "Konten: {{preview}}",
+      "modelsLabel": "Modelle: {{preview}}",
+      "lastRun": "Zuletzt {{time}}",
+      "nextRun": "Nächste {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "Weckfunktion aktivieren",
+      "enableDesc": "Durch Aktivieren der Weckfunktion wird die Plugin-Weckfunktion deaktiviert. Fortfahren?",
+      "deleteConfirm": "Aufgabe „{{name}}“ löschen?",
+      "testTitle": "Jetzt testen",
+      "historyTitle": "Auslöseverlauf",
+      "taskTitleEdit": "Weckaufgabe bearbeiten",
+      "taskTitleNew": "Neue Weckaufgabe"
+    },
+    "form": {
+      "taskName": "Aufgabenname",
+      "taskStatus": "Aufgabenstatus",
+      "triggerMode": "Auslösemodus",
+      "triggerModeHint": "1. Geplant: Auslösung zu festgelegten Zeiten.\\n2. Crontab: per Ausdruck definieren.\\n3. Quoten-Reset: einmal auslösen, wenn Quote voll ist.",
+      "modeScheduled": "📅 Geplant",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 Quoten-Reset",
+      "modelSelect": "Modellauswahl",
+      "modelHint": "Im selben Quotengruppe nur ein Modell wählen. Mehrere Modelle werden nacheinander ausgelöst.",
+      "modelsEmpty": "Keine empfohlenen Modelle",
+      "accountSelect": "Kontenauswahl",
+      "accountHint": "Mehrfachauswahl möglich; Weckung nutzt Konten nacheinander.",
+      "accountsEmpty": "Keine Konten",
+      "customPrompt": "Benutzerdefinierter Prompt",
+      "promptPlaceholder": "Standard {{word}}",
+      "promptHint": "Leer lassen, um den Standard-Prompt {{word}} zu verwenden.",
+      "maxTokens": "Max. Ausgabe-Tokens",
+      "maxTokensHint": "Standard 0 (unbegrenzt).",
+      "repeatMode": "Wiederholungsmodus",
+      "repeatDaily": "Täglich",
+      "repeatWeekly": "Wöchentlich",
+      "repeatInterval": "Intervall",
+      "selectTime": "Zeit wählen",
+      "customTime": "Benutzerdefinierte Zeit",
+      "selectWeekday": "Wochentag wählen",
+      "quickWorkdays": "Werktage",
+      "quickWeekend": "Wochenende",
+      "quickAll": "Alle",
+      "intervalSetting": "Intervall-Einstellungen",
+      "intervalEvery": "Alle",
+      "intervalHours": "Stunden",
+      "intervalStart": "Start",
+      "intervalEnd": "Ende",
+      "nextRuns": "Nächste Ausführungen",
+      "nextRunsEmpty": "Bitte Auslösezeiten wählen",
+      "crontab": "Crontab-Ausdruck",
+      "crontabPlaceholder": "z.B.: 0 8,12,17 * * *",
+      "crontabValidate": "Prüfen",
+      "crontabValidateHint": "Ausdruck wird beim Speichern geprüft",
+      "crontabPreviewEmpty": "Bitte gültigen Crontab-Ausdruck eingeben",
+      "timeWindowEnabled": "Zeitfenster aktivieren",
+      "timeWindowHint": "Wenn aktiviert, wird der Quoten-Reset nur im Zeitfenster ausgelöst; außerhalb feste Zeiten.",
+      "timeWindow": "Aktives Zeitfenster für Quoten-Reset",
+      "timeWindowFrom": "Von",
+      "timeWindowTo": "Bis",
+      "fallbackTimes": "Zeiten außerhalb des Fensters",
+      "saveTask": "Aufgabe speichern"
+    },
+    "test": {
+      "modelsLabel": "Zu auslösende Modelle",
+      "accountsLabel": "Testkonten",
+      "accountsHint": "Mehrere Konten für den Test auswählen.",
+      "start": "Test starten",
+      "testing": "Teste..."
+    }
+  }
+}

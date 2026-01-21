@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "success": "Success",
+    "failed": "Failed",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "close": "Close",
+    "open": "Open",
+    "copy": "Copy",
+    "add": "Add",
+    "enable": "Enable",
+    "disable": "Disable",
+    "none": "None",
+    "detail": "Details",
+    "editable": "Editable",
+    "preview": "Preview"
+  },
+  "nav": {
+    "overview": "Overview",
+    "accounts": "Accounts",
+    "wakeup": "Wakeup Tasks",
+    "fingerprints": "Fingerprints",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Customize your Cockpit Tools experience.",
+    "tabs": {
+      "general": "General",
+      "network": "Network",
+      "about": "About"
+    },
+    "general": {
+      "appearance": "Appearance",
+      "language": "Language",
+      "languageDesc": "Select the interface language",
+      "theme": "Theme",
+      "themeDesc": "Switch between dark and light mode",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeSystem": "System",
+      "accountManagement": "Account Management",
+      "autoRefresh": "Auto Refresh Quota",
+      "autoRefreshDesc": "Background update frequency",
+      "autoRefreshDisabled": "Disabled",
+      "autoRefreshCustom": "Custom...",
+      "every15min": "Every 15 minutes",
+      "every30min": "Every 30 minutes",
+      "every1hour": "Every hour",
+      "minutes": "min",
+      "storageTitle": "Directories & Storage",
+      "dataDir": "Data Directory",
+      "dataDirDesc": "Storage location for accounts and configuration files.",
+      "fpDir": "Fingerprint Storage",
+      "fpDirDesc": "Storage location for device fingerprint files."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "WebSocket Service",
+      "wsServiceDesc": "Allow external programs (e.g., VS Code extension) to connect",
+      "preferredPort": "Preferred Port",
+      "preferredPortDesc": "Default is {{port}}, restart required after change",
+      "currentPort": "Current Port",
+      "portNormal": "Service running normally",
+      "portFallback": "Port {{configured}} is in use, using {{actual}} instead",
+      "restartRequired": "Configuration changed, please restart the app to apply",
+      "saveSuccess": "Settings saved!",
+      "saveSuccessRestart": "Settings saved! Please restart the app for port changes to take effect.",
+      "saveFailed": "Save failed: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "Professional Account Management Solution",
+      "author": "Author",
+      "wechat": "WeChat",
+      "github": "GitHub",
+      "sponsor": "Sponsor",
+      "supportDev": "Support Development"
+    },
+    "saveSettings": "Save Settings"
+  },
+  "accounts": {
+    "title": "Account Management",
+    "subtitle": "Manage your Antigravity account list.",
+    "total": "{{count}} accounts",
+    "search": "Search accounts...",
+    "addAccount": "Add Account",
+    "refreshAll": "Refresh All",
+    "export": "Export",
+    "import": "Import",
+    "switchLogin": "Switch Login",
+    "refreshQuota": "Refresh Quota",
+    "copyToken": "Copy Token",
+    "deleteAccount": "Delete Account",
+    "confirmDelete": "Are you sure you want to delete account {{email}}?",
+    "columns": {
+      "email": "Email",
+      "subscription": "Subscription",
+      "quota": "Quota Status",
+      "fingerprint": "Fingerprint",
+      "lastUsed": "Last Used",
+      "actions": "Actions"
+    },
+    "status": {
+      "current": "Current",
+      "disabled": "Disabled",
+      "normal": "Normal",
+      "forbidden": "403",
+      "forbidden_tooltip": "API returned 403 Forbidden, account has no access to Gemini Code Assist",
+      "forbidden_msg": "Account forbidden, skipped auto refresh"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "FREE"
+    },
+    "empty": {
+      "title": "No Accounts",
+      "desc": "Click \"Add\" to get started",
+      "btn": "Add Account"
+    },
+    "noMatch": {
+      "title": "No matching accounts",
+      "desc": "No accounts match the current filters"
+    },
+    "view": {
+      "list": "List view",
+      "grid": "Card view"
+    },
+    "filterLabel": "Filter accounts",
+    "filter": {
+      "all": "All ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "FREE ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "View details",
+      "fingerprint": "Fingerprint",
+      "switch": "Switch account",
+      "switchTo": "Switch to this account",
+      "selectFingerprint": "Select fingerprint"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "Refresh Token",
+      "import": "Import"
+    },
+    "oauth": {
+      "authorizing": "Authorizing OAuth...",
+      "success": "OAuth authorized",
+      "failed": "OAuth authorization failed: {{error}}",
+      "hint": "We recommend completing Google OAuth in your browser.",
+      "start": "Start OAuth authorization",
+      "continue": "I've authorized, continue",
+      "linkLabel": "Authorization link",
+      "generatingLink": "Generating authorization link..."
+    },
+    "token": {
+      "desc": "Paste refresh_token or account JSON to import in bulk.",
+      "placeholder": "Supported format: [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] or paste refresh_token directly",
+      "importStart": "Start import",
+      "invalid": "No valid refresh_token found",
+      "importProgress": "Importing {{current}}/{{total}}...",
+      "importSuccess": "Imported {{count}} accounts",
+      "importPartial": "Imported {{success}} accounts, failed {{fail}}",
+      "importFailed": "Import failed, please check refresh_token"
+    }
+  },
+  "overview": {
+    "title": "Account Overview",
+    "subtitle": "Real-time monitoring of all account model quotas.",
+    "total": "{{count}} accounts",
+    "accountDisabled": "Account disabled",
+    "noQuotaData": "No quota data",
+    "currentAccount": "Currently in use",
+    "switchTo": "Switch to this account",
+    "switching": "Switching...",
+    "fingerprint": "Fingerprint",
+    "bound": "Bound"
+  },
+  "fingerprints": {
+    "title": "Device Fingerprints",
+    "subtitle": "Manage device fingerprints bound to accounts.",
+    "toolbar": {
+      "generate": "Generate New",
+      "capture": "Capture Current",
+      "import": "Import",
+      "folder": "Folder",
+      "delete": "Delete"
+    },
+    "table": {
+      "name": "Fingerprint Name",
+      "machineId": "Machine ID",
+      "accounts": "Bound Accounts",
+      "actions": "Actions"
+    },
+    "modals": {
+      "generate": {
+        "title": "Generate Fingerprint",
+        "btn": "Generate"
+      },
+      "capture": {
+        "title": "Capture Fingerprint",
+        "btn": "Capture"
+      },
+      "rename": {
+        "title": "Rename Fingerprint",
+        "label": "Fingerprint Name"
+      },
+      "import": {
+        "title": "Import Fingerprints",
+        "fromTools": "Import from Antigravity Tools",
+        "desc": "Import from ~/.antigravity_tools/"
+      },
+      "bound": {
+        "title": "Bound Accounts",
+        "add": "Add Accounts",
+        "empty": "No accounts bound",
+        "emptyAll": "All accounts are bound",
+        "select": "Select accounts to add",
+        "from": "From: {{name}}"
+      },
+      "detail": {
+        "title": "Fingerprint Details",
+        "created": "Created at {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "Delete this fingerprint? Accounts bound to it will revert to original.",
+      "batchDeleteConfirm": "Delete {{count}} fingerprints? Accounts bound to them will revert to original.",
+      "generated": "New fingerprint generated",
+      "captured": "Current fingerprint captured",
+      "renamed": "Renamed",
+      "deleted": "Fingerprint deleted",
+      "imported": "Imported {{count}} fingerprints",
+      "addedAccounts": "Added {{count}} accounts",
+      "enterName": "Enter fingerprint name",
+      "previewNotReady": "Preview not ready, please wait",
+      "duplicate": "Duplicate fingerprint exists: {{name}}",
+      "readOnly": "Read-only",
+      "current": "Current"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "Add Account",
+      "desc": "Add your Antigravity account via Google OAuth",
+      "loginBtn": "Google OAuth Login",
+      "waiting": "Waiting..."
+    },
+    "import": {
+      "title": "Import Accounts",
+      "desc": "Choose an import method",
+      "local": "Import Local Account",
+      "localDesc": "Import current logged-in account from Antigravity Client",
+      "tools": "Import Antigravity Tools",
+      "toolsDesc": "Import from ~/.antigravity_tools/ directory",
+      "jsonDivider": "or Paste JSON",
+      "orJson": "or Paste JSON",
+      "jsonPlaceholder": "Paste account JSON content",
+      "jsonBtn": "Import from JSON",
+      "importing": "Importing...",
+      "importBtn": "Import",
+      "oauthAction": "OAuth Authorization",
+      "fromExtension": "Import from Plugin",
+      "syncBadge": "Sync Antigravity Cockpit plugin accounts",
+      "fromLocalDB": "Import from Local DB",
+      "localDBDesc": "Read login accounts from Antigravity Client on this machine",
+      "toolsDescMigrate": "Migrate accounts from ~/.antigravity_tools/",
+      "importingTools": "Importing from Antigravity Tools...",
+      "importingLocal": "Importing local account...",
+      "importingExtension": "Importing plugin account...",
+      "noAccountsFound": "No importable accounts found"
+    },
+    "fingerprint": {
+      "title": "Select Fingerprint",
+      "desc": "Select fingerprint for account <1>{{email}}</1>",
+      "original": "Original Fingerprint",
+      "new": "Add New Fingerprint",
+      "bind": "Confirm Bind",
+      "selectLabel": "Select Fingerprint",
+      "boundCount": "accounts"
+    },
+    "quota": {
+      "title": "Quota Details",
+      "noData": "No quota data",
+      "close": "Close",
+      "resetTime": "Reset Time"
+    }
+  },
+  "pagination": {
+    "info": "Showing {{start}} - {{end}} of {{total}}",
+    "perPage": "{{count}} / page",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "Are you sure you want to delete this account?",
+    "batchDeleteConfirm": "Are you sure you want to delete {{count}} selected accounts?",
+    "switched": "Switched to {{email}}",
+    "switchFailed": "Switch failed: {{error}}",
+    "importSuccess": "Successfully imported {{count}} accounts",
+    "importLocalSuccess": "Successfully imported account: {{email}}",
+    "importFailed": "Import failed: {{error}}",
+    "exportFailed": "Export failed: {{error}}",
+    "bindFailed": "Bind failed: {{error}}",
+    "jsonRequired": "Please enter or paste JSON content",
+    "example": "Example",
+    "actionRunning": "{{action}}...",
+    "actionSuccess": "{{action}} succeeded",
+    "actionFailed": "{{action}} failed: {{error}}"
+  },
+  "wakeup": {
+    "title": "Wakeup Tasks",
+    "subtitle": "Manage multiple automatic wakeup tasks with independent controls.",
+    "globalToggle": "Global Wakeup Switch",
+    "newTask": "New Task",
+    "runTest": "Run Test",
+    "history": "Trigger History",
+    "gotoAddAccount": "Add Accounts",
+    "emptyTitle": "No wakeup tasks yet",
+    "emptyDesc": "Tasks will automatically trigger wakeups based on rules.",
+    "statusEnabled": "Enabled",
+    "statusDisabled": "Disabled",
+    "statusRunning": "Running",
+    "edit": "Edit",
+    "defaultTaskName": "Wakeup Task",
+    "newTaskName": "New Wakeup Task",
+    "historyCount": "Trigger History ({{count}})",
+    "historyEmpty": "No history yet",
+    "historyClear": "Clear history",
+    "historyPromptLabel": "Prompt: {{prompt}}",
+    "format": {
+      "noReply": "(No reply)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "Today {{time}}",
+      "tomorrow": "Tomorrow {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "Not selected",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}} items)",
+      "quotaReset": "Quota reset auto wakeup",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "Daily {{times}}{{suffix}}",
+      "weekly": "Weekly {{days}} {{times}}{{suffix}}",
+      "interval": "Every {{hours}}h ({{start}}-{{end}})",
+      "invalidCrontab": "Invalid Crontab"
+    },
+    "weekdays": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "notice": {
+      "modelsFetchFailed": "Failed to fetch models, please check account status",
+      "featureDisabled": "Wakeup is disabled",
+      "taskMissingModels": "Task has no selected model",
+      "taskMissingAccounts": "Task has no selected account",
+      "taskFailed": "Task \"{{name}}\" failed for {{count}} request(s)",
+      "taskCompleted": "Task \"{{name}}\" completed",
+      "testMissingModel": "Please select a test model",
+      "testMissingAccount": "Please select a test account",
+      "testFailed": "Test failed for {{count}} request(s)",
+      "testCompleted": "Test completed",
+      "nameRequired": "Please enter a task name",
+      "accountRequired": "Select at least one account",
+      "modelRequired": "Select at least one model",
+      "crontabRequired": "Please enter a crontab expression",
+      "taskSaved": "Task \"{{name}}\" saved",
+      "featureOff": "Wakeup disabled",
+      "featureOn": "Wakeup enabled"
+    },
+    "triggerSource": {
+      "scheduled": "Scheduled",
+      "crontab": "Crontab",
+      "quotaReset": "Quota reset",
+      "manual": "Run Test",
+      "unknown": "Unknown"
+    },
+    "taskCard": {
+      "accountsCount": "Accounts {{count}}",
+      "modelsCount": "Models {{count}}",
+      "accountsLabel": "Accounts: {{preview}}",
+      "modelsLabel": "Models: {{preview}}",
+      "lastRun": "Last {{time}}",
+      "nextRun": "Next {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "Enable wakeup",
+      "enableDesc": "Enabling wakeup will disable the plugin wakeup feature. Continue?",
+      "deleteConfirm": "Delete task \"{{name}}\"?",
+      "testTitle": "Run Test",
+      "historyTitle": "Trigger History",
+      "taskTitleEdit": "Edit Wakeup Task",
+      "taskTitleNew": "New Wakeup Task"
+    },
+    "form": {
+      "taskName": "Task name",
+      "taskStatus": "Task status",
+      "triggerMode": "Trigger mode",
+      "triggerModeHint": "1. Scheduled: trigger at set times.\\n2. Crontab: define with an expression.\\n3. Quota reset: trigger once when quota is full.",
+      "modeScheduled": "📅 Scheduled",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 Quota reset",
+      "modelSelect": "Model selection",
+      "modelHint": "For the same quota group, choose one model. Multiple models trigger in sequence.",
+      "modelsEmpty": "No recommended models",
+      "accountSelect": "Account selection",
+      "accountHint": "Select multiple accounts; wakeup will use them in sequence.",
+      "accountsEmpty": "No accounts",
+      "customPrompt": "Custom prompt",
+      "promptPlaceholder": "Default {{word}}",
+      "promptHint": "Leave empty to use default prompt {{word}}.",
+      "maxTokens": "Max output tokens",
+      "maxTokensHint": "Default 0 (unlimited).",
+      "repeatMode": "Repeat mode",
+      "repeatDaily": "Daily",
+      "repeatWeekly": "Weekly",
+      "repeatInterval": "Interval",
+      "selectTime": "Select time",
+      "customTime": "Custom time",
+      "selectWeekday": "Select weekday",
+      "quickWorkdays": "Weekdays",
+      "quickWeekend": "Weekend",
+      "quickAll": "All",
+      "intervalSetting": "Interval settings",
+      "intervalEvery": "Every",
+      "intervalHours": "hours",
+      "intervalStart": "Start",
+      "intervalEnd": "End",
+      "nextRuns": "Next runs",
+      "nextRunsEmpty": "Please select trigger times",
+      "crontab": "Crontab expression",
+      "crontabPlaceholder": "e.g. 0 8,12,17 * * *",
+      "crontabValidate": "Validate",
+      "crontabValidateHint": "Expression will be validated on save",
+      "crontabPreviewEmpty": "Please enter a valid Crontab expression",
+      "timeWindowEnabled": "Enable time window",
+      "timeWindowHint": "When enabled, quota reset triggers only within the window; outside uses fixed times.",
+      "timeWindow": "Quota reset active window",
+      "timeWindowFrom": "From",
+      "timeWindowTo": "To",
+      "fallbackTimes": "Fallback times",
+      "saveTask": "Save task"
+    },
+    "test": {
+      "modelsLabel": "Models to trigger",
+      "accountsLabel": "Test accounts",
+      "accountsHint": "Select multiple accounts to test with.",
+      "start": "Start test",
+      "testing": "Testing..."
+    }
+  }
+}

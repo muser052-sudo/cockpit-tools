@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "확인",
+    "cancel": "취소",
+    "save": "저장",
+    "saving": "저장 중...",
+    "delete": "삭제",
+    "refresh": "새로고침",
+    "loading": "로딩 중...",
+    "success": "성공",
+    "failed": "실패",
+    "enabled": "활성화됨",
+    "disabled": "비활성화됨",
+    "close": "닫기",
+    "open": "열기",
+    "copy": "복사",
+    "add": "추가",
+    "enable": "활성화",
+    "disable": "비활성화",
+    "none": "없음",
+    "detail": "상세",
+    "editable": "편집 가능",
+    "preview": "미리보기"
+  },
+  "nav": {
+    "overview": "개요",
+    "accounts": "계정 관리",
+    "wakeup": "깨우기 작업",
+    "fingerprints": "기기 지문",
+    "settings": "설정"
+  },
+  "settings": {
+    "title": "앱 설정",
+    "subtitle": "Cockpit Tools 환경을 설정합니다.",
+    "tabs": {
+      "general": "일반",
+      "network": "네트워크",
+      "about": "정보"
+    },
+    "general": {
+      "appearance": "디자인",
+      "language": "표시 언어",
+      "languageDesc": "인터페이스 언어를 선택하십시오",
+      "theme": "테마",
+      "themeDesc": "다크 모드와 라이트 모드를 전환합니다",
+      "themeLight": "라이트",
+      "themeDark": "다크",
+      "themeSystem": "시스템 설정",
+      "accountManagement": "계정 관리",
+      "autoRefresh": "할당량 자동 새로고침",
+      "autoRefreshDesc": "백그라운드 업데이트 빈도",
+      "autoRefreshDisabled": "비활성화됨",
+      "autoRefreshCustom": "사용자 정의...",
+      "every15min": "15분마다",
+      "every30min": "30분마다",
+      "every1hour": "1시간마다",
+      "minutes": "분",
+      "storageTitle": "디렉터리 및 저장소",
+      "dataDir": "데이터 디렉터리",
+      "dataDirDesc": "계정 및 구성 파일 저장 위치.",
+      "fpDir": "지문 저장소",
+      "fpDirDesc": "기기 지문 파일 저장 위치."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "WebSocket 서비스",
+      "wsServiceDesc": "외부 프로그램(예: VS Code 확장 프로그램)의 연결을 허용합니다",
+      "preferredPort": "기본 포트",
+      "preferredPortDesc": "기본값은 {{port}}이며, 변경 후 재시작이 필요합니다",
+      "currentPort": "현재 실행 포트",
+      "portNormal": "서비스가 정상적으로 실행 중입니다",
+      "portFallback": "기본 포트 {{configured}}가 사용 중이어서 {{actual}}를 사용합니다",
+      "restartRequired": "설정이 변경되었습니다. 적용하려면 앱을 재시작하십시오",
+      "saveSuccess": "설정이 저장되었습니다!",
+      "saveSuccessRestart": "설정이 저장되었습니다! 포트 변경을 적용하려면 앱을 재시작하십시오",
+      "saveFailed": "저장 실패: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "전문적인 계정 관리 솔루션",
+      "author": "제작자",
+      "wechat": "WeChat 플러스",
+      "github": "GitHub 저장소",
+      "sponsor": "후원",
+      "supportDev": "개발 지원"
+    },
+    "saveSettings": "설정 저장"
+  },
+  "accounts": {
+    "title": "계정 관리",
+    "subtitle": "Antigravity 계정 목록을 관리합니다.",
+    "total": "총 {{count}}개 계정",
+    "search": "계정 검색...",
+    "addAccount": "계정 추가",
+    "refreshAll": "모두 새로고침",
+    "export": "내보내기",
+    "import": "가져오기",
+    "switchLogin": "로그인 전환",
+    "refreshQuota": "할당량 새로고침",
+    "copyToken": "토큰 복사",
+    "deleteAccount": "계정 삭제",
+    "confirmDelete": "{{email}} 계정을 삭제하시겠습니까?",
+    "columns": {
+      "email": "이메일",
+      "subscription": "구독 유형",
+      "quota": "할당량 상태",
+      "fingerprint": "지문",
+      "lastUsed": "마지막 사용",
+      "actions": "작업"
+    },
+    "status": {
+      "current": "현재 사용 중",
+      "disabled": "비활성화됨",
+      "normal": "정상",
+      "forbidden": "403",
+      "forbidden_tooltip": "API가 403 Forbidden을 반환했습니다. 계정이 Gemini Code Assist에 접근할 수 없습니다",
+      "forbidden_msg": "계정 금지됨, 자동 새로고침 건너뜀"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "FREE"
+    },
+    "empty": {
+      "title": "계정 없음",
+      "desc": "\"추가\" 버튼을 클릭하여 시작하십시오",
+      "btn": "계정 추가"
+    },
+    "noMatch": {
+      "title": "일치하는 계정 없음",
+      "desc": "현재 필터와 일치하는 계정이 없습니다"
+    },
+    "view": {
+      "list": "목록 보기",
+      "grid": "카드 보기"
+    },
+    "filterLabel": "계정 필터",
+    "filter": {
+      "all": "전체 ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "FREE ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "상세 보기",
+      "fingerprint": "지문",
+      "switch": "계정 전환",
+      "switchTo": "이 계정으로 전환",
+      "selectFingerprint": "지문 선택"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "리프레시 토큰",
+      "import": "가져오기"
+    },
+    "oauth": {
+      "authorizing": "OAuth 인증 중...",
+      "success": "OAuth 인증 완료",
+      "failed": "OAuth 인증 실패: {{error}}",
+      "hint": "브라우저에서 Google OAuth를 완료하는 것을 권장합니다.",
+      "start": "OAuth 인증 시작",
+      "continue": "인증 완료, 계속",
+      "linkLabel": "인증 링크",
+      "generatingLink": "인증 링크 생성 중..."
+    },
+    "token": {
+      "desc": "refresh_token 또는 계정 JSON을 붙여넣어 일괄 가져오기.",
+      "placeholder": "지원 형식: [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] 또는 refresh_token 직접 붙여넣기",
+      "importStart": "가져오기 시작",
+      "invalid": "유효한 refresh_token을 찾을 수 없습니다",
+      "importProgress": "{{current}}/{{total}} 가져오는 중...",
+      "importSuccess": "{{count}}개 계정 가져옴",
+      "importPartial": "{{success}}개 성공, {{fail}}개 실패",
+      "importFailed": "가져오기 실패, refresh_token을 확인하세요"
+    }
+  },
+  "overview": {
+    "title": "계정 개요",
+    "subtitle": "모든 계정의 모델 할당량을 실시간으로 모니터링합니다.",
+    "total": "총 {{count}}개 계정",
+    "accountDisabled": "계정이 비활성화되었습니다",
+    "noQuotaData": "할당량 데이터 없음",
+    "currentAccount": "현재 사용 중",
+    "switchTo": "이 계정으로 전환",
+    "switching": "전환 중...",
+    "fingerprint": "지문",
+    "bound": "연결됨"
+  },
+  "fingerprints": {
+    "title": "기기 지문",
+    "subtitle": "계정에 연결된 기기 지문을 관리합니다.",
+    "toolbar": {
+      "generate": "새로 생성",
+      "capture": "현재 지문 캡처",
+      "import": "가져오기",
+      "folder": "폴더",
+      "delete": "삭제"
+    },
+    "table": {
+      "name": "지문 이름",
+      "machineId": "기기 ID",
+      "accounts": "연결된 계정",
+      "actions": "작업"
+    },
+    "modals": {
+      "generate": {
+        "title": "지문 생성",
+        "btn": "생성"
+      },
+      "capture": {
+        "title": "현재 지문 캡처",
+        "btn": "캡처"
+      },
+      "rename": {
+        "title": "이름 변경",
+        "label": "지문 이름"
+      },
+      "import": {
+        "title": "지문 가져오기",
+        "fromTools": "Antigravity Tools에서 가져오기",
+        "desc": "~/.antigravity_tools/ 디렉토리에서 가져옵니다"
+      },
+      "bound": {
+        "title": "연결된 계정 관리",
+        "add": "계정 추가",
+        "empty": "연결된 계정 없음",
+        "emptyAll": "모든 계정이 이미 연결되었습니다",
+        "select": "추가할 계정 선택",
+        "from": "소스: {{name}}"
+      },
+      "detail": {
+        "title": "지문 상세 정보",
+        "created": "생성일: {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "이 지문을 삭제하시겠습니까? 연결된 계정들은 기본 지문으로 돌아갑니다.",
+      "batchDeleteConfirm": "{{count}}개의 지문을 삭제하시겠습니까? 연결된 계정들은 기본 지문으로 돌아갑니다.",
+      "generated": "새 지문이 생성되었습니다",
+      "captured": "현재 지문이 캡처되었습니다",
+      "renamed": "이름이 변경되었습니다",
+      "deleted": "지문이 삭제되었습니다",
+      "imported": "{{count}}개의 지문을 가져왔습니다",
+      "addedAccounts": "{{count}}개 계정 추가됨",
+      "enterName": "지문 이름을 입력하십시오",
+      "previewNotReady": "미리보기가 준비되지 않았습니다. 잠시 후 다시 시도하십시오",
+      "duplicate": "중복된 지문이 존재합니다: {{name}}",
+      "readOnly": "읽기 전용",
+      "current": "현재"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "계정 추가",
+      "desc": "Google OAuth 인증을 통해 Antigravity 계정을 추가합니다",
+      "loginBtn": "Google OAuth 로그인",
+      "waiting": "대기 중..."
+    },
+    "import": {
+      "title": "계정 가져오기",
+      "desc": "가져오기 방법을 선택하십시오",
+      "local": "로컬 계정 가져오기",
+      "localDesc": "Antigravity 클라이언트에서 현재 로그인된 계정을 가져옵니다",
+      "tools": "Antigravity Tools에서 가져오기",
+      "toolsDesc": "~/.antigravity_tools/ 디렉토리에서 가져옵니다",
+      "jsonDivider": "또는 JSON 붙여넣기",
+      "orJson": "또는 JSON 붙여넣기",
+      "jsonPlaceholder": "계정 JSON 내용을 붙여넣으십시오",
+      "jsonBtn": "JSON에서 가져오기",
+      "importing": "가져오는 중...",
+      "importBtn": "가져오기",
+      "oauthAction": "OAuth 인증",
+      "fromExtension": "플러그인에서 가져오기",
+      "syncBadge": "Antigravity Cockpit 플러그인 계정 동기화",
+      "fromLocalDB": "로컬 DB에서 가져오기",
+      "localDBDesc": "이 기기의 Antigravity 클라이언트에서 로그인 계정 읽기",
+      "toolsDescMigrate": "~/.antigravity_tools/에서 계정 마이그레이션",
+      "importingTools": "Antigravity Tools에서 가져오는 중...",
+      "importingLocal": "로컬 계정 가져오는 중...",
+      "importingExtension": "플러그인 계정 가져오는 중...",
+      "noAccountsFound": "가져올 계정이 없습니다"
+    },
+    "fingerprint": {
+      "title": "지문 선택",
+      "desc": "<1>{{email}}</1> 계정의 지문을 선택하십시오",
+      "original": "기본 지문",
+      "new": "새 지문 추가",
+      "bind": "연결 확인",
+      "selectLabel": "지문 선택",
+      "boundCount": "개 계정"
+    },
+    "quota": {
+      "title": "할당량 상세",
+      "noData": "할당량 데이터 없음",
+      "close": "닫기",
+      "resetTime": "재설정 시간"
+    }
+  },
+  "pagination": {
+    "info": "{{total}}개 중 {{start}} - {{end}} 표시",
+    "perPage": "페이지당 {{count}}개",
+    "prev": "이전",
+    "next": "다음",
+    "page": "페이지 {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "이 계정을 삭제하시겠습니까?",
+    "batchDeleteConfirm": "선택한 {{count}}개 계정을 삭제하시겠습니까?",
+    "switched": "{{email}} 계정으로 전환되었습니다",
+    "switchFailed": "전환 실패: {{error}}",
+    "importSuccess": "{{count}}개 계정을 성공적으로 가져왔습니다",
+    "importLocalSuccess": "계정을 가져왔습니다: {{email}}",
+    "importFailed": "가져오기 실패: {{error}}",
+    "exportFailed": "내보내기 실패: {{error}}",
+    "bindFailed": "연결 실패: {{error}}",
+    "jsonRequired": "JSON 내용을 입력하거나 붙여넣으십시오",
+    "example": "예시",
+    "actionRunning": "{{action}} 중...",
+    "actionSuccess": "{{action}} 성공",
+    "actionFailed": "{{action}} 실패: {{error}}"
+  },
+  "wakeup": {
+    "title": "깨우기 작업",
+    "subtitle": "여러 자동 깨우기 작업을 독립적으로 관리합니다.",
+    "globalToggle": "깨우기 전체 스위치",
+    "newTask": "새 작업",
+    "runTest": "즉시 테스트",
+    "history": "트리거 기록",
+    "gotoAddAccount": "계정 추가",
+    "emptyTitle": "깨우기 작업이 없습니다",
+    "emptyDesc": "규칙에 따라 자동으로 깨우기 작업이 실행됩니다.",
+    "statusEnabled": "활성화",
+    "statusDisabled": "비활성화",
+    "statusRunning": "실행 중",
+    "edit": "편집",
+    "defaultTaskName": "깨우기 작업",
+    "newTaskName": "새 깨우기 작업",
+    "historyCount": "트리거 기록 ({{count}})",
+    "historyEmpty": "기록이 없습니다",
+    "historyClear": "기록 삭제",
+    "historyPromptLabel": "프롬프트: {{prompt}}",
+    "format": {
+      "noReply": "(응답 없음)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "오늘 {{time}}",
+      "tomorrow": "내일 {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "선택 안 됨",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}}개)",
+      "quotaReset": "할당량 재설정 자동 깨우기",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "매일 {{times}}{{suffix}}",
+      "weekly": "매주 {{days}} {{times}}{{suffix}}",
+      "interval": "{{hours}}시간마다 ({{start}}-{{end}})",
+      "invalidCrontab": "잘못된 Crontab"
+    },
+    "weekdays": {
+      "sun": "일",
+      "mon": "월",
+      "tue": "화",
+      "wed": "수",
+      "thu": "목",
+      "fri": "금",
+      "sat": "토"
+    },
+    "notice": {
+      "modelsFetchFailed": "모델을 가져오지 못했습니다. 계정 상태를 확인하세요",
+      "featureDisabled": "깨우기 기능이 비활성화됨",
+      "taskMissingModels": "작업에 선택된 모델이 없습니다",
+      "taskMissingAccounts": "작업에 선택된 계정이 없습니다",
+      "taskFailed": "작업 \"{{name}}\"가 {{count}}개 요청에서 실패",
+      "taskCompleted": "작업 \"{{name}}\" 완료",
+      "testMissingModel": "테스트 모델을 선택하세요",
+      "testMissingAccount": "테스트 계정을 선택하세요",
+      "testFailed": "테스트가 {{count}}개 요청에서 실패",
+      "testCompleted": "테스트 완료",
+      "nameRequired": "작업 이름을 입력하세요",
+      "accountRequired": "계정을 하나 이상 선택하세요",
+      "modelRequired": "모델을 하나 이상 선택하세요",
+      "crontabRequired": "Crontab 표현식을 입력하세요",
+      "taskSaved": "작업 \"{{name}}\" 저장됨",
+      "featureOff": "깨우기 비활성화",
+      "featureOn": "깨우기 활성화"
+    },
+    "triggerSource": {
+      "scheduled": "예약",
+      "crontab": "Crontab",
+      "quotaReset": "할당량 재설정",
+      "manual": "즉시 테스트",
+      "unknown": "알 수 없음"
+    },
+    "taskCard": {
+      "accountsCount": "계정 {{count}}",
+      "modelsCount": "모델 {{count}}",
+      "accountsLabel": "계정: {{preview}}",
+      "modelsLabel": "모델: {{preview}}",
+      "lastRun": "마지막 {{time}}",
+      "nextRun": "다음 {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "깨우기 활성화",
+      "enableDesc": "깨우기를 활성화하면 플러그인 깨우기 기능이 꺼집니다. 계속하시겠습니까?",
+      "deleteConfirm": "작업 \"{{name}}\"를 삭제할까요?",
+      "testTitle": "즉시 테스트",
+      "historyTitle": "트리거 기록",
+      "taskTitleEdit": "깨우기 작업 편집",
+      "taskTitleNew": "새 깨우기 작업"
+    },
+    "form": {
+      "taskName": "작업 이름",
+      "taskStatus": "작업 상태",
+      "triggerMode": "트리거 방식",
+      "triggerModeHint": "1. 예약: 설정된 시간에 트리거됩니다.\\n2. Crontab: 표현식으로 정의합니다.\\n3. 할당량 재설정: 할당량이 가득 찼을 때 한 번 실행됩니다.",
+      "modeScheduled": "📅 예약",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 할당량 재설정",
+      "modelSelect": "모델 선택",
+      "modelHint": "같은 할당량 그룹에서는 하나의 모델을 추천합니다. 여러 모델은 순차 실행됩니다.",
+      "modelsEmpty": "추천 모델 없음",
+      "accountSelect": "계정 선택",
+      "accountHint": "여러 계정을 선택할 수 있으며 순서대로 사용됩니다.",
+      "accountsEmpty": "계정 없음",
+      "customPrompt": "사용자 프롬프트",
+      "promptPlaceholder": "기본 {{word}}",
+      "promptHint": "비워두면 기본 프롬프트 {{word}} 사용.",
+      "maxTokens": "최대 출력 토큰",
+      "maxTokensHint": "기본값 0 (무제한).",
+      "repeatMode": "반복 방식",
+      "repeatDaily": "매일",
+      "repeatWeekly": "매주",
+      "repeatInterval": "간격",
+      "selectTime": "시간 선택",
+      "customTime": "사용자 시간",
+      "selectWeekday": "요일 선택",
+      "quickWorkdays": "평일",
+      "quickWeekend": "주말",
+      "quickAll": "전체",
+      "intervalSetting": "간격 설정",
+      "intervalEvery": "매",
+      "intervalHours": "시간",
+      "intervalStart": "시작",
+      "intervalEnd": "끝",
+      "nextRuns": "다음 실행",
+      "nextRunsEmpty": "트리거 시간을 선택하세요",
+      "crontab": "Crontab 표현식",
+      "crontabPlaceholder": "예: 0 8,12,17 * * *",
+      "crontabValidate": "검증",
+      "crontabValidateHint": "표현식은 저장 시 검증됩니다",
+      "crontabPreviewEmpty": "유효한 Crontab 표현식을 입력하세요",
+      "timeWindowEnabled": "시간 창 사용",
+      "timeWindowHint": "활성화하면 할당량 재설정은 창 내에서만 동작하며, 밖에서는 고정 시간 사용.",
+      "timeWindow": "할당량 재설정 시간 창",
+      "timeWindowFrom": "시작",
+      "timeWindowTo": "종료",
+      "fallbackTimes": "대체 시간",
+      "saveTask": "작업 저장"
+    },
+    "test": {
+      "modelsLabel": "트리거할 모델",
+      "accountsLabel": "테스트 계정",
+      "accountsHint": "테스트에 사용할 계정을 여러 개 선택하세요.",
+      "start": "테스트 시작",
+      "testing": "테스트 중..."
+    }
+  }
+}

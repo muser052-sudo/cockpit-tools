@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "delete": "Supprimer",
+    "refresh": "Actualiser",
+    "loading": "Chargement...",
+    "success": "Succès",
+    "failed": "Échec",
+    "enabled": "Activé",
+    "disabled": "Désactivé",
+    "close": "Fermer",
+    "open": "Ouvrir",
+    "copy": "Copier",
+    "add": "Ajouter",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "none": "Aucun",
+    "detail": "Détails",
+    "editable": "Modifiable",
+    "preview": "Aperçu"
+  },
+  "nav": {
+    "overview": "Aperçu",
+    "accounts": "Comptes",
+    "wakeup": "Tâches de réveil",
+    "fingerprints": "Empreintes",
+    "settings": "Paramètres"
+  },
+  "settings": {
+    "title": "Paramètres de l'application",
+    "subtitle": "Personnalisez votre expérience Cockpit Tools.",
+    "tabs": {
+      "general": "Général",
+      "network": "Réseau",
+      "about": "À propos"
+    },
+    "general": {
+      "appearance": "Apparence",
+      "language": "Langue",
+      "languageDesc": "Sélectionnez la langue de l'interface",
+      "theme": "Thème",
+      "themeDesc": "Basculer entre le mode clair et sombre",
+      "themeLight": "Clair",
+      "themeDark": "Sombre",
+      "themeSystem": "Système",
+      "accountManagement": "Gestion des comptes",
+      "autoRefresh": "Actualisation automatique du quota",
+      "autoRefreshDesc": "Fréquence de mise à jour en arrière-plan",
+      "autoRefreshDisabled": "Désactivé",
+      "autoRefreshCustom": "Personnalisé...",
+      "every15min": "Toutes les 15 minutes",
+      "every30min": "Toutes les 30 minutes",
+      "every1hour": "Toutes les heures",
+      "minutes": "min",
+      "storageTitle": "Directories & Storage",
+      "dataDir": "Data Directory",
+      "dataDirDesc": "Storage location for accounts and configuration files.",
+      "fpDir": "Fingerprint Storage",
+      "fpDirDesc": "Storage location for device fingerprint files."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "Service WebSocket",
+      "wsServiceDesc": "Autoriser les programmes externes (ex. extension VS Code) à se connecter",
+      "preferredPort": "Port préféré",
+      "preferredPortDesc": "Le port par défaut est {{port}}, redémarrage requis après modification",
+      "currentPort": "Port actuel",
+      "portNormal": "Service fonctionnant normalement",
+      "portFallback": "Le port {{configured}} est utilisé, {{actual}} est utilisé à la place",
+      "restartRequired": "Configuration modifiée, veuillez redémarrer l'application pour appliquer",
+      "saveSuccess": "Paramètres enregistrés !",
+      "saveSuccessRestart": "Paramètres enregistrés ! Veuillez redémarrer l'application pour que les changements de port prennent effet.",
+      "saveFailed": "Échec de l'enregistrement : {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "Solution professionnelle de gestion de comptes",
+      "author": "Auteur",
+      "wechat": "WeChat",
+      "github": "Dépôt GitHub",
+      "sponsor": "Soutenir",
+      "supportDev": "Soutenir le développement"
+    },
+    "saveSettings": "Enregistrer les paramètres"
+  },
+  "accounts": {
+    "title": "Gestion des comptes",
+    "subtitle": "Gérez votre liste de comptes Antigravity.",
+    "total": "{{count}} comptes",
+    "search": "Rechercher des comptes...",
+    "addAccount": "Ajouter un compte",
+    "refreshAll": "Tout actualiser",
+    "export": "Exporter",
+    "import": "Importer",
+    "switchLogin": "Changer de login",
+    "refreshQuota": "Actualiser le quota",
+    "copyToken": "Copier le token",
+    "deleteAccount": "Supprimer le compte",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer le compte {{email}} ?",
+    "columns": {
+      "email": "E-mail",
+      "subscription": "Abonnement",
+      "quota": "Statut du quota",
+      "fingerprint": "Empreinte",
+      "lastUsed": "Dernière utilisation",
+      "actions": "Actions"
+    },
+    "status": {
+      "current": "Actuel",
+      "disabled": "Désactivé",
+      "normal": "Normal",
+      "forbidden": "403",
+      "forbidden_tooltip": "API a retourné 403 Forbidden, le compte n'a pas accès à Gemini Code Assist",
+      "forbidden_msg": "Compte interdit, actualisation automatique ignorée"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "GRATUIT"
+    },
+    "empty": {
+      "title": "Aucun compte",
+      "desc": "Cliquez sur \"Ajouter\" pour commencer",
+      "btn": "Ajouter un compte"
+    },
+    "noMatch": {
+      "title": "Aucun compte correspondant",
+      "desc": "Aucun compte ne correspond aux filtres"
+    },
+    "view": {
+      "list": "Vue liste",
+      "grid": "Vue cartes"
+    },
+    "filterLabel": "Filtrer les comptes",
+    "filter": {
+      "all": "Tous ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "FREE ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "Voir les détails",
+      "fingerprint": "Empreinte",
+      "switch": "Changer de compte",
+      "switchTo": "Basculer vers ce compte",
+      "selectFingerprint": "Sélectionner l'empreinte"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "Jeton d’actualisation",
+      "import": "Importer"
+    },
+    "oauth": {
+      "authorizing": "Autorisation OAuth...",
+      "success": "OAuth autorisé",
+      "failed": "Échec de l'autorisation OAuth : {{error}}",
+      "hint": "Nous recommandons de terminer Google OAuth dans le navigateur.",
+      "start": "Démarrer l'autorisation OAuth",
+      "continue": "J'ai autorisé, continuer",
+      "linkLabel": "Lien d'autorisation",
+      "generatingLink": "Génération du lien d'autorisation..."
+    },
+    "token": {
+      "desc": "Collez refresh_token ou un JSON de comptes pour importer en lot.",
+      "placeholder": "Format pris en charge : [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] ou collez refresh_token",
+      "importStart": "Démarrer l'import",
+      "invalid": "Aucun refresh_token valide trouvé",
+      "importProgress": "Importation {{current}}/{{total}}...",
+      "importSuccess": "Importé {{count}} comptes",
+      "importPartial": "Importé {{success}} comptes, échec {{fail}}",
+      "importFailed": "Échec de l'import, vérifiez refresh_token"
+    }
+  },
+  "overview": {
+    "title": "Aperçu des comptes",
+    "subtitle": "Surveillance en temps réel des quotas de tous les comptes.",
+    "total": "{{count}} comptes",
+    "accountDisabled": "Compte désactivé",
+    "noQuotaData": "Aucune donnée de quota",
+    "currentAccount": "Actuellement utilisé",
+    "switchTo": "Basculer vers ce compte",
+    "switching": "Bascule en cours...",
+    "fingerprint": "Empreinte",
+    "bound": "Lié"
+  },
+  "fingerprints": {
+    "title": "Empreintes d'appareil",
+    "subtitle": "Gérez les empreintes d'appareil liées aux comptes.",
+    "toolbar": {
+      "generate": "Générer nouvelle",
+      "capture": "Capturer actuelle",
+      "import": "Importer",
+      "folder": "Dossier",
+      "delete": "Supprimer"
+    },
+    "table": {
+      "name": "Nom de l'empreinte",
+      "machineId": "ID de machine",
+      "accounts": "Comptes liés",
+      "actions": "Actions"
+    },
+    "modals": {
+      "generate": {
+        "title": "Générer empreinte",
+        "btn": "Générer"
+      },
+      "capture": {
+        "title": "Capturer empreinte",
+        "btn": "Capturer"
+      },
+      "rename": {
+        "title": "Renommer empreinte",
+        "label": "Nom de l'empreinte"
+      },
+      "import": {
+        "title": "Importer empreintes",
+        "fromTools": "Importer depuis Antigravity Tools",
+        "desc": "Importation depuis le répertoire ~/.antigravity_tools/"
+      },
+      "bound": {
+        "title": "Comptes liés",
+        "add": "Ajouter des comptes",
+        "empty": "Aucun compte lié",
+        "emptyAll": "Tous les comptes sont liés",
+        "select": "Sélectionnez les comptes à ajouter",
+        "from": "Depuis : {{name}}"
+      },
+      "detail": {
+        "title": "Détails de l'empreinte",
+        "created": "Créé le {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "Supprimer cette empreinte ? Les comptes liés reviendront à l'original.",
+      "batchDeleteConfirm": "Supprimer {{count}} empreintes ? Les comptes liés reviendront à l'original.",
+      "generated": "Nouvelle empreinte générée",
+      "captured": "Empreinte actuelle capturée",
+      "renamed": "Renommé",
+      "deleted": "Empreinte supprimée",
+      "imported": "{{count}} empreintes importées",
+      "addedAccounts": "{{count}} comptes ajoutés",
+      "enterName": "Entrez le nom de l'empreinte",
+      "previewNotReady": "Prévisualisation pas prête, veuillez patienter",
+      "duplicate": "Une empreinte identique existe déjà : {{name}}",
+      "readOnly": "Lecture seule",
+      "current": "Actuelle"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "Ajouter un compte",
+      "desc": "Ajoutez votre compte Antigravity via Google OAuth",
+      "loginBtn": "Connexion Google OAuth",
+      "waiting": "Attente..."
+    },
+    "import": {
+      "title": "Importer des comptes",
+      "desc": "Choisissez une méthode d'importation",
+      "local": "Importer compte local",
+      "localDesc": "Importer le compte actuel du client Antigravity",
+      "tools": "Importer Antigravity Tools",
+      "toolsDesc": "Importation depuis le répertoire ~/.antigravity_tools/",
+      "jsonDivider": "ou Coller JSON",
+      "orJson": "ou Coller JSON",
+      "jsonPlaceholder": "Coller le contenu JSON du compte",
+      "jsonBtn": "Importer depuis JSON",
+      "importing": "Importation...",
+      "importBtn": "Importer",
+      "oauthAction": "Autorisation OAuth",
+      "fromExtension": "Importer depuis l'extension",
+      "syncBadge": "Synchroniser les comptes de l'extension Antigravity Cockpit",
+      "fromLocalDB": "Importer depuis la base de données locale",
+      "localDBDesc": "Lire les comptes de connexion du client Antigravity sur cette machine",
+      "toolsDescMigrate": "Migrer les comptes depuis ~/.antigravity_tools/",
+      "importingTools": "Importation depuis Antigravity Tools...",
+      "importingLocal": "Importation du compte local...",
+      "importingExtension": "Importation du compte de l'extension...",
+      "noAccountsFound": "Aucun compte importable trouvé"
+    },
+    "fingerprint": {
+      "title": "Sélectionner empreinte",
+      "desc": "Sélectionnez l'empreinte pour le compte <1>{{email}}</1>",
+      "original": "Empreinte originale",
+      "new": "Ajouter nouvelle empreinte",
+      "bind": "Confirmer liaison",
+      "selectLabel": "Sélectionner empreinte",
+      "boundCount": "comptes"
+    },
+    "quota": {
+      "title": "Détails du quota",
+      "noData": "Pas de données de quota",
+      "close": "Fermer",
+      "resetTime": "Heure de réinitialisation"
+    }
+  },
+  "pagination": {
+    "info": "Affichage de {{start}} - {{end}} sur {{total}}",
+    "perPage": "{{count}} / page",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "page": "Page {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce compte ?",
+    "batchDeleteConfirm": "Êtes-vous sûr de vouloir supprimer les {{count}} comptes sélectionnés ?",
+    "switched": "Basculé vers {{email}}",
+    "switchFailed": "Échec du basculement : {{error}}",
+    "importSuccess": "{{count}} comptes importés avec succès",
+    "importLocalSuccess": "Compte importé avec succès : {{email}}",
+    "importFailed": "Échec de l'importation : {{error}}",
+    "exportFailed": "Échec de l'exportation : {{error}}",
+    "bindFailed": "Échec de la liaison : {{error}}",
+    "jsonRequired": "Veuillez entrer ou coller le contenu JSON",
+    "example": "Exemple",
+    "actionRunning": "{{action}}...",
+    "actionSuccess": "{{action}} réussi",
+    "actionFailed": "{{action}} a échoué : {{error}}"
+  },
+  "wakeup": {
+    "title": "Tâches de réveil",
+    "subtitle": "Gérez plusieurs tâches de réveil automatique avec des contrôles indépendants.",
+    "globalToggle": "Interrupteur global de réveil",
+    "newTask": "Nouvelle tâche",
+    "runTest": "Tester maintenant",
+    "history": "Historique des déclenchements",
+    "gotoAddAccount": "Ajouter des comptes",
+    "emptyTitle": "Aucune tâche de réveil",
+    "emptyDesc": "Les tâches se déclencheront automatiquement selon les règles.",
+    "statusEnabled": "Activé",
+    "statusDisabled": "Désactivé",
+    "statusRunning": "En cours",
+    "edit": "Modifier",
+    "defaultTaskName": "Tâche de réveil",
+    "newTaskName": "Nouvelle tâche de réveil",
+    "historyCount": "Historique des déclenchements ({{count}})",
+    "historyEmpty": "Aucun historique",
+    "historyClear": "Effacer l'historique",
+    "historyPromptLabel": "Mot de réveil : {{prompt}}",
+    "format": {
+      "noReply": "(Aucune réponse)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]] : {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "Aujourd'hui {{time}}",
+      "tomorrow": "Demain {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "Non sélectionné",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}} éléments)",
+      "quotaReset": "Réveil au reset de quota",
+      "crontab": "Crontab : {{expr}}",
+      "daily": "Quotidien {{times}}{{suffix}}",
+      "weekly": "Hebdomadaire {{days}} {{times}}{{suffix}}",
+      "interval": "Toutes les {{hours}} h ({{start}}-{{end}})",
+      "invalidCrontab": "Crontab invalide"
+    },
+    "weekdays": {
+      "sun": "Dim",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Jeu",
+      "fri": "Ven",
+      "sat": "Sam"
+    },
+    "notice": {
+      "modelsFetchFailed": "Impossible de récupérer les modèles, vérifiez l'état du compte",
+      "featureDisabled": "Le réveil est désactivé",
+      "taskMissingModels": "La tâche n'a aucun modèle sélectionné",
+      "taskMissingAccounts": "La tâche n'a aucun compte sélectionné",
+      "taskFailed": "La tâche « {{name}} » a échoué pour {{count}} requête(s)",
+      "taskCompleted": "La tâche « {{name}} » est terminée",
+      "testMissingModel": "Veuillez sélectionner un modèle de test",
+      "testMissingAccount": "Veuillez sélectionner un compte de test",
+      "testFailed": "Test échoué pour {{count}} requête(s)",
+      "testCompleted": "Test terminé",
+      "nameRequired": "Veuillez saisir le nom de la tâche",
+      "accountRequired": "Sélectionnez au moins un compte",
+      "modelRequired": "Sélectionnez au moins un modèle",
+      "crontabRequired": "Veuillez saisir une expression crontab",
+      "taskSaved": "Tâche « {{name}} » enregistrée",
+      "featureOff": "Réveil désactivé",
+      "featureOn": "Réveil activé"
+    },
+    "triggerSource": {
+      "scheduled": "Planifié",
+      "crontab": "Crontab",
+      "quotaReset": "Réinitialisation de quota",
+      "manual": "Tester maintenant",
+      "unknown": "Inconnu"
+    },
+    "taskCard": {
+      "accountsCount": "Comptes {{count}}",
+      "modelsCount": "Modèles {{count}}",
+      "accountsLabel": "Comptes : {{preview}}",
+      "modelsLabel": "Modèles : {{preview}}",
+      "lastRun": "Dernière {{time}}",
+      "nextRun": "Prochaine {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "Activer le réveil",
+      "enableDesc": "Activer le réveil désactivera la fonction de réveil du plugin. Continuer ?",
+      "deleteConfirm": "Supprimer la tâche « {{name}} » ?",
+      "testTitle": "Tester maintenant",
+      "historyTitle": "Historique des déclenchements",
+      "taskTitleEdit": "Modifier la tâche de réveil",
+      "taskTitleNew": "Nouvelle tâche de réveil"
+    },
+    "form": {
+      "taskName": "Nom de la tâche",
+      "taskStatus": "Statut de la tâche",
+      "triggerMode": "Mode de déclenchement",
+      "triggerModeHint": "1. Planifié : déclenche à des heures définies.\\n2. Crontab : définir via une expression.\\n3. Reset quota : déclenche une fois quand le quota est plein.",
+      "modeScheduled": "📅 Planifié",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 Reset de quota",
+      "modelSelect": "Sélection de modèles",
+      "modelHint": "Dans le même groupe de quota, choisissez un modèle. Plusieurs modèles se déclenchent en séquence.",
+      "modelsEmpty": "Aucun modèle recommandé",
+      "accountSelect": "Sélection de comptes",
+      "accountHint": "Sélection multiple possible ; les comptes seront utilisés en séquence.",
+      "accountsEmpty": "Aucun compte",
+      "customPrompt": "Invite personnalisée",
+      "promptPlaceholder": "Par défaut {{word}}",
+      "promptHint": "Laisser vide pour utiliser l'invite par défaut {{word}}.",
+      "maxTokens": "Tokens max",
+      "maxTokensHint": "Par défaut 0 (illimité).",
+      "repeatMode": "Mode de répétition",
+      "repeatDaily": "Quotidien",
+      "repeatWeekly": "Hebdomadaire",
+      "repeatInterval": "Intervalle",
+      "selectTime": "Sélectionner l'heure",
+      "customTime": "Heure personnalisée",
+      "selectWeekday": "Sélectionner le jour",
+      "quickWorkdays": "Jours ouvrés",
+      "quickWeekend": "Week-end",
+      "quickAll": "Tous",
+      "intervalSetting": "Paramètres d'intervalle",
+      "intervalEvery": "Toutes les",
+      "intervalHours": "heures",
+      "intervalStart": "Début",
+      "intervalEnd": "Fin",
+      "nextRuns": "Prochaines exécutions",
+      "nextRunsEmpty": "Sélectionnez des horaires de déclenchement",
+      "crontab": "Expression Crontab",
+      "crontabPlaceholder": "ex. 0 8,12,17 * * *",
+      "crontabValidate": "Valider",
+      "crontabValidateHint": "L'expression sera validée à l'enregistrement",
+      "crontabPreviewEmpty": "Veuillez entrer une expression Crontab valide",
+      "timeWindowEnabled": "Activer la fenêtre horaire",
+      "timeWindowHint": "Quand activé, le reset de quota ne se déclenche que dans la fenêtre ; sinon heures fixes.",
+      "timeWindow": "Fenêtre active de reset de quota",
+      "timeWindowFrom": "De",
+      "timeWindowTo": "À",
+      "fallbackTimes": "Heures hors fenêtre",
+      "saveTask": "Enregistrer la tâche"
+    },
+    "test": {
+      "modelsLabel": "Modèles à déclencher",
+      "accountsLabel": "Comptes de test",
+      "accountsHint": "Sélectionnez plusieurs comptes pour tester.",
+      "start": "Lancer le test",
+      "testing": "Test en cours..."
+    }
+  }
+}

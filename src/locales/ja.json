@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "確認",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "saving": "保存中...",
+    "delete": "削除",
+    "refresh": "更新",
+    "loading": "読み込み中...",
+    "success": "成功",
+    "failed": "失敗",
+    "enabled": "有効",
+    "disabled": "無効",
+    "close": "閉じる",
+    "open": "開く",
+    "copy": "コピー",
+    "add": "追加",
+    "enable": "有効化",
+    "disable": "無効化",
+    "none": "なし",
+    "detail": "詳細",
+    "editable": "編集可",
+    "preview": "プレビュー"
+  },
+  "nav": {
+    "overview": "概要",
+    "accounts": "アカウント管理",
+    "wakeup": "ウェイクアップタスク",
+    "fingerprints": "デバイス指紋",
+    "settings": "設定"
+  },
+  "settings": {
+    "title": "アプリ設定",
+    "subtitle": "Cockpit Tools の利用体験をカスタマイズします。",
+    "tabs": {
+      "general": "全般",
+      "network": "ネットワーク設定",
+      "about": "本アプリについて"
+    },
+    "general": {
+      "appearance": "外観",
+      "language": "表示言語",
+      "languageDesc": "表示言語を選択してください",
+      "theme": "テーマ",
+      "themeDesc": "ダークモードとライトモードを切り替えます",
+      "themeLight": "ライト",
+      "themeDark": "ダーク",
+      "themeSystem": "システム設定に従う",
+      "accountManagement": "アカウント管理",
+      "autoRefresh": "クォータの自動更新",
+      "autoRefreshDesc": "バックグラウンドでの更新頻度",
+      "autoRefreshDisabled": "無効",
+      "autoRefreshCustom": "カスタム...",
+      "every15min": "15分ごと",
+      "every30min": "30分ごと",
+      "every1hour": "1時間ごと",
+      "minutes": "分",
+      "storageTitle": "Directories & Storage",
+      "dataDir": "Data Directory",
+      "dataDirDesc": "Storage location for accounts and configuration files.",
+      "fpDir": "Fingerprint Storage",
+      "fpDirDesc": "Storage location for device fingerprint files."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "WebSocket サービス",
+      "wsServiceDesc": "外部プログラム（VS Code 拡張機能など）からの接続を許可する",
+      "preferredPort": "推奨ポート",
+      "preferredPortDesc": "デフォルトは {{port}} です。変更後は再起動が必要です。",
+      "currentPort": "現在の実行ポート",
+      "portNormal": "正常に動作中",
+      "portFallback": "設定ポート {{configured}} が使用中のため、{{actual}} を使用しています",
+      "restartRequired": "設定が変更されました。適用するにはアプリを再起動してください。",
+      "saveSuccess": "設定を保存しました！",
+      "saveSuccessRestart": "設定を保存しました！ポートの変更を反映させるにはアプリを再起動してください。",
+      "saveFailed": "保存に失敗しました: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "プロフェッショナルなアカウント管理ソリューション",
+      "author": "著者",
+      "wechat": "WeChat 公衆号",
+      "github": "GitHub リポジトリ",
+      "sponsor": "スポンサー",
+      "supportDev": "開発を支援する"
+    },
+    "saveSettings": "設定を保存"
+  },
+  "accounts": {
+    "title": "アカウント管理",
+    "subtitle": "Antigravity アカウントの一覧を管理します。",
+    "total": "合計 {{count}} 個のアカウント",
+    "search": "アカウントを検索...",
+    "addAccount": "アカウントを追加",
+    "refreshAll": "すべて更新",
+    "export": "エクスポート",
+    "import": "インポート",
+    "switchLogin": "ログインを切り替え",
+    "refreshQuota": "クォータを更新",
+    "copyToken": "トークンをコピー",
+    "deleteAccount": "アカウントを削除",
+    "confirmDelete": "アカウント {{email}} を削除してもよろしいですか？",
+    "columns": {
+      "email": "メールアドレス",
+      "subscription": "サブスクリプション",
+      "quota": "クォータ状況",
+      "fingerprint": "指紋",
+      "lastUsed": "最終使用",
+      "actions": "操作"
+    },
+    "status": {
+      "current": "使用中",
+      "disabled": "無効",
+      "normal": "通常",
+      "forbidden": "403",
+      "forbidden_tooltip": "APIが403 Forbiddenを返しました。アカウントはGemini Code Assistにアクセスできません",
+      "forbidden_msg": "アカウント禁止、自動更新をスキップしました"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "FREE"
+    },
+    "empty": {
+      "title": "アカウントがありません",
+      "desc": "「追加」をクリックして開始してください",
+      "btn": "アカウントを追加"
+    },
+    "noMatch": {
+      "title": "一致するアカウントがありません",
+      "desc": "フィルター条件に一致するアカウントが見つかりません"
+    },
+    "view": {
+      "list": "リスト表示",
+      "grid": "カード表示"
+    },
+    "filterLabel": "アカウントを絞り込み",
+    "filter": {
+      "all": "すべて ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "FREE ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "詳細を見る",
+      "fingerprint": "指紋",
+      "switch": "アカウント切替",
+      "switchTo": "このアカウントに切替",
+      "selectFingerprint": "指紋を選択"
+    },
+    "tabs": {
+      "oauth": "OAuth 認証",
+      "token": "Refresh Token",
+      "import": "インポート"
+    },
+    "oauth": {
+      "authorizing": "OAuth 認証中...",
+      "success": "OAuth 認証成功",
+      "failed": "OAuth 認証失敗: {{error}}",
+      "hint": "ブラウザで Google OAuth を完了することを推奨します。",
+      "start": "OAuth 認証を開始",
+      "continue": "認証済み、続行",
+      "linkLabel": "認証リンク",
+      "generatingLink": "認証リンクを生成中..."
+    },
+    "token": {
+      "desc": "refresh_token またはアカウント JSON を貼り付けて一括インポートできます。",
+      "placeholder": "対応形式：[{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] または refresh_token を直接貼り付け",
+      "importStart": "インポート開始",
+      "invalid": "有効な refresh_token が見つかりません",
+      "importProgress": "インポート中 {{current}}/{{total}}...",
+      "importSuccess": "{{count}} 件のアカウントをインポートしました",
+      "importPartial": "{{success}} 件成功、{{fail}} 件失敗",
+      "importFailed": "インポートに失敗しました。refresh_token を確認してください"
+    }
+  },
+  "overview": {
+    "title": "アカウント概要",
+    "subtitle": "全アカウントのモデルクォータ状況をリアルタイムで監視します。",
+    "total": "合計 {{count}} 個のアカウント",
+    "accountDisabled": "アカウントは無効です",
+    "noQuotaData": "クォータデータがありません",
+    "currentAccount": "現在使用中",
+    "switchTo": "このアカウントに切り替え",
+    "switching": "切り替え中...",
+    "fingerprint": "指紋",
+    "bound": "紐付け済み"
+  },
+  "fingerprints": {
+    "title": "デバイス指紋",
+    "subtitle": "アカウントに紐付けられたデバイス指紋を管理します。",
+    "toolbar": {
+      "generate": "新規生成",
+      "capture": "現在をキャプチャ",
+      "import": "インポート",
+      "folder": "フォルダー",
+      "delete": "削除"
+    },
+    "table": {
+      "name": "指紋名",
+      "machineId": "デバイス ID",
+      "accounts": "紐付けアカウント",
+      "actions": "操作"
+    },
+    "modals": {
+      "generate": {
+        "title": "指紋を生成",
+        "btn": "生成"
+      },
+      "capture": {
+        "title": "現在の指紋をキャプチャ",
+        "btn": "キャプチャ"
+      },
+      "rename": {
+        "title": "名前を変更",
+        "label": "指紋名"
+      },
+      "import": {
+        "title": "指紋をインポート",
+        "fromTools": "Antigravity Tools からインポート",
+        "desc": "~/.antigravity_tools/ ディレクトリから読み込みます"
+      },
+      "bound": {
+        "title": "紐付けアカウント管理",
+        "add": "アカウントを追加",
+        "empty": "紐付けられたアカウントはありません",
+        "emptyAll": "すべてのアカウントが紐付けられています",
+        "select": "追加するアカウントを選択",
+        "from": "ソース: {{name}}"
+      },
+      "detail": {
+        "title": "指紋の詳細",
+        "created": "作成日時: {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "この指紋を削除しますか？紐付けられたアカウントはオリジナルの指紋に戻ります。",
+      "batchDeleteConfirm": "{{count}} 個の指紋を削除しますか？紐付けられたアカウントはオリジナルの指紋に戻ります。",
+      "generated": "新しい指紋が生成されました",
+      "captured": "現在の指紋をキャプチャしました",
+      "renamed": "名前を変更しました",
+      "deleted": "指紋を削除しました",
+      "imported": "{{count}} 個の指紋をインポートしました",
+      "addedAccounts": "{{count}} 件のアカウントを追加しました",
+      "enterName": "指紋名を入力してください",
+      "previewNotReady": "プレビューの準備ができていません。しばらくお待ちください",
+      "duplicate": "重複する指紋が存在します: {{name}}",
+      "readOnly": "読み取り専用",
+      "current": "現在"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "アカウントを追加",
+      "desc": "Google OAuth 認証を使用して Antigravity アカウントを追加します",
+      "loginBtn": "Google OAuth でログイン",
+      "waiting": "待機中..."
+    },
+    "import": {
+      "title": "アカウントをインポート",
+      "desc": "インポート方法を選択してください",
+      "local": "ローカルアカウントをインポート",
+      "localDesc": "Antigravity クライアントから現在ログイン中のアカウントを読み込みます",
+      "tools": "Antigravity Tools からインポート",
+      "toolsDesc": "~/.antigravity_tools/ ディレクトリから読み込みます",
+      "jsonDivider": "または JSON を貼り付け",
+      "orJson": "または JSON を貼り付け",
+      "jsonPlaceholder": "アカウントの JSON 内容を貼り付けてください",
+      "jsonBtn": "JSON からインポート",
+      "importing": "インポート中...",
+      "importBtn": "インポート",
+      "oauthAction": "OAuth 認証",
+      "fromExtension": "プラグインからインポート",
+      "syncBadge": "Antigravity Cockpit プラグインのアカウントを同期",
+      "fromLocalDB": "ローカル DB からインポート",
+      "localDBDesc": "このマシンの Antigravity クライアントからログインアカウントを読み込む",
+      "toolsDescMigrate": "~/.antigravity_tools/ からアカウントを移行",
+      "importingTools": "Antigravity Tools からインポート中...",
+      "importingLocal": "ローカルアカウントをインポート中...",
+      "importingExtension": "プラグインアカウントをインポート中...",
+      "noAccountsFound": "インポート可能なアカウントが見つかりません"
+    },
+    "fingerprint": {
+      "title": "指紋を選択",
+      "desc": "アカウント <1>{{email}}</1> の指紋を選択してください",
+      "original": "オリジナルの指紋",
+      "new": "新しい指紋を追加",
+      "bind": "紐付けを確定",
+      "selectLabel": "指紋を選択",
+      "boundCount": "個のアカウント"
+    },
+    "quota": {
+      "title": "クォータ詳細",
+      "noData": "クォータデータなし",
+      "close": "閉じる",
+      "resetTime": "リセット時間"
+    }
+  },
+  "pagination": {
+    "info": "{{total}} 件中 {{start}} - {{end}} 件を表示",
+    "perPage": "{{count}} 件 / ページ",
+    "prev": "前へ",
+    "next": "次へ",
+    "page": "{{total}} ページ中 {{current}} ページ目"
+  },
+  "messages": {
+    "deleteConfirm": "このアカウントを削除してもよろしいですか？",
+    "batchDeleteConfirm": "選択した {{count}} 個のアカウントを削除してもよろしいですか？",
+    "switched": "{{email}} に切り替えました",
+    "switchFailed": "切り替えに失敗しました: {{error}}",
+    "importSuccess": "{{count}} 個のアカウントをインポートしました",
+    "importLocalSuccess": "アカウントをインポートしました: {{email}}",
+    "importFailed": "インポートに失敗しました: {{error}}",
+    "exportFailed": "エクスポートに失敗しました: {{error}}",
+    "bindFailed": "紐付けに失敗しました: {{error}}",
+    "jsonRequired": "JSON 内容を入力するか貼り付けてください",
+    "example": "例",
+    "actionRunning": "{{action}}中...",
+    "actionSuccess": "{{action}}成功",
+    "actionFailed": "{{action}}失敗: {{error}}"
+  },
+  "wakeup": {
+    "title": "ウェイクアップタスク",
+    "subtitle": "複数の自動ウェイクアップタスクを管理し、個別にオン/オフできます。",
+    "globalToggle": "ウェイクアップ全体スイッチ",
+    "newTask": "新規タスク",
+    "runTest": "すぐにテスト",
+    "history": "トリガー履歴",
+    "gotoAddAccount": "アカウントを追加",
+    "emptyTitle": "まだウェイクアップタスクがありません",
+    "emptyDesc": "タスクを作成するとルールに従って自動的に実行されます。",
+    "statusEnabled": "有効",
+    "statusDisabled": "無効",
+    "statusRunning": "実行中",
+    "edit": "編集",
+    "defaultTaskName": "ウェイクアップタスク",
+    "newTaskName": "新しいウェイクアップタスク",
+    "historyCount": "トリガー履歴 ({{count}})",
+    "historyEmpty": "履歴はありません",
+    "historyClear": "履歴をクリア",
+    "historyPromptLabel": "ウェイクアップ語：{{prompt}}",
+    "format": {
+      "noReply": "(返信なし)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "今日 {{time}}",
+      "tomorrow": "明日 {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "未選択",
+      "joiner": "、",
+      "moreItems": "{{items}} など{{total}}件",
+      "quotaReset": "クォータリセット自動ウェイクアップ",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "毎日 {{times}}{{suffix}}",
+      "weekly": "毎週 {{days}} {{times}}{{suffix}}",
+      "interval": "{{hours}} 時間ごと ({{start}}-{{end}})",
+      "invalidCrontab": "無効な Crontab"
+    },
+    "weekdays": {
+      "sun": "日",
+      "mon": "月",
+      "tue": "火",
+      "wed": "水",
+      "thu": "木",
+      "fri": "金",
+      "sat": "土"
+    },
+    "notice": {
+      "modelsFetchFailed": "モデルの取得に失敗しました。アカウント状態を確認してください",
+      "featureDisabled": "ウェイクアップ機能が無効です",
+      "taskMissingModels": "タスクにモデルが選択されていません",
+      "taskMissingAccounts": "タスクにアカウントが選択されていません",
+      "taskFailed": "タスク「{{name}}」が {{count}} 件失敗しました",
+      "taskCompleted": "タスク「{{name}}」が完了しました",
+      "testMissingModel": "テストモデルを選択してください",
+      "testMissingAccount": "テストアカウントを選択してください",
+      "testFailed": "テストが {{count}} 件失敗しました",
+      "testCompleted": "テスト完了",
+      "nameRequired": "タスク名を入力してください",
+      "accountRequired": "少なくとも 1 つのアカウントを選択してください",
+      "modelRequired": "少なくとも 1 つのモデルを選択してください",
+      "crontabRequired": "crontab 式を入力してください",
+      "taskSaved": "タスク「{{name}}」を保存しました",
+      "featureOff": "ウェイクアップをオフにしました",
+      "featureOn": "ウェイクアップをオンにしました"
+    },
+    "triggerSource": {
+      "scheduled": "定時",
+      "crontab": "Crontab",
+      "quotaReset": "クォータリセット",
+      "manual": "すぐにテスト",
+      "unknown": "不明"
+    },
+    "taskCard": {
+      "accountsCount": "アカウント {{count}}",
+      "modelsCount": "モデル {{count}}",
+      "accountsLabel": "アカウント：{{preview}}",
+      "modelsLabel": "モデル：{{preview}}",
+      "lastRun": "前回 {{time}}",
+      "nextRun": "次回 {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "ウェイクアップを有効化",
+      "enableDesc": "ウェイクアップを有効にするとプラグイン側のウェイクアップ機能が無効になります。続行しますか？",
+      "deleteConfirm": "タスク「{{name}}」を削除しますか？",
+      "testTitle": "すぐにテスト",
+      "historyTitle": "トリガー履歴",
+      "taskTitleEdit": "ウェイクアップタスクを編集",
+      "taskTitleNew": "ウェイクアップタスクを新規作成"
+    },
+    "form": {
+      "taskName": "タスク名",
+      "taskStatus": "タスク状態",
+      "triggerMode": "トリガー方式",
+      "triggerModeHint": "1. 定時：設定した時間に実行。\\n2. Crontab：式で定義。\\n3. クォータリセット：満了時に一度実行。",
+      "modeScheduled": "📅 定時",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 クォータリセット",
+      "modelSelect": "モデル選択",
+      "modelHint": "同じクォータグループでは 1 つのモデルを推奨。複数選択すると順に実行されます。",
+      "modelsEmpty": "おすすめモデルがありません",
+      "accountSelect": "アカウント選択",
+      "accountHint": "複数選択可。順に使用します。",
+      "accountsEmpty": "アカウントがありません",
+      "customPrompt": "カスタムウェイクアップ語",
+      "promptPlaceholder": "デフォルト {{word}}",
+      "promptHint": "空欄の場合はデフォルト {{word}} を使用します。",
+      "maxTokens": "最大出力トークン",
+      "maxTokensHint": "デフォルト 0（無制限）",
+      "repeatMode": "繰り返し",
+      "repeatDaily": "毎日",
+      "repeatWeekly": "毎週",
+      "repeatInterval": "間隔",
+      "selectTime": "時間を選択",
+      "customTime": "カスタム時間",
+      "selectWeekday": "曜日を選択",
+      "quickWorkdays": "平日",
+      "quickWeekend": "週末",
+      "quickAll": "全て",
+      "intervalSetting": "間隔設定",
+      "intervalEvery": "毎",
+      "intervalHours": "時間",
+      "intervalStart": "開始",
+      "intervalEnd": "終了",
+      "nextRuns": "次回実行プレビュー",
+      "nextRunsEmpty": "実行時間を選択してください",
+      "crontab": "Crontab 式",
+      "crontabPlaceholder": "例：0 8,12,17 * * *",
+      "crontabValidate": "検証",
+      "crontabValidateHint": "保存時に式を検証します",
+      "crontabPreviewEmpty": "有効な Crontab 式を入力してください",
+      "timeWindowEnabled": "時間帯戦略を有効化",
+      "timeWindowHint": "有効にするとクォータリセットは指定時間帯のみ実行し、時間外は固定時間で実行します。",
+      "timeWindow": "クォータリセット有効時間帯",
+      "timeWindowFrom": "開始",
+      "timeWindowTo": "終了",
+      "fallbackTimes": "時間外の実行時間",
+      "saveTask": "タスクを保存"
+    },
+    "test": {
+      "modelsLabel": "起動するモデル",
+      "accountsLabel": "テストアカウント",
+      "accountsHint": "複数のアカウントでテストできます。",
+      "start": "テスト開始",
+      "testing": "テスト中..."
+    }
+  }
+}

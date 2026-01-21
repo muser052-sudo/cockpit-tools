@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "Onayla",
+    "cancel": "İptal",
+    "save": "Kaydet",
+    "saving": "Kaydediliyor...",
+    "delete": "Sil",
+    "refresh": "Yenile",
+    "loading": "Yükleniyor...",
+    "success": "Başarılı",
+    "failed": "Hata",
+    "enabled": "Etkin",
+    "disabled": "Devre Dışı",
+    "close": "Kapat",
+    "open": "Aç",
+    "copy": "Kopyala",
+    "add": "Ekle",
+    "enable": "Etkinleştir",
+    "disable": "Devre dışı bırak",
+    "none": "Yok",
+    "detail": "Detaylar",
+    "editable": "Düzenlenebilir",
+    "preview": "Önizleme"
+  },
+  "nav": {
+    "overview": "Genel Bakış",
+    "accounts": "Hesaplar",
+    "wakeup": "Uyandırma Görevleri",
+    "fingerprints": "Parmak İzleri",
+    "settings": "Ayarlar"
+  },
+  "settings": {
+    "title": "Uygulama Ayarları",
+    "subtitle": "Cockpit Tools deneyiminizi özelleştirin.",
+    "tabs": {
+      "general": "Genel",
+      "network": "Ağ",
+      "about": "Hakkında"
+    },
+    "general": {
+      "appearance": "Görünüm",
+      "language": "Dil",
+      "languageDesc": "Arayüz dilini seçin",
+      "theme": "Tema",
+      "themeDesc": "Koyu ve açık mod arasında geçiş yapın",
+      "themeLight": "Açık",
+      "themeDark": "Koyu",
+      "themeSystem": "Sistem",
+      "accountManagement": "Hesap Yönetimi",
+      "autoRefresh": "Otomatik Kota Yenileme",
+      "autoRefreshDesc": "Arka plan güncelleme sıklığı",
+      "autoRefreshDisabled": "Devre Dışı",
+      "autoRefreshCustom": "Özel...",
+      "every15min": "15 dakikada bir",
+      "every30min": "30 dakikada bir",
+      "every1hour": "Her saat",
+      "minutes": "dk",
+      "storageTitle": "Directories & Storage",
+      "dataDir": "Data Directory",
+      "dataDirDesc": "Storage location for accounts and configuration files.",
+      "fpDir": "Fingerprint Storage",
+      "fpDirDesc": "Storage location for device fingerprint files."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "WebSocket Servisi",
+      "wsServiceDesc": "Harici programların (örn. VS Code eklentisi) bağlanmasına izin ver",
+      "preferredPort": "Tercih Edilen Port",
+      "preferredPortDesc": "Varsayılan {{port}}, değişiklikten sonra yeniden başlatma gerekir",
+      "currentPort": "Mevcut Port",
+      "portNormal": "Servis normal çalışıyor",
+      "portFallback": "{{configured}} portu kullanımda, yerine {{actual}} kullanılıyor",
+      "restartRequired": "Yapılandırma değişti, uygulamak için lütfen uygulamayı yeniden başlatın",
+      "saveSuccess": "Ayarlar kaydedildi!",
+      "saveSuccessRestart": "Ayarlar kaydedildi! Port değişikliklerinin etkili olması için lütfen uygulamayı yeniden başlatın.",
+      "saveFailed": "Kaydetme hatası: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "Profesyonel Hesap Yönetimi Çözümü",
+      "author": "Yazar",
+      "wechat": "WeChat",
+      "github": "GitHub Deposu",
+      "sponsor": "Sponsor",
+      "supportDev": "Geliştirmeyi Destekle"
+    },
+    "saveSettings": "Ayarları Kaydet"
+  },
+  "accounts": {
+    "title": "Hesap Yönetimi",
+    "subtitle": "Antigravity hesap listenizi yönetin.",
+    "total": "{{count}} hesap",
+    "search": "Hesaplarda ara...",
+    "addAccount": "Hesap Ekle",
+    "refreshAll": "Tümünü Yenile",
+    "export": "Dışa Aktar",
+    "import": "İçe Aktar",
+    "switchLogin": "Girişi Değiştir",
+    "refreshQuota": "Kotayı Yenile",
+    "copyToken": "Token'ı Kopyala",
+    "deleteAccount": "Hesabı Sil",
+    "confirmDelete": "{{email}} hesabını silmek istediğinizden emin misiniz?",
+    "columns": {
+      "email": "E-posta",
+      "subscription": "Abonelik",
+      "quota": "Kota Durumu",
+      "fingerprint": "Parmak İzi",
+      "lastUsed": "Son Kullanım",
+      "actions": "İşlemler"
+    },
+    "status": {
+      "current": "Mevcut",
+      "disabled": "Devre Dışı",
+      "normal": "Normal",
+      "forbidden": "403",
+      "forbidden_tooltip": "API 403 Forbidden döndürdü, hesabın Gemini Code Assist'e erişimi yok",
+      "forbidden_msg": "Hesap yasaklı, otomatik yenileme atlandı"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "ÜCRETSİZ"
+    },
+    "empty": {
+      "title": "Hesap Yok",
+      "desc": "Başlamak için \"Ekle\"ye tıklayın",
+      "btn": "Hesap Ekle"
+    },
+    "noMatch": {
+      "title": "Eşleşen hesap bulunamadı",
+      "desc": "Mevcut filtrelere uygun hesap bulunamadı"
+    },
+    "view": {
+      "list": "Liste görünümü",
+      "grid": "Kart görünümü"
+    },
+    "filterLabel": "Hesapları filtrele",
+    "filter": {
+      "all": "Tümü ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "ÜCRETSİZ ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "Detayları görüntüle",
+      "fingerprint": "Parmak izi",
+      "switch": "Hesap değiştir",
+      "switchTo": "Bu hesaba geç",
+      "selectFingerprint": "Parmak izi seç"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "Refresh Token",
+      "import": "İçe Aktar"
+    },
+    "oauth": {
+      "authorizing": "OAuth yetkilendiriliyor...",
+      "success": "OAuth yetkilendirildi",
+      "failed": "OAuth yetkilendirmesi başarısız: {{error}}",
+      "hint": "Google OAuth işlemini tarayıcınızda tamamlamanızı öneririz.",
+      "start": "OAuth yetkilendirmesini başlat",
+      "continue": "Yetkilendirdim, devam et",
+      "linkLabel": "Yetkilendirme bağlantısı",
+      "generatingLink": "Yetkilendirme bağlantısı oluşturuluyor..."
+    },
+    "token": {
+      "desc": "Toplu içe aktarma için refresh_token veya hesap JSON'unu yapıştırın.",
+      "placeholder": "Desteklenen format: [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] veya doğrudan refresh_token yapıştırın",
+      "importStart": "İçe aktarmayı başlat",
+      "invalid": "Geçerli refresh_token bulunamadı",
+      "importProgress": "{{current}}/{{total}} içe aktarılıyor...",
+      "importSuccess": "{{count}} hesap içe aktarıldı",
+      "importPartial": "{{success}} hesap başarıyla içe aktarıldı, {{fail}} hata",
+      "importFailed": "İçe aktarma başarısız, lütfen refresh_token'ı kontrol edin"
+    }
+  },
+  "overview": {
+    "title": "Hesap Genel Bakışı",
+    "subtitle": "Tüm hesap modellerinin kotalarını gerçek zamanlı izleyin.",
+    "total": "{{count}} hesap",
+    "accountDisabled": "Hesap devre dışı",
+    "noQuotaData": "Kota verisi yok",
+    "currentAccount": "Şu an kullanımda",
+    "switchTo": "Bu hesaba geç",
+    "switching": "Geçiliyor...",
+    "fingerprint": "Parmak İzi",
+    "bound": "Bağlı"
+  },
+  "fingerprints": {
+    "title": "Cihaz Parmak İzleri",
+    "subtitle": "Hesaplara bağlı cihaz parmak izlerini yönetin.",
+    "toolbar": {
+      "generate": "Yeni Oluştur",
+      "capture": "Mevcudu Yakala",
+      "import": "İçe Aktar",
+      "folder": "Klasör",
+      "delete": "Sil"
+    },
+    "table": {
+      "name": "Parmak İzi Adı",
+      "machineId": "Makine ID",
+      "accounts": "Bağlı Hesaplar",
+      "actions": "İşlemler"
+    },
+    "modals": {
+      "generate": {
+        "title": "Parmak İzi Oluştur",
+        "btn": "Oluştur"
+      },
+      "capture": {
+        "title": "Parmak İzini Yakala",
+        "btn": "Yakala"
+      },
+      "rename": {
+        "title": "Parmak İzini Yeniden Adlandır",
+        "label": "Parmak İzi Adı"
+      },
+      "import": {
+        "title": "Parmak İzlerini İçe Aktar",
+        "fromTools": "Antigravity Tools'tan İçe Aktar",
+        "desc": "~/.antigravity_tools/ dizininden içe aktar"
+      },
+      "bound": {
+        "title": "Bağlı Hesaplar",
+        "add": "Hesap Ekle",
+        "empty": "Bağlı hesap yok",
+        "emptyAll": "Tüm hesaplar bağlı",
+        "select": "Eklenecek hesapları seçin",
+        "from": "Kaynağı: {{name}}"
+      },
+      "detail": {
+        "title": "Parmak İzi Detayları",
+        "created": "{{time}} tarihinde oluşturuldu"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "Bu parmak izini silmek istiyor musunuz? Bağlı hesaplar orijinal haline dönecektir.",
+      "batchDeleteConfirm": "{{count}} parmak izini silmek istiyor musunuz? Bağlı hesaplar orijinal haline dönecektir.",
+      "generated": "Yeni parmak izi oluşturuldu",
+      "captured": "Mevcut parmak izi yakalandı",
+      "renamed": "Yeniden adlandırıldı",
+      "deleted": "Parmak izi silindi",
+      "imported": "{{count}} parmak izi içe aktarıldı",
+      "addedAccounts": "{{count}} hesap eklendi",
+      "enterName": "Parmak izi adını girin",
+      "previewNotReady": "Önizleme hazır değil, lütfen bekleyin",
+      "duplicate": "Aynı parmak izi zaten var: {{name}}",
+      "readOnly": "Salt Okunur",
+      "current": "Mevcut"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "Hesap Ekle",
+      "desc": "Google OAuth üzerinden Antigravity hesabınızı ekleyin",
+      "loginBtn": "Google OAuth Girişi",
+      "waiting": "Bekleniyor..."
+    },
+    "import": {
+      "title": "Hesapları İçe Aktar",
+      "desc": "Bir içe aktarma yöntemi seçin",
+      "local": "Yerel Hesabı İçe Aktar",
+      "localDesc": "Antigravity İstemcisinden mevcut giriş yapılmış hesabı içe aktar",
+      "tools": "Antigravity Tools'tan İçe Aktar",
+      "toolsDesc": "~/.antigravity_tools/ dizininden içe aktar",
+      "jsonDivider": "veya JSON Yapıştır",
+      "orJson": "veya JSON Yapıştır",
+      "jsonPlaceholder": "Hesap JSON içeriğini yapıştırın",
+      "jsonBtn": "JSON'dan İçe Aktar",
+      "importing": "İçe aktarılıyor...",
+      "importBtn": "İçe Aktar",
+      "oauthAction": "OAuth Yetkilendirme",
+      "fromExtension": "Eklentiden İçe Aktar",
+      "syncBadge": "Antigravity Cockpit eklenti hesaplarını senkronize et",
+      "fromLocalDB": "Yerel Veritabanından İçe Aktar",
+      "localDBDesc": "Bu makinedeki Antigravity İstemcisinden giriş hesaplarını oku",
+      "toolsDescMigrate": "Hesapları ~/.antigravity_tools/ dizininden taşı",
+      "importingTools": "Antigravity Tools'tan içe aktarılıyor...",
+      "importingLocal": "Yerel hesap içe aktarılıyor...",
+      "importingExtension": "Eklenti hesabı içe aktarılıyor...",
+      "noAccountsFound": "İçe aktarılabilir hesap bulunamadı"
+    },
+    "fingerprint": {
+      "title": "Parmak İzini Seç",
+      "desc": "<1>{{email}}</1> hesabı için parmak izi seçin",
+      "original": "Orijinal Parmak İzi",
+      "new": "Yeni Parmak İzi Ekle",
+      "bind": "Bağlamayı Onayla",
+      "selectLabel": "Parmak İzini Seç",
+      "boundCount": "hesap"
+    },
+    "quota": {
+      "title": "Kota Detayları",
+      "noData": "Kota verisi yok",
+      "close": "Kapat",
+      "resetTime": "Sıfırlama Zamanı"
+    }
+  },
+  "pagination": {
+    "info": "{{total}} öğeden {{start}} - {{end}} arası gösteriliyor",
+    "perPage": "{{count}} / sayfa",
+    "prev": "Önceki",
+    "next": "Sonraki",
+    "page": "Sayfa {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "Bu hesabı silmek istediğinizden emin misiniz?",
+    "batchDeleteConfirm": "Seçilen {{count}} hesabı silmek istediğinizden emin misiniz?",
+    "switched": "{{email}} hesabına geçildi",
+    "switchFailed": "Geçiş hatası: {{error}}",
+    "importSuccess": "{{count}} hesap başarıyla içe aktarıldı",
+    "importLocalSuccess": "Hesap başarıyla içe aktarıldı: {{email}}",
+    "importFailed": "İçe aktarma hatası: {{error}}",
+    "exportFailed": "Dışa aktarma hatası: {{error}}",
+    "bindFailed": "Bağlama hatası: {{error}}",
+    "jsonRequired": "Lütfen JSON içeriğini girin veya yapıştırın",
+    "example": "Örnek",
+    "actionRunning": "{{action}}...",
+    "actionSuccess": "{{action}} başarılı",
+    "actionFailed": "{{action}} başarısız: {{error}}"
+  },
+  "wakeup": {
+    "title": "Uyandırma Görevleri",
+    "subtitle": "Bağımsız kontrollere sahip birden fazla otomatik uyandırma görevini yönetin.",
+    "globalToggle": "Genel Uyandırma Anahtarı",
+    "newTask": "Yeni Görev",
+    "runTest": "Testi Çalıştır",
+    "history": "Tetikleme Geçmişi",
+    "gotoAddAccount": "Hesap Ekle",
+    "emptyTitle": "Henüz uyandırma görevi yok",
+    "emptyDesc": "Görevler, kurallara göre otomatik olarak uyandırmaları tetikleyecektir.",
+    "statusEnabled": "Etkin",
+    "statusDisabled": "Devre Dışı",
+    "statusRunning": "Çalışıyor",
+    "edit": "Düzenle",
+    "defaultTaskName": "Uyandırma Görevi",
+    "newTaskName": "Yeni Uyandırma Görevi",
+    "historyCount": "Tetikleme Geçmişi ({{count}})",
+    "historyEmpty": "Henüz geçmiş yok",
+    "historyClear": "Geçmişi temizle",
+    "historyPromptLabel": "İstem: {{prompt}}",
+    "format": {
+      "noReply": "(Yanıt yok)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokenler={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "Bugün {{time}}",
+      "tomorrow": "Yarın {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "Seçilmedi",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}} öğe)",
+      "quotaReset": "Kota sıfırlandığında otomatik uyandır",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "Günlük {{times}}{{suffix}}",
+      "weekly": "Haftalık {{days}} {{times}}{{suffix}}",
+      "interval": "Her {{hours}}s ({{start}}-{{end}})",
+      "invalidCrontab": "Geçersiz Crontab"
+    },
+    "weekdays": {
+      "sun": "Paz",
+      "mon": "Pzt",
+      "tue": "Sal",
+      "wed": "Çar",
+      "thu": "Per",
+      "fri": "Cum",
+      "sat": "Cmt"
+    },
+    "notice": {
+      "modelsFetchFailed": "Modeller getirilemedi, lütfen hesap durumunu kontrol edin",
+      "featureDisabled": "Uyandırma devre dışı",
+      "taskMissingModels": "Görevin seçili modeli yok",
+      "taskMissingAccounts": "Görevin seçili hesabı yok",
+      "taskFailed": "Görev \"{{name}}\", {{count}} istek için başarısız oldu",
+      "taskCompleted": "Görev \"{{name}}\" tamamlandı",
+      "testMissingModel": "Lütfen bir test modeli seçin",
+      "testMissingAccount": "Lütfen bir test hesabı seçin",
+      "testFailed": "Test, {{count}} istek için başarısız oldu",
+      "testCompleted": "Test tamamlandı",
+      "nameRequired": "Lütfen bir görev adı girin",
+      "accountRequired": "En az bir hesap seçin",
+      "modelRequired": "En az bir model seçin",
+      "crontabRequired": "Lütfen bir crontab ifadesi girin",
+      "taskSaved": "Görev \"{{name}}\" kaydedildi",
+      "featureOff": "Uyandırma devre dışı bırakıldı",
+      "featureOn": "Uyandırma etkinleştirildi"
+    },
+    "triggerSource": {
+      "scheduled": "Planlı",
+      "crontab": "Crontab",
+      "quotaReset": "Kota sıfırlama",
+      "manual": "Testi Çalıştır",
+      "unknown": "Bilinmiyor"
+    },
+    "taskCard": {
+      "accountsCount": "Hesaplar {{count}}",
+      "modelsCount": "Modeller {{count}}",
+      "accountsLabel": "Hesaplar: {{preview}}",
+      "modelsLabel": "Modeller: {{preview}}",
+      "lastRun": "Son {{time}}",
+      "nextRun": "Sonraki {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "Uyandırmayı etkinleştir",
+      "enableDesc": "Uyandırmayı etkinleştirmek, eklenti uyandırma özelliğini devre dışı bırakacaktır. Devam edilsin mi?",
+      "deleteConfirm": "\"{{name}}\" görevini silmek istiyor musunuz?",
+      "testTitle": "Testi Çalıştır",
+      "historyTitle": "Tetikleme Geçmişi",
+      "taskTitleEdit": "Uyandırma Görevini Düzenle",
+      "taskTitleNew": "Yeni Uyandırma Görevi"
+    },
+    "form": {
+      "taskName": "Görev adı",
+      "taskStatus": "Görev durumu",
+      "triggerMode": "Tetikleme modu",
+      "triggerModeHint": "1. Planlı: ayarlanan zamanlarda tetiklenir.\\n2. Crontab: bir ifadeyle tanımlanır.\\n3. Kota sıfırlama: kota dolu olduğunda bir kez tetiklenir.",
+      "modeScheduled": "📅 Planlı",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 Kota sıfırlama",
+      "modelSelect": "Model seçimi",
+      "modelHint": "Aynı kota grubu için tek bir model seçin. Birden fazla model sırayla tetiklenir.",
+      "modelsEmpty": "Önerilen model yok",
+      "accountSelect": "Hesap seçimi",
+      "accountHint": "Birden fazla hesap seçebilirsiniz; uyandırma bunları sırayla kullanacaktır.",
+      "accountsEmpty": "Hesap yok",
+      "customPrompt": "Özel istem",
+      "promptPlaceholder": "Varsayılan {{word}}",
+      "promptHint": "Varsayılan istemi ({{word}}) kullanmak için boş bırakın.",
+      "maxTokens": "Maksimum çıktı tokeni",
+      "maxTokensHint": "Varsayılan 0 (sınırsız).",
+      "repeatMode": "Tekrarlama modu",
+      "repeatDaily": "Günlük",
+      "repeatWeekly": "Haftalık",
+      "repeatInterval": "Aralık",
+      "selectTime": "Zaman seçin",
+      "customTime": "Özel zaman",
+      "selectWeekday": "Haftanın gününü seçin",
+      "quickWorkdays": "Hafta içi",
+      "quickWeekend": "Hafta sonu",
+      "quickAll": "Tümü",
+      "intervalSetting": "Aralık ayarları",
+      "intervalEvery": "Her",
+      "intervalHours": "saat",
+      "intervalStart": "Başlangıç",
+      "intervalEnd": "Bitiş",
+      "nextRuns": "Sonraki çalışmalar",
+      "nextRunsEmpty": "Lütfen tetikleme zamanlarını seçin",
+      "crontab": "Crontab ifadesi",
+      "crontabPlaceholder": "örn. 0 8,12,17 * * *",
+      "crontabValidate": "Doğrula",
+      "crontabValidateHint": "İfade kaydedilirken doğrulanacaktır",
+      "crontabPreviewEmpty": "Lütfen geçerli bir Crontab ifadesi girin",
+      "timeWindowEnabled": "Zaman penceresini etkinleştir",
+      "timeWindowHint": "Etkinleştirildiğinde, kota sıfırlama tetikleyicileri yalnızca pencere içinde çalışır; dışındakiler sabit zamanları kullanır.",
+      "timeWindow": "Kota sıfırlama aktif penceresi",
+      "timeWindowFrom": "Başlangıç",
+      "timeWindowTo": "Bitiş",
+      "fallbackTimes": "Geri dönüş zamanları",
+      "saveTask": "Görevi kaydet"
+    },
+    "test": {
+      "modelsLabel": "Tetiklenecek modeller",
+      "accountsLabel": "Test hesapları",
+      "accountsHint": "Test edilecek birden fazla hesap seçin.",
+      "start": "Testi başlat",
+      "testing": "Test ediliyor..."
+    }
+  }
+}

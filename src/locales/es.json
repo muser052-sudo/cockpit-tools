@@ -1,0 +1,472 @@
+{
+  "common": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "delete": "Eliminar",
+    "refresh": "Actualizar",
+    "loading": "Cargando...",
+    "success": "Éxito",
+    "failed": "Error",
+    "enabled": "Habilitado",
+    "disabled": "Deshabilitado",
+    "close": "Cerrar",
+    "open": "Abrir",
+    "copy": "Copiar",
+    "add": "Agregar",
+    "enable": "Habilitar",
+    "disable": "Deshabilitar",
+    "none": "Ninguno",
+    "detail": "Detalles",
+    "editable": "Editable",
+    "preview": "Vista previa"
+  },
+  "nav": {
+    "overview": "Resumen",
+    "accounts": "Cuentas",
+    "wakeup": "Tareas de activación",
+    "fingerprints": "Huellas",
+    "settings": "Ajustes"
+  },
+  "settings": {
+    "title": "Ajustes de la Aplicación",
+    "subtitle": "Personaliza tu experiencia con Cockpit Tools.",
+    "tabs": {
+      "general": "General",
+      "network": "Red",
+      "about": "Acerca de"
+    },
+    "general": {
+      "appearance": "Apariencia",
+      "language": "Idioma",
+      "languageDesc": "Selecciona el idioma de la interfaz",
+      "theme": "Tema",
+      "themeDesc": "Cambiar entre modo claro y oscuro",
+      "themeLight": "Claro",
+      "themeDark": "Oscuro",
+      "themeSystem": "Sistema",
+      "accountManagement": "Gestión de Cuentas",
+      "autoRefresh": "Actualización Automática de Cuota",
+      "autoRefreshDesc": "Frecuencia de actualización en segundo plano",
+      "autoRefreshDisabled": "Deshabilitado",
+      "autoRefreshCustom": "Personalizado...",
+      "every15min": "Cada 15 minutos",
+      "every30min": "Cada 30 minutos",
+      "every1hour": "Cada hora",
+      "minutes": "min",
+      "storageTitle": "Directories & Storage",
+      "dataDir": "Data Directory",
+      "dataDirDesc": "Storage location for accounts and configuration files.",
+      "fpDir": "Fingerprint Storage",
+      "fpDirDesc": "Storage location for device fingerprint files."
+    },
+    "network": {
+      "apiTitle": "Antigravity Cockpit API",
+      "wsService": "Servicio WebSocket",
+      "wsServiceDesc": "Permitir que programas externos (ej. extensión de VS Code) se conecten",
+      "preferredPort": "Puerto Preferido",
+      "preferredPortDesc": "El predeterminado es {{port}}, requiere reinicio tras el cambio",
+      "currentPort": "Puerto Actual",
+      "portNormal": "Servicio funcionando normalmente",
+      "portFallback": "El puerto {{configured}} está en uso, usando {{actual}} en su lugar",
+      "restartRequired": "Configuración cambiada, por favor reinicia la aplicación para aplicar",
+      "saveSuccess": "¡Ajustes guardados!",
+      "saveSuccessRestart": "¡Ajustes guardados! Por favor, reinicia la aplicación para que los cambios de puerto surtan efecto.",
+      "saveFailed": "Error al guardar: {{error}}"
+    },
+    "about": {
+      "appName": "Cockpit Tools",
+      "slogan": "Solución Profesional de Gestión de Cuentas",
+      "author": "Autor",
+      "wechat": "WeChat",
+      "github": "Depósito GitHub",
+      "sponsor": "Patrocinar",
+      "supportDev": "Apoyar Desarrollo"
+    },
+    "saveSettings": "Guardar Ajustes"
+  },
+  "accounts": {
+    "title": "Gestión de Cuentas",
+    "subtitle": "Gestiona tu lista de cuentas de Antigravity.",
+    "total": "{{count}} cuentas",
+    "search": "Buscar cuentas...",
+    "addAccount": "Añadir Cuenta",
+    "refreshAll": "Actualizar Todo",
+    "export": "Exportar",
+    "import": "Importar",
+    "switchLogin": "Cambiar Inicio",
+    "refreshQuota": "Actualizar Cuota",
+    "copyToken": "Copiar Token",
+    "deleteAccount": "Eliminar Cuenta",
+    "confirmDelete": "¿Estás seguro de que quieres eliminar la cuenta {{email}}?",
+    "columns": {
+      "email": "Correo",
+      "subscription": "Suscripción",
+      "quota": "Estado de Cuota",
+      "fingerprint": "Huella",
+      "lastUsed": "Último Uso",
+      "actions": "Acciones"
+    },
+    "status": {
+      "current": "Actual",
+      "disabled": "Deshabilitada",
+      "normal": "Normal",
+      "forbidden": "403",
+      "forbidden_tooltip": "API devolvió 403 Forbidden, la cuenta no tiene acceso a Gemini Code Assist",
+      "forbidden_msg": "Cuenta prohibida, actualización automática omitida"
+    },
+    "tier": {
+      "pro": "PRO",
+      "ultra": "ULTRA",
+      "free": "GRATIS"
+    },
+    "empty": {
+      "title": "Sin Cuentas",
+      "desc": "Haz clic en \"Añadir\" para comenzar",
+      "btn": "Añadir Cuenta"
+    },
+    "noMatch": {
+      "title": "No hay cuentas coincidentes",
+      "desc": "No se encontraron cuentas que coincidan con los filtros"
+    },
+    "view": {
+      "list": "Vista de lista",
+      "grid": "Vista de tarjetas"
+    },
+    "filterLabel": "Filtrar cuentas",
+    "filter": {
+      "all": "Todas ({{count}})",
+      "pro": "PRO ({{count}})",
+      "ultra": "ULTRA ({{count}})",
+      "free": "FREE ({{count}})"
+    },
+    "actions": {
+      "viewDetails": "Ver detalles",
+      "fingerprint": "Huella",
+      "switch": "Cambiar cuenta",
+      "switchTo": "Cambiar a esta cuenta",
+      "selectFingerprint": "Seleccionar huella"
+    },
+    "tabs": {
+      "oauth": "OAuth",
+      "token": "Refresh Token",
+      "import": "Importar"
+    },
+    "oauth": {
+      "authorizing": "Autorizando OAuth...",
+      "success": "OAuth autorizado",
+      "failed": "OAuth falló: {{error}}",
+      "hint": "Recomendamos completar Google OAuth en el navegador.",
+      "start": "Iniciar autorización OAuth",
+      "continue": "Ya autoricé, continuar",
+      "linkLabel": "Enlace de autorización",
+      "generatingLink": "Generando enlace de autorización..."
+    },
+    "token": {
+      "desc": "Pega refresh_token o JSON de cuentas para importar en lote.",
+      "placeholder": "Formato soportado: [{\"email\":\"xxx\",\"refresh_token\":\"1//...\"}] o pega refresh_token directamente",
+      "importStart": "Iniciar importación",
+      "invalid": "No se encontró un refresh_token válido",
+      "importProgress": "Importando {{current}}/{{total}}...",
+      "importSuccess": "Importadas {{count}} cuentas",
+      "importPartial": "Importadas {{success}} cuentas, fallaron {{fail}}",
+      "importFailed": "Error al importar, revisa el refresh_token"
+    }
+  },
+  "overview": {
+    "title": "Resumen de Cuentas",
+    "subtitle": "Seguimiento en tiempo real de las cuotas de todas las cuentas.",
+    "total": "{{count}} cuentas",
+    "accountDisabled": "Cuenta deshabilitada",
+    "noQuotaData": "Sin datos de cuota",
+    "currentAccount": "En uso actualmente",
+    "switchTo": "Cambiar a esta cuenta",
+    "switching": "Cambiando...",
+    "fingerprint": "Huella",
+    "bound": "Vinculado"
+  },
+  "fingerprints": {
+    "title": "Huellas de Dispositivo",
+    "subtitle": "Gestiona las huellas de dispositivo vinculadas a las cuentas.",
+    "toolbar": {
+      "generate": "Generar Nueva",
+      "capture": "Capturar Actual",
+      "import": "Importar",
+      "folder": "Carpeta",
+      "delete": "Eliminar"
+    },
+    "table": {
+      "name": "Nombre de Huella",
+      "machineId": "ID de Máquina",
+      "accounts": "Cuentas Vinculadas",
+      "actions": "Acciones"
+    },
+    "modals": {
+      "generate": {
+        "title": "Generar Huella",
+        "btn": "Generar"
+      },
+      "capture": {
+        "title": "Capturar Huella",
+        "btn": "Capturar"
+      },
+      "rename": {
+        "title": "Renombrar Huella",
+        "label": "Nombre de Huella"
+      },
+      "import": {
+        "title": "Importar Huellas",
+        "fromTools": "Importar de Antigravity Tools",
+        "desc": "Importar del directorio ~/.antigravity_tools/"
+      },
+      "bound": {
+        "title": "Cuentas Vinculadas",
+        "add": "Añadir Cuentas",
+        "empty": "No hay cuentas vinculadas",
+        "emptyAll": "Todas las cuentas están vinculadas",
+        "select": "Selecciona cuentas para añadir",
+        "from": "Desde: {{name}}"
+      },
+      "detail": {
+        "title": "Detalles de Huella",
+        "created": "Creado en {{time}}"
+      }
+    },
+    "messages": {
+      "deleteConfirm": "¿Eliminar esta huella? Las cuentas vinculadas volverán a la original.",
+      "batchDeleteConfirm": "¿Eliminar {{count}} huellas? Las cuentas vinculadas volverán a la original.",
+      "generated": "Nueva huella generada",
+      "captured": "Huella actual capturada",
+      "renamed": "Renombrado",
+      "deleted": "Huella eliminada",
+      "imported": "Importadas {{count}} huellas",
+      "addedAccounts": "Añadidas {{count}} cuentas",
+      "enterName": "Introduce el nombre de la huella",
+      "previewNotReady": "Vista previa no lista, por favor espera",
+      "duplicate": "Ya existe una huella idéntica: {{name}}",
+      "readOnly": "Solo lectura",
+      "current": "Actual"
+    }
+  },
+  "modals": {
+    "addAccount": {
+      "title": "Añadir Cuenta",
+      "desc": "Añade tu cuenta de Antigravity mediante Google OAuth",
+      "loginBtn": "Iniciar sesión con Google",
+      "waiting": "Esperando..."
+    },
+    "import": {
+      "title": "Importar Cuentas",
+      "desc": "Elige un método de importación",
+      "local": "Importar Cuenta Local",
+      "localDesc": "Importar cuenta actual del cliente Antigravity",
+      "tools": "Importar de Antigravity Tools",
+      "toolsDesc": "Importar del directorio ~/.antigravity_tools/",
+      "jsonDivider": "o Pegar JSON",
+      "orJson": "o Pegar JSON",
+      "jsonPlaceholder": "Pega el contenido JSON de la cuenta",
+      "jsonBtn": "Importar desde JSON",
+      "importing": "Importando...",
+      "importBtn": "Importar",
+      "oauthAction": "Autorización OAuth",
+      "fromExtension": "Importar desde el plugin",
+      "syncBadge": "Sincronizar cuentas del plugin Antigravity Cockpit",
+      "fromLocalDB": "Importar desde la base de datos local",
+      "localDBDesc": "Leer cuentas del cliente Antigravity en esta máquina",
+      "toolsDescMigrate": "Migrar cuentas desde ~/.antigravity_tools/",
+      "importingTools": "Importando desde Antigravity Tools...",
+      "importingLocal": "Importando cuenta local...",
+      "importingExtension": "Importando cuenta del plugin...",
+      "noAccountsFound": "No se encontraron cuentas para importar"
+    },
+    "fingerprint": {
+      "title": "Seleccionar Huella",
+      "desc": "Selecciona huella para la cuenta <1>{{email}}</1>",
+      "original": "Huella Original",
+      "new": "Añadir Nueva Huella",
+      "bind": "Confirmar Vinculación",
+      "selectLabel": "Seleccionar Huella",
+      "boundCount": "cuentas"
+    },
+    "quota": {
+      "title": "Detalles de Cuota",
+      "noData": "Sin datos de cuota",
+      "close": "Cerrar",
+      "resetTime": "Hora de reinicio"
+    }
+  },
+  "pagination": {
+    "info": "Mostrando {{start}} - {{end}} de {{total}}",
+    "perPage": "{{count}} / página",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {{current}} / {{total}}"
+  },
+  "messages": {
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar esta cuenta?",
+    "batchDeleteConfirm": "¿Estás seguro de que quieres eliminar las {{count}} cuentas seleccionadas?",
+    "switched": "Cambiado a {{email}}",
+    "switchFailed": "Fallo al cambiar: {{error}}",
+    "importSuccess": "Importadas con éxito {{count}} cuentas",
+    "importLocalSuccess": "Cuenta importada con éxito: {{email}}",
+    "importFailed": "Fallo al importar: {{error}}",
+    "exportFailed": "Fallo al exportar: {{error}}",
+    "bindFailed": "Fallo al vincular: {{error}}",
+    "jsonRequired": "Por favor, introduce o pega el contenido JSON",
+    "example": "Ejemplo",
+    "actionRunning": "{{action}}...",
+    "actionSuccess": "{{action}} completado",
+    "actionFailed": "{{action}} falló: {{error}}"
+  },
+  "wakeup": {
+    "title": "Tareas de activación",
+    "subtitle": "Gestiona múltiples tareas de activación automática con controles independientes.",
+    "globalToggle": "Interruptor global de activación",
+    "newTask": "Nueva tarea",
+    "runTest": "Probar ahora",
+    "history": "Historial de activación",
+    "gotoAddAccount": "Añadir cuentas",
+    "emptyTitle": "Aún no hay tareas de activación",
+    "emptyDesc": "Las tareas activarán automáticamente según las reglas.",
+    "statusEnabled": "Habilitado",
+    "statusDisabled": "Deshabilitado",
+    "statusRunning": "En ejecución",
+    "edit": "Editar",
+    "defaultTaskName": "Tarea de activación",
+    "newTaskName": "Nueva tarea de activación",
+    "historyCount": "Historial de activación ({{count}})",
+    "historyEmpty": "Sin historial",
+    "historyClear": "Limpiar historial",
+    "historyPromptLabel": "Palabra de activación: {{prompt}}",
+    "format": {
+      "noReply": "(Sin respuesta)",
+      "durationMs": "{{ms}}ms",
+      "tokens": "tokens={{prompt}}+{{completion}}={{total}}",
+      "traceId": "traceId={{traceId}}",
+      "detailJoiner": ", ",
+      "message": "[[{{model}}]]: {{reply}}{{suffix}}",
+      "none": "--",
+      "today": "Hoy {{time}}",
+      "tomorrow": "Mañana {{time}}",
+      "weekdayWithTime": "{{day}} {{time}}",
+      "notSelected": "No seleccionado",
+      "joiner": ", ",
+      "moreItems": "{{items}} ({{total}} elementos)",
+      "quotaReset": "Activación al reiniciar cuota",
+      "crontab": "Crontab: {{expr}}",
+      "daily": "Diario {{times}}{{suffix}}",
+      "weekly": "Semanal {{days}} {{times}}{{suffix}}",
+      "interval": "Cada {{hours}} h ({{start}}-{{end}})",
+      "invalidCrontab": "Crontab inválido"
+    },
+    "weekdays": {
+      "sun": "Dom",
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mié",
+      "thu": "Jue",
+      "fri": "Vie",
+      "sat": "Sáb"
+    },
+    "notice": {
+      "modelsFetchFailed": "No se pudieron obtener los modelos, revisa el estado de la cuenta",
+      "featureDisabled": "La activación está deshabilitada",
+      "taskMissingModels": "La tarea no tiene modelos seleccionados",
+      "taskMissingAccounts": "La tarea no tiene cuentas seleccionadas",
+      "taskFailed": "La tarea \"{{name}}\" falló en {{count}} solicitud(es)",
+      "taskCompleted": "La tarea \"{{name}}\" se completó",
+      "testMissingModel": "Selecciona un modelo de prueba",
+      "testMissingAccount": "Selecciona una cuenta de prueba",
+      "testFailed": "Prueba fallida en {{count}} solicitud(es)",
+      "testCompleted": "Prueba completada",
+      "nameRequired": "Introduce el nombre de la tarea",
+      "accountRequired": "Selecciona al menos una cuenta",
+      "modelRequired": "Selecciona al menos un modelo",
+      "crontabRequired": "Introduce una expresión crontab",
+      "taskSaved": "Tarea \"{{name}}\" guardada",
+      "featureOff": "Activación deshabilitada",
+      "featureOn": "Activación habilitada"
+    },
+    "triggerSource": {
+      "scheduled": "Programado",
+      "crontab": "Crontab",
+      "quotaReset": "Reinicio de cuota",
+      "manual": "Probar ahora",
+      "unknown": "Desconocido"
+    },
+    "taskCard": {
+      "accountsCount": "Cuentas {{count}}",
+      "modelsCount": "Modelos {{count}}",
+      "accountsLabel": "Cuentas: {{preview}}",
+      "modelsLabel": "Modelos: {{preview}}",
+      "lastRun": "Última {{time}}",
+      "nextRun": "Próxima {{time}}"
+    },
+    "dialogs": {
+      "enableTitle": "Habilitar activación",
+      "enableDesc": "Al habilitar activación se desactivará la función de activación del plugin. ¿Continuar?",
+      "deleteConfirm": "¿Eliminar la tarea \"{{name}}\"?",
+      "testTitle": "Probar ahora",
+      "historyTitle": "Historial de activación",
+      "taskTitleEdit": "Editar tarea de activación",
+      "taskTitleNew": "Nueva tarea de activación"
+    },
+    "form": {
+      "taskName": "Nombre de la tarea",
+      "taskStatus": "Estado de la tarea",
+      "triggerMode": "Modo de activación",
+      "triggerModeHint": "1. Programado: se activa en horas definidas.\\n2. Crontab: definir con expresión.\\n3. Reinicio de cuota: se activa una vez cuando la cuota está llena.",
+      "modeScheduled": "📅 Programado",
+      "modeCrontab": "🧩 Crontab",
+      "modeQuotaReset": "🔄 Reinicio de cuota",
+      "modelSelect": "Selección de modelos",
+      "modelHint": "En el mismo grupo de cuota, elige un modelo. Varios modelos se activan en secuencia.",
+      "modelsEmpty": "No hay modelos recomendados",
+      "accountSelect": "Selección de cuentas",
+      "accountHint": "Puedes seleccionar varias cuentas; se usarán en secuencia.",
+      "accountsEmpty": "No hay cuentas",
+      "customPrompt": "Prompt personalizado",
+      "promptPlaceholder": "Predeterminado {{word}}",
+      "promptHint": "Déjalo vacío para usar el prompt predeterminado {{word}}.",
+      "maxTokens": "Máximo de tokens",
+      "maxTokensHint": "Predeterminado 0 (ilimitado).",
+      "repeatMode": "Modo de repetición",
+      "repeatDaily": "Diario",
+      "repeatWeekly": "Semanal",
+      "repeatInterval": "Intervalo",
+      "selectTime": "Seleccionar hora",
+      "customTime": "Hora personalizada",
+      "selectWeekday": "Seleccionar día",
+      "quickWorkdays": "Días laborables",
+      "quickWeekend": "Fin de semana",
+      "quickAll": "Todos",
+      "intervalSetting": "Configuración de intervalo",
+      "intervalEvery": "Cada",
+      "intervalHours": "horas",
+      "intervalStart": "Inicio",
+      "intervalEnd": "Fin",
+      "nextRuns": "Próximas ejecuciones",
+      "nextRunsEmpty": "Selecciona horarios de activación",
+      "crontab": "Expresión Crontab",
+      "crontabPlaceholder": "Ej.: 0 8,12,17 * * *",
+      "crontabValidate": "Validar",
+      "crontabValidateHint": "La expresión se validará al guardar",
+      "crontabPreviewEmpty": "Introduce una expresión Crontab válida",
+      "timeWindowEnabled": "Habilitar ventana horaria",
+      "timeWindowHint": "Al habilitar, el reinicio de cuota se activa solo dentro de la ventana; fuera se usan horas fijas.",
+      "timeWindow": "Ventana activa de reinicio de cuota",
+      "timeWindowFrom": "De",
+      "timeWindowTo": "A",
+      "fallbackTimes": "Horas fuera de ventana",
+      "saveTask": "Guardar tarea"
+    },
+    "test": {
+      "modelsLabel": "Modelos a activar",
+      "accountsLabel": "Cuentas de prueba",
+      "accountsHint": "Selecciona varias cuentas para probar.",
+      "start": "Iniciar prueba",
+      "testing": "Probando..."
+    }
+  }
+}
