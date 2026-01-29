@@ -1061,9 +1061,6 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
       const tier = getSubscriptionTier(account.quota);
       const tierLabel = t(`accounts.tier.${tier.toLowerCase()}`, tier);
       const displayModels = getDisplayModels(account.quota);
-      const tags = (account.tags || []).map(normalizeTag).filter(Boolean);
-      const visibleTags = tags.slice(0, 2);
-      const extraTagCount = tags.length - visibleTags.length;
       const warning = refreshWarnings[account.email];
       const warningLabel = warning?.kind === 'auth'
         ? t('accounts.status.authInvalid')
@@ -1103,16 +1100,6 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                   </span>
                 )}
               </div>
-              {tags.length > 0 && (
-                <div className="account-tags-inline">
-                  {visibleTags.map((tag) => (
-                    <span key={tag} className="tag-pill">{tag}</span>
-                  ))}
-                  {extraTagCount > 0 && (
-                    <span className="tag-pill more">+{extraTagCount}</span>
-                  )}
-                </div>
-              )}
             </div>
           </td>
           <td>

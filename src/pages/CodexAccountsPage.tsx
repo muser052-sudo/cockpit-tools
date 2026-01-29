@@ -715,20 +715,6 @@ export function CodexAccountsPage() {
                 <span className="account-email-text" title={account.email}>{account.email}</span>
                 {isCurrent && <span className="mini-tag current">{t('codex.current', '当前')}</span>}
               </div>
-              {(account.tags || []).length > 0 && (
-                <div className="account-tags-inline">
-                  {account.tags?.slice(0, 2).map((tag) => (
-                    <span key={tag} className="tag-pill">
-                      {tag}
-                    </span>
-                  ))}
-                  {(account.tags || []).length > 2 && (
-                    <span className="tag-pill more">
-                      +{(account.tags || []).length - 2}
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
           </td>
           <td>
