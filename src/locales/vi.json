@@ -64,7 +64,12 @@
       "dataDir": "Thư mục dữ liệu",
       "dataDirDesc": "Vị trí lưu trữ tài khoản và cấu hình.",
       "fpDir": "Thư mục lưu trữ Antigravity",
-      "fpDirDesc": "Vị trí lưu trữ tệp dữ liệu Antigravity."
+      "fpDirDesc": "Vị trí lưu trữ tệp dữ liệu Antigravity.",
+      "closeBehavior": "Hành động khi đóng",
+      "closeBehaviorDesc": "Chọn hành động khi đóng cửa sổ",
+      "closeBehaviorAsk": "Hỏi mỗi lần",
+      "closeBehaviorMinimize": "Thu nhỏ xuống khay",
+      "closeBehaviorQuit": "Thoát ứng dụng"
     },
     "network": {
       "apiTitle": "API Antigravity Cockpit",
@@ -202,7 +207,9 @@
       "importSuccess": "Đã nhập {{count}} tài khoản",
       "importPartial": "Đã nhập thành công {{success}} tài khoản, thất bại {{fail}}",
       "importFailed": "Nhập thất bại, vui lòng kiểm tra refresh_token"
-    }
+    },
+    "confirmDeleteTag": "Xóa thẻ \"{{tag}}\"? Thẻ này sẽ bị xóa khỏi {{count}} tài khoản.",
+    "defaultGroup": "Nhóm mặc định"
   },
   "overview": {
     "title": "Tổng quan tài khoản",
@@ -534,7 +541,8 @@
   "update_notification": {
     "title": "Có bản cập nhật mới",
     "message": "Phiên bản hiện tại v{{current}}, đã có phiên bản mới.",
-    "action": "Tải về ngay"
+    "action": "Tải về ngay",
+    "whatsNew": "Có gì mới"
   },
   "closeDialog": {
     "title": "Đóng cửa sổ",

@@ -64,8 +64,8 @@ export function normalizeLanguage(lang: string): string {
   return lower;
 }
 
-// 从 localStorage 读取语言设置，默认中文
-const savedLanguage = normalizeLanguage(localStorage.getItem('app-language') || 'zh-CN');
+// 从 localStorage 读取语言设置，默认英文
+const savedLanguage = normalizeLanguage(localStorage.getItem('app-language') || 'en');
 
 i18n
   .use(initReactI18next)
@@ -93,7 +93,7 @@ i18n
       'ar': { translation: ar },
     },
     lng: savedLanguage,
-    fallbackLng: 'zh-cn',
+    fallbackLng: 'en',
     interpolation: {
       escapeValue: false, // React 已经处理了 XSS
     },

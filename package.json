@@ -1,12 +1,15 @@
 {
-  "name": "antigravity-cockpit-tools",
+  "name": "cockpit-tools",
   "private": true,
-  "version": "0.4.3",
+  "version": "0.4.6",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "prebuild": "npm run typecheck",
     "build": "npm run sync-version && tsc && vite build",
     "preview": "vite preview",
+    "pretauri": "npm run typecheck",
     "tauri": "npm run sync-version && tauri",
     "sync-version": "node scripts/sync-version.js"
   },

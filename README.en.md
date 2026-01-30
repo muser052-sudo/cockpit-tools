@@ -2,9 +2,9 @@
 
 English · [简体中文](README.md)
 
-[![GitHub stars](https://img.shields.io/github/stars/jlcodes99/antigravity-cockpit-tools?style=flat&color=gold)](https://github.com/jlcodes99/antigravity-cockpit-tools)
-[![GitHub issues](https://img.shields.io/github/issues/jlcodes99/antigravity-cockpit-tools)](https://github.com/jlcodes99/antigravity-cockpit-tools/issues)
-[![License](https://img.shields.io/github/license/jlcodes99/antigravity-cockpit-tools)](https://github.com/jlcodes99/antigravity-cockpit-tools)
+[![GitHub stars](https://img.shields.io/github/stars/jlcodes99/cockpit-tools?style=flat&color=gold)](https://github.com/jlcodes99/cockpit-tools)
+[![GitHub issues](https://img.shields.io/github/issues/jlcodes99/cockpit-tools)](https://github.com/jlcodes99/cockpit-tools/issues)
+[![License](https://img.shields.io/github/license/jlcodes99/cockpit-tools)](https://github.com/jlcodes99/cockpit-tools)
 
 A **universal AI IDE account management tool**, currently supporting **Antigravity** and **Codex**.
 
@@ -68,7 +68,7 @@ A brand new visual dashboard providing a one-stop status overview:
 
 ### Option A: Manual Download (Recommended)
 
-Go to [GitHub Releases](https://github.com/jlcodes99/antigravity-cockpit-tools/releases) to download the package for your system:
+Go to [GitHub Releases](https://github.com/jlcodes99/cockpit-tools/releases) to download the package for your system:
 
 *   **macOS**: `.dmg` (Apple Silicon & Intel)
 *   **Windows**: `.msi` (Recommended) or `.exe`

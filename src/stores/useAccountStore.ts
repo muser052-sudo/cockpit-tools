@@ -2,6 +2,50 @@ import { create } from 'zustand';
 import { Account, RefreshStats } from '../types/account';
 import * as accountService from '../services/accountService';
 
+const ACCOUNTS_CACHE_KEY = 'agtools.accounts.cache';
+const CURRENT_ACCOUNT_CACHE_KEY = 'agtools.accounts.current';
+
+const loadCachedAccounts = () => {
+    try {
+        const raw = localStorage.getItem(ACCOUNTS_CACHE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+};
+
+const loadCachedCurrentAccount = () => {
+    try {
+        const raw = localStorage.getItem(CURRENT_ACCOUNT_CACHE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw) as Account;
+    } catch {
+        return null;
+    }
+};
+
+const persistAccountsCache = (accounts: Account[]) => {
+    try {
+        localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(accounts));
+    } catch {
+        // ignore cache write failures
+    }
+};
+
+const persistCurrentAccountCache = (account: Account | null) => {
+    try {
+        if (!account) {
+            localStorage.removeItem(CURRENT_ACCOUNT_CACHE_KEY);
+            return;
+        }
+        localStorage.setItem(CURRENT_ACCOUNT_CACHE_KEY, JSON.stringify(account));
+    } catch {
+        // ignore cache write failures
+    }
+};
+
 // 防抖状态（在 store 外部维护，避免触发 re-render）
 let fetchAccountsPromise: Promise<void> | null = null;
 let fetchAccountsLastTime = 0;
@@ -30,8 +74,8 @@ interface AccountState {
 }
 
 export const useAccountStore = create<AccountState>((set, get) => ({
-    accounts: [],
-    currentAccount: null,
+    accounts: loadCachedAccounts(),
+    currentAccount: loadCachedCurrentAccount(),
     loading: false,
     error: null,
 
@@ -50,6 +94,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
             try {
                 const accounts = await accountService.listAccounts();
                 set({ accounts, loading: false });
+                persistAccountsCache(accounts);
             } catch (e) {
                 set({ error: String(e), loading: false });
             } finally {
@@ -77,6 +122,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
             try {
                 const account = await accountService.getCurrentAccount();
                 set({ currentAccount: account });
+                persistCurrentAccountCache(account);
             } catch (e) {
                 console.error('Failed to fetch current account:', e);
             } finally {

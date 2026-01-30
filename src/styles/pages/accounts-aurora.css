@@ -143,8 +143,8 @@
 }
 
 .accounts-page .view-btn {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 8px;
 }
 
@@ -857,3 +857,62 @@
 .accounts-page .accounts-grid .account-card:nth-child(6) { animation-delay: 240ms; }
 .accounts-page .accounts-grid .account-card:nth-child(7) { animation-delay: 280ms; }
 .accounts-page .accounts-grid .account-card:nth-child(8) { animation-delay: 320ms; }
+
+/* Dark mode - list/table view tuning */
+[data-theme="dark"] .accounts-page .account-table-container {
+  background: rgba(8, 11, 19, 0.98);
+  border-color: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+[data-theme="dark"] .accounts-page .account-table {
+  background: transparent;
+}
+
+[data-theme="dark"] .accounts-page .account-table tbody tr {
+  background: rgba(15, 23, 42, 0.86);
+}
+
+[data-theme="dark"] .accounts-page .account-table tbody tr:nth-child(even) {
+  background: rgba(15, 23, 42, 0.92);
+}
+
+[data-theme="dark"] .accounts-page .account-table th {
+  background: rgba(15, 23, 42, 0.98);
+  color: rgba(226, 232, 240, 0.9);
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}
+
+[data-theme="dark"] .accounts-page .account-table td {
+  border-bottom-color: rgba(148, 163, 184, 0.1);
+  color: rgba(226, 232, 240, 0.92);
+}
+
+[data-theme="dark"] .accounts-page .account-table tr:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+[data-theme="dark"] .accounts-page .account-table tr.current {
+  background: rgba(59, 130, 246, 0.24);
+}
+
+
+[data-theme="dark"] .accounts-page .pagination-container {
+  background: rgba(8, 11, 19, 0.92);
+  border-top-color: rgba(148, 163, 184, 0.18);
+}
+
+[data-theme="dark"] .accounts-page .quota-progress-track {
+  background: rgba(148, 163, 184, 0.18);
+}
+
+[data-theme="dark"] .accounts-page .quota-name,
+[data-theme="dark"] .accounts-page .quota-reset {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+[data-theme="dark"] .accounts-page .tag-group-row td {
+  background: rgba(15, 23, 42, 0.7);
+  border-bottom-color: rgba(148, 163, 184, 0.18);
+}

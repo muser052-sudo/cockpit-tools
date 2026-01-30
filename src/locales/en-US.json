@@ -64,7 +64,12 @@
       "dataDir": "Data Directory",
       "dataDirDesc": "Storage location for accounts and configuration files.",
       "fpDir": "Antigravity Storage",
-      "fpDirDesc": "Storage location for Antigravity data files."
+      "fpDirDesc": "Storage location for Antigravity data files.",
+      "closeBehavior": "Close Behavior",
+      "closeBehaviorDesc": "Choose action when closing window",
+      "closeBehaviorAsk": "Ask every time",
+      "closeBehaviorMinimize": "Minimize to tray",
+      "closeBehaviorQuit": "Quit application"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -202,7 +207,9 @@
       "importSuccess": "Imported {{count}} accounts",
       "importPartial": "Imported {{success}} accounts, failed {{fail}}",
       "importFailed": "Import failed, please check refresh_token"
-    }
+    },
+    "confirmDeleteTag": "Delete tag \"{{tag}}\"? This tag will be removed from {{count}} accounts.",
+    "defaultGroup": "Default Group"
   },
   "overview": {
     "title": "Account Overview",
@@ -534,7 +541,8 @@
   "update_notification": {
     "title": "Update Available",
     "message": "Current version v{{current}}, a new version is available.",
-    "action": "Download Now"
+    "action": "Download Now",
+    "whatsNew": "What's New"
   },
   "closeDialog": {
     "title": "Close Window",

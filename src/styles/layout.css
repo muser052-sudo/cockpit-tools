@@ -8,7 +8,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 32px;
+  height: 64px;
   z-index: 9999;
   -webkit-app-region: drag;
   user-select: none;
@@ -111,8 +111,8 @@
 .nav-item .tooltip {
   position: absolute;
   inset-inline-start: 60px;
-  background: var(--text-primary);
-  color: white;
+  background: var(--text-primary); /* 使用文字色作为背景 = 反色效果 */
+  color: var(--bg-primary); /* 使用背景色作为文字 = 反色效果 */
   padding: 6px 12px;
   border-radius: 8px;
   font-size: 12px;
@@ -122,6 +122,7 @@
   transform: translateX(-10px);
   transition: all 0.2s;
   white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .nav-item:hover .tooltip {
@@ -133,4 +134,3 @@
   from { opacity: 0; transform: translate(-20px, -50%); }
   to { opacity: 1; transform: translate(0, -50%); }
 }
-

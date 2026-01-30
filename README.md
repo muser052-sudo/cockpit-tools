@@ -2,8 +2,8 @@
 
 [English](README.en.md) · 简体中文
 
-[![GitHub stars](https://img.shields.io/github/stars/jlcodes99/antigravity-cockpit-tools?style=flat&color=gold)](https://github.com/jlcodes99/antigravity-cockpit-tools)
-[![GitHub issues](https://img.shields.io/github/issues/jlcodes99/antigravity-cockpit-tools)](https://github.com/jlcodes99/antigravity-cockpit-tools/issues)
+[![GitHub stars](https://img.shields.io/github/stars/jlcodes99/cockpit-tools?style=flat&color=gold)](https://github.com/jlcodes99/cockpit-tools)
+[![GitHub issues](https://img.shields.io/github/issues/jlcodes99/cockpit-tools)](https://github.com/jlcodes99/cockpit-tools/issues)
 
 一款**通用的 AI IDE 账号管理工具**，目前完美支持 **Antigravity** 和 **Codex**。
 
@@ -65,7 +65,7 @@
 
 ### 选项 A: 手动下载 (推荐)
 
-前往 [GitHub Releases](https://github.com/jlcodes99/antigravity-cockpit-tools/releases) 下载对应系统的安装包：
+前往 [GitHub Releases](https://github.com/jlcodes99/cockpit-tools/releases) 下载对应系统的安装包：
 
 *   **macOS**: `.dmg` (Apple Silicon & Intel)
 *   **Windows**: `.msi` (推荐) 或 `.exe`

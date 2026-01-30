@@ -62,3 +62,82 @@
     transform: translateY(0) scale(1);
   }
 }
+
+/* Release Notes Section */
+.release-notes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.release-notes-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.release-notes-content {
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.release-notes-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.release-notes-heading {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 8px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.release-notes-heading:first-child {
+  margin-top: 0;
+}
+
+.release-notes-item {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding: 4px 0 4px 16px;
+  position: relative;
+}
+
+.release-notes-item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: bold;
+}
+
+.release-notes-item strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Scrollbar styling */
+.release-notes-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.release-notes-content::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+}
+
+.release-notes-content::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.release-notes-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

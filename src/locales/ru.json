@@ -64,7 +64,12 @@
       "dataDir": "Каталог данных",
       "dataDirDesc": "Место хранения аккаунтов и конфигурационных файлов.",
       "fpDir": "Хранилище Antigravity",
-      "fpDirDesc": "Место хранения файлов данных Antigravity."
+      "fpDirDesc": "Место хранения файлов данных Antigravity.",
+      "closeBehavior": "Поведение при закрытии",
+      "closeBehaviorDesc": "Действие при закрытии окна",
+      "closeBehaviorAsk": "Спрашивать каждый раз",
+      "closeBehaviorMinimize": "Свернуть в трей",
+      "closeBehaviorQuit": "Закрыть приложение"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -202,7 +207,9 @@
       "importSuccess": "Импортировано аккаунтов: {{count}}",
       "importPartial": "Импортировано {{success}}, ошибка {{fail}}",
       "importFailed": "Импорт не удался, проверьте refresh_token"
-    }
+    },
+    "confirmDeleteTag": "Удалить тег \"{{tag}}\"? Этот тег будет удален из {{count}} аккаунтов.",
+    "defaultGroup": "Группа по умолчанию"
   },
   "overview": {
     "title": "Обзор аккаунтов",
@@ -534,7 +541,8 @@
   "update_notification": {
     "title": "Доступно обновление",
     "message": "Текущая версия v{{current}}, доступна новая версия.",
-    "action": "Скачать сейчас"
+    "action": "Скачать сейчас",
+    "whatsNew": "Что нового"
   },
   "closeDialog": {
     "title": "Закрыть окно",

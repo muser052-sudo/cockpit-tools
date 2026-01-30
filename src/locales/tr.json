@@ -64,7 +64,12 @@
       "dataDir": "Data Directory",
       "dataDirDesc": "Storage location for accounts and configuration files.",
       "fpDir": "Antigravity Depolama",
-      "fpDirDesc": "Antigravity veri dosyalarının depolandığı konum."
+      "fpDirDesc": "Antigravity veri dosyalarının depolandığı konum.",
+      "closeBehavior": "Kapanış Davranışı",
+      "closeBehaviorDesc": "Pencere kapatıldığında yapılacak işlem",
+      "closeBehaviorAsk": "Her seferinde sor",
+      "closeBehaviorMinimize": "Tepsisine küçült",
+      "closeBehaviorQuit": "Uygulamadan Çık"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -202,7 +207,9 @@
       "importSuccess": "{{count}} hesap içe aktarıldı",
       "importPartial": "{{success}} hesap başarıyla içe aktarıldı, {{fail}} hata",
       "importFailed": "İçe aktarma başarısız, lütfen refresh_token'ı kontrol edin"
-    }
+    },
+    "confirmDeleteTag": "\"{{tag}}\" etiketi silinsin mi? Bu etiket {{count}} hesaptan kaldırılacak.",
+    "defaultGroup": "Varsayılan Grup"
   },
   "overview": {
     "title": "Hesap Genel Bakışı",
@@ -534,7 +541,8 @@
   "update_notification": {
     "title": "Güncelleme Mevcut",
     "message": "Mevcut sürüm v{{current}}, yeni bir sürüm mevcut.",
-    "action": "Şimdi İndir"
+    "action": "Şimdi İndir",
+    "whatsNew": "Yenilikler"
   },
   "closeDialog": {
     "title": "Pencereyi kapat",

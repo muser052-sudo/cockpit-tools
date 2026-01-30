@@ -18,6 +18,10 @@ import { changeLanguage, getCurrentLanguage, normalizeLanguage } from './i18n';
 
 import { DashboardPage } from './pages/DashboardPage';
 
+interface GeneralConfigTheme {
+  theme: string;
+}
+
 function App() {
   const [page, setPage] = useState<Page>('dashboard');
   const [showUpdateNotification, setShowUpdateNotification] = useState(false);
@@ -26,6 +30,58 @@ function App() {
   
   // 启用自动刷新 hook
   useAutoRefresh();
+
+  useEffect(() => {
+    let cleanup: (() => void) | null = null;
+
+    const applyTheme = (newTheme: string) => {
+      if (newTheme === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', newTheme);
+      }
+    };
+
+    const watchSystemTheme = () => {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme('system');
+
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', handleChange);
+      } else {
+        mediaQuery.addListener(handleChange);
+      }
+
+      return () => {
+        if (mediaQuery.removeEventListener) {
+          mediaQuery.removeEventListener('change', handleChange);
+        } else {
+          mediaQuery.removeListener(handleChange);
+        }
+      };
+    };
+
+    const initTheme = async () => {
+      try {
+        const config = await invoke<GeneralConfigTheme>('get_general_config');
+        applyTheme(config.theme);
+        if (config.theme === 'system') {
+          cleanup = watchSystemTheme();
+        }
+      } catch (error) {
+        console.error('Failed to load theme config:', error);
+      }
+    };
+
+    initTheme();
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, []);
 
   // Check for updates on startup
   useEffect(() => {

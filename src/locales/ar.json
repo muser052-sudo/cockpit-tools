@@ -64,7 +64,12 @@
       "dataDir": "مجلد البيانات",
       "dataDirDesc": "موقع تخزين الحسابات وملفات التكوين.",
       "fpDir": "مجلد تخزين Antigravity",
-      "fpDirDesc": "موقع تخزين ملفات بيانات Antigravity."
+      "fpDirDesc": "موقع تخزين ملفات بيانات Antigravity.",
+      "closeBehavior": "سلوك الإغلاق",
+      "closeBehaviorDesc": "اختر الإجراء عند إغلاق النافذة",
+      "closeBehaviorAsk": "اسأل في كل مرة",
+      "closeBehaviorMinimize": "تصغير إلى الدرج",
+      "closeBehaviorQuit": "إنهاء التطبيق"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -202,7 +207,9 @@
       "importSuccess": "تم استيراد {{count}} حسابات",
       "importPartial": "تم استيراد {{success}} حسابات، فشل {{fail}}",
       "importFailed": "فشل الاستيراد، يرجى التحقق من refresh_token"
-    }
+    },
+    "confirmDeleteTag": "هل تريد حذف العلامة \"{{tag}}\"؟ ستتم إزالة هذه العلامة من {{count}} حسابات.",
+    "defaultGroup": "مجموعة افتراضية"
   },
   "overview": {
     "title": "نظرة عامة على الحسابات",
@@ -534,7 +541,8 @@
   "update_notification": {
     "title": "التحديث متاح",
     "message": "الإصدار الحالي v{{current}}، يتوفر إصدار جديد.",
-    "action": "تنزيل الآن"
+    "action": "تنزيل الآن",
+    "whatsNew": "ما الجديد"
   },
   "closeDialog": {
     "title": "إغلاق النافذة",

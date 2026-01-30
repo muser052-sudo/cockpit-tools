@@ -183,6 +183,8 @@
     "editTags": "Edit Tags",
     "groupByTag": "Group by tags",
     "untagged": "Untagged",
+    "confirmDeleteTag": "Delete tag \"{{tag}}\"? This tag will be removed from {{count}} accounts.",
+    "defaultGroup": "Default Group",
     "actions": {
       "viewDetails": "View details",
       "fingerprint": "Fingerprint",
@@ -546,7 +548,8 @@
   "update_notification": {
     "title": "Update Available",
     "message": "Current version v{{current}}, a new version is available.",
-    "action": "Download Now"
+    "action": "Download Now",
+    "whatsNew": "What's New"
   },
   "closeDialog": {
     "title": "Close Window",

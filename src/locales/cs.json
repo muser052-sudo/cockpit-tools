@@ -64,7 +64,12 @@
       "dataDir": "Datový adresář",
       "dataDirDesc": "Umístění pro uložení účtů a konfiguračních souborů.",
       "fpDir": "Úložiště Antigravity",
-      "fpDirDesc": "Umístění datových souborů Antigravity."
+      "fpDirDesc": "Umístění datových souborů Antigravity.",
+      "closeBehavior": "Chování při zavírání",
+      "closeBehaviorDesc": "Vyberte akci při zavření okna",
+      "closeBehaviorAsk": "Vždy se zeptat",
+      "closeBehaviorMinimize": "Minimalizovat do lišty",
+      "closeBehaviorQuit": "Ukončit aplikaci"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -202,7 +207,9 @@
       "importSuccess": "Importováno {{count}} účtů",
       "importPartial": "Importováno {{success}} účtů, {{fail}} neúspěšných",
       "importFailed": "Import selhal, zkontrolujte refresh_token"
-    }
+    },
+    "confirmDeleteTag": "Smazat štítek \"{{tag}}\"? Tento štítek bude odebrán z {{count}} účtů.",
+    "defaultGroup": "Výchozí skupina"
   },
   "overview": {
     "title": "Přehled účtů",
@@ -534,7 +541,8 @@
   "update_notification": {
     "title": "Aktualizace k dispozici",
     "message": "Současná verze v{{current}}, je k dispozici nová verze.",
-    "action": "Stáhnout nyní"
+    "action": "Stáhnout nyní",
+    "whatsNew": "Co je nového"
   },
   "closeDialog": {
     "title": "Zavřít okno",

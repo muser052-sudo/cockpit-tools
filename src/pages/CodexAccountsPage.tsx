@@ -1184,7 +1184,7 @@ export function CodexAccountsPage() {
                       <span>{oauthPrepareError}</span>
                       {oauthPortInUse && (
                         <button className="btn btn-sm btn-outline" onClick={handleReleaseOauthPort}>
-                          {t('codex.oauth.releasePort', '释放端口')}
+                          {t('codex.oauth.portInUseAction', 'Close port and retry')}
                         </button>
                       )}
                     </div>
@@ -1198,10 +1198,10 @@ export function CodexAccountsPage() {
                       </div>
                       <button className="btn btn-primary btn-full" onClick={handleOpenOauthUrl}>
                         <Globe size={16} />
-                        {t('codex.oauth.openInBrowser', '在浏览器中打开')}
+                        {t('codex.oauth.openBrowser', 'Open in Browser')}
                       </button>
                       <p className="oauth-hint">
-                        {t('codex.oauth.waiting', '在浏览器完成登录后，应用会自动捕获授权信息。')}
+                        {t('codex.oauth.hint', 'Once authorized, this window will update automatically')}
                       </p>
                     </div>
                   ) : (
@@ -1230,7 +1230,7 @@ export function CodexAccountsPage() {
                     disabled={importing || !tokenInput.trim()}
                   >
                     {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Download size={16} />}
-                    {t('codex.import.btn', '立即导入')}
+                    {t('codex.token.import', 'Import')}
                   </button>
                 </div>
               )}
@@ -1242,7 +1242,7 @@ export function CodexAccountsPage() {
                   </p>
                   <button className="btn btn-primary btn-full" onClick={handleImportFromLocal} disabled={importing}>
                     {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Database size={16} />}
-                    {t('codex.import.fromLocal', '从本地导入')}
+                    {t('codex.local.import', 'Get Local Account')}
                   </button>
                 </div>
               )}
@@ -1288,7 +1288,7 @@ export function CodexAccountsPage() {
             </div>
             <div className="modal-body">
               <p>
-                {`确认删除标签 “${tagDeleteConfirm.tag}” 吗？该标签将从 ${tagDeleteConfirm.count} 个账号中移除。`}
+                {t('accounts.confirmDeleteTag', 'Delete tag "{{tag}}"? This tag will be removed from {{count}} accounts.', { tag: tagDeleteConfirm.tag, count: tagDeleteConfirm.count })}
               </p>
             </div>
             <div className="modal-footer">

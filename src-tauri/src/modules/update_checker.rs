@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 use crate::modules::logger;
 
-const GITHUB_API_URL: &str = "https://api.github.com/repos/jlcodes99/antigravity-cockpit-tools/releases/latest";
+const GITHUB_API_URL: &str = "https://api.github.com/repos/jlcodes99/cockpit-tools/releases/latest";
+const CHANGELOG_EN_URL: &str = "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/CHANGELOG.md";
+const CHANGELOG_ZH_URL: &str = "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/CHANGELOG.zh-CN.md";
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const DEFAULT_CHECK_INTERVAL_HOURS: u64 = 24;
 
@@ -13,6 +15,7 @@ pub struct UpdateInfo {
     pub has_update: bool,
     pub download_url: String,
     pub release_notes: String,
+    pub release_notes_zh: String,
     pub published_at: String,
 }
 
@@ -42,7 +45,6 @@ impl Default for UpdateSettings {
 struct GitHubRelease {
     tag_name: String,
     html_url: String,
-    body: Option<String>,
     published_at: String,
 }
 
@@ -91,14 +93,76 @@ pub async fn check_for_updates() -> Result<UpdateInfo, String> {
         logger::log_info(&format!("已是最新版本: {} (与远程版本 {} 一致)", current_version, latest_version));
     }
 
+    // Fetch changelog content for release notes
+    let (release_notes, release_notes_zh) = if has_update {
+        let notes_en = fetch_changelog_for_version(&client, CHANGELOG_EN_URL, &latest_version).await;
+        let notes_zh = fetch_changelog_for_version(&client, CHANGELOG_ZH_URL, &latest_version).await;
+        (notes_en, notes_zh)
+    } else {
+        (String::new(), String::new())
+    };
+
     Ok(UpdateInfo {
         current_version,
         latest_version,
         has_update,
         download_url: release.html_url,
-        release_notes: release.body.unwrap_or_default(),
+        release_notes,
+        release_notes_zh,
         published_at: release.published_at,
     })
+}
+
+/// Fetch changelog content for a specific version
+async fn fetch_changelog_for_version(client: &reqwest::Client, url: &str, version: &str) -> String {
+    match client.get(url).send().await {
+        Ok(response) if response.status().is_success() => {
+            if let Ok(content) = response.text().await {
+                extract_version_notes(&content, version)
+            } else {
+                String::new()
+            }
+        }
+        _ => String::new(),
+    }
+}
+
+/// Extract release notes for a specific version from CHANGELOG content
+fn extract_version_notes(changelog: &str, version: &str) -> String {
+    let mut result = Vec::new();
+    let mut in_target_version = false;
+    let version_header = format!("## [{}]", version);
+    
+    for line in changelog.lines() {
+        if line.starts_with("## [") {
+            if line.contains(&version_header) || line.starts_with(&version_header) {
+                in_target_version = true;
+                continue; // Skip the version header itself
+            } else if in_target_version {
+                // Next version section, stop
+                break;
+            }
+        }
+        
+        if in_target_version {
+            // Skip empty lines at start
+            if result.is_empty() && line.trim().is_empty() {
+                continue;
+            }
+            // Skip separator lines
+            if line.trim() == "---" {
+                continue;
+            }
+            result.push(line);
+        }
+    }
+    
+    // Trim trailing empty lines
+    while result.last().map(|s| s.trim().is_empty()).unwrap_or(false) {
+        result.pop();
+    }
+    
+    result.join("\n")
 }
 
 /// Compare two semantic versions (e.g., "0.2.0" vs "0.1.0")
@@ -149,7 +213,7 @@ pub fn should_check_for_updates(settings: &UpdateSettings) -> bool {
 /// Get data directory for storing update settings
 fn get_data_dir() -> Result<std::path::PathBuf, String> {
     dirs::data_local_dir()
-        .map(|d| d.join("antigravity-cockpit-tools"))
+        .map(|d| d.join("cockpit-tools"))
         .ok_or_else(|| "Failed to get data directory".to_string())
 }
 

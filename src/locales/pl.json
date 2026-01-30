@@ -64,7 +64,12 @@
       "dataDir": "Katalog danych",
       "dataDirDesc": "Lokalizacja przechowywania kont i plików konfiguracji.",
       "fpDir": "Magazyn Antigravity",
-      "fpDirDesc": "Lokalizacja plików danych Antigravity."
+      "fpDirDesc": "Lokalizacja plików danych Antigravity.",
+      "closeBehavior": "Zachowanie przy zamykaniu",
+      "closeBehaviorDesc": "Wybierz akcję przy zamykaniu okna",
+      "closeBehaviorAsk": "Zawsze pytaj",
+      "closeBehaviorMinimize": "Minimalizuj do zasobnika",
+      "closeBehaviorQuit": "Zamknij aplikację"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -202,7 +207,9 @@
       "importSuccess": "Zaimportowano {{count}} kont",
       "importPartial": "Zaimportowano {{success}} kont, nieudane {{fail}}",
       "importFailed": "Import nie powiódł się, sprawdź refresh_token"
-    }
+    },
+    "confirmDeleteTag": "Usunąć tag \"{{tag}}\"? Ten tag zostanie usunięty z {{count}} kont.",
+    "defaultGroup": "Grupa domyślna"
   },
   "overview": {
     "title": "Przegląd kont",
@@ -534,7 +541,8 @@
   "update_notification": {
     "title": "Dostępna aktualizacja",
     "message": "Aktualna wersja v{{current}}, dostępna jest nowa wersja.",
-    "action": "Pobierz teraz"
+    "action": "Pobierz teraz",
+    "whatsNew": "Co nowego"
   },
   "closeDialog": {
     "title": "Zamknij okno",

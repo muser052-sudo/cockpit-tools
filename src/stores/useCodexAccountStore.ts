@@ -2,6 +2,50 @@ import { create } from 'zustand';
 import { CodexAccount } from '../types/codex';
 import * as codexService from '../services/codexService';
 
+const CODEX_ACCOUNTS_CACHE_KEY = 'agtools.codex.accounts.cache';
+const CODEX_CURRENT_ACCOUNT_CACHE_KEY = 'agtools.codex.accounts.current';
+
+const loadCachedCodexAccounts = () => {
+  try {
+    const raw = localStorage.getItem(CODEX_ACCOUNTS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const loadCachedCodexCurrentAccount = () => {
+  try {
+    const raw = localStorage.getItem(CODEX_CURRENT_ACCOUNT_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as CodexAccount;
+  } catch {
+    return null;
+  }
+};
+
+const persistCodexAccountsCache = (accounts: CodexAccount[]) => {
+  try {
+    localStorage.setItem(CODEX_ACCOUNTS_CACHE_KEY, JSON.stringify(accounts));
+  } catch {
+    // ignore cache write failures
+  }
+};
+
+const persistCodexCurrentAccountCache = (account: CodexAccount | null) => {
+  try {
+    if (!account) {
+      localStorage.removeItem(CODEX_CURRENT_ACCOUNT_CACHE_KEY);
+      return;
+    }
+    localStorage.setItem(CODEX_CURRENT_ACCOUNT_CACHE_KEY, JSON.stringify(account));
+  } catch {
+    // ignore cache write failures
+  }
+};
+
 interface CodexAccountState {
   accounts: CodexAccount[];
   currentAccount: CodexAccount | null;
@@ -22,8 +66,8 @@ interface CodexAccountState {
 }
 
 export const useCodexAccountStore = create<CodexAccountState>((set, get) => ({
-  accounts: [],
-  currentAccount: null,
+  accounts: loadCachedCodexAccounts(),
+  currentAccount: loadCachedCodexCurrentAccount(),
   loading: false,
   error: null,
   
@@ -32,6 +76,7 @@ export const useCodexAccountStore = create<CodexAccountState>((set, get) => ({
     try {
       const accounts = await codexService.listCodexAccounts();
       set({ accounts, loading: false });
+      persistCodexAccountsCache(accounts);
     } catch (e) {
       set({ error: String(e), loading: false });
     }
@@ -41,6 +86,7 @@ export const useCodexAccountStore = create<CodexAccountState>((set, get) => ({
     try {
       const currentAccount = await codexService.getCurrentCodexAccount();
       set({ currentAccount });
+      persistCodexCurrentAccountCache(currentAccount);
     } catch (e) {
       console.error('获取当前 Codex 账号失败:', e);
     }

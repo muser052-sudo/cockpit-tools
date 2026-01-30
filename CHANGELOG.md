@@ -7,6 +7,17 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [0.4.6] - 2026-01-29
+
+### Added
+- **Update Notification**: Update dialog now displays release notes with localized content (English/Chinese).
+
+### Fixed
+- **i18n**: Fixed missing translations in Codex add account modal (OAuth, Token, Import tabs).
+- **Accessibility**: Improved FREE tier badge contrast for better readability in light mode.
+- **i18n**: Fixed hardcoded Chinese strings in tag deletion confirmation dialog.
+
+---
 ## [0.4.3] - 2026-01-29
 
 ### Added
