@@ -43,6 +43,13 @@
   gap: 32px; /* 减小留白 (was 40px) */
   z-index: 1000;
   animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.side-nav * {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .nav-brand {

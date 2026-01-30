@@ -1260,20 +1260,25 @@ export function CodexAccountsPage() {
 
       {deleteConfirm && (
         <div className="modal-overlay" onClick={() => !deleting && setDeleteConfirm(null)}>
-          <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{t('common.confirm', '确认操作')}</h2>
+              <h2>{t('common.confirm')}</h2>
+              <button
+                className="modal-close"
+                onClick={() => !deleting && setDeleteConfirm(null)}
+              >
+                <X size={18} />
+              </button>
             </div>
             <div className="modal-body">
               <p>{deleteConfirm.message}</p>
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)} disabled={deleting}>
-                {t('common.cancel', '取消')}
+                {t('common.cancel')}
               </button>
               <button className="btn btn-danger" onClick={confirmDelete} disabled={deleting}>
-                {deleting ? <RefreshCw size={16} className="loading-spinner" /> : <Trash2 size={16} />}
-                {t('common.delete', '删除')}
+                {t('common.confirm')}
               </button>
             </div>
           </div>
@@ -1282,9 +1287,15 @@ export function CodexAccountsPage() {
 
       {tagDeleteConfirm && (
         <div className="modal-overlay" onClick={() => !deletingTag && setTagDeleteConfirm(null)}>
-          <div className="modal-content confirm-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{t('common.confirm', '确认操作')}</h2>
+              <h2>{t('common.confirm')}</h2>
+              <button
+                className="modal-close"
+                onClick={() => !deletingTag && setTagDeleteConfirm(null)}
+              >
+                <X size={18} />
+              </button>
             </div>
             <div className="modal-body">
               <p>
@@ -1293,11 +1304,10 @@ export function CodexAccountsPage() {
             </div>
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setTagDeleteConfirm(null)} disabled={deletingTag}>
-                {t('common.cancel', '取消')}
+                {t('common.cancel')}
               </button>
               <button className="btn btn-danger" onClick={confirmDeleteTag} disabled={deletingTag}>
-                {deletingTag ? <RefreshCw size={16} className="loading-spinner" /> : <Trash2 size={16} />}
-                {deletingTag ? t('common.processing', '处理中...') : t('common.delete', '删除')}
+                {deletingTag ? t('common.processing', '处理中...') : t('common.confirm')}
               </button>
             </div>
           </div>
