@@ -64,10 +64,12 @@ jobs:
 
       - name: Read app version
         id: app_version
+        shell: bash
         run: echo "VERSION=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
 
       - name: Validate tag matches version
         if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
         run: |
           EXPECTED_TAG="v${{ steps.app_version.outputs.VERSION }}"
           if [ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]; then
