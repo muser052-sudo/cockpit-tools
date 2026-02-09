@@ -21,7 +21,7 @@ import {
   Calendar,
   Tag,
   ChevronDown,
-  ExternalLink,
+  Play,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
@@ -40,6 +40,7 @@ import { GitHubCopilotOverviewTabsHeader, GitHubCopilotTab } from '../components
 import { GitHubCopilotInstancesContent } from './GitHubCopilotInstancesPage';
 
 const GHCP_FLOW_NOTICE_COLLAPSED_KEY = 'agtools.github_copilot.flow_notice_collapsed';
+const GHCP_CURRENT_ACCOUNT_ID_KEY = 'agtools.github_copilot.current_account_id';
 
 export function GitHubCopilotAccountsPage() {
   const { t, i18n } = useTranslation();
@@ -98,6 +99,14 @@ export function GitHubCopilotAccountsPage() {
       return false;
     }
   });
+  const [currentAccountId, setCurrentAccountId] = useState<string | null>(() => {
+    try {
+      const value = localStorage.getItem(GHCP_CURRENT_ACCOUNT_ID_KEY);
+      return value && value.trim() ? value : null;
+    } catch {
+      return null;
+    }
+  });
 
   const showAddModalRef = useRef(showAddModal);
   const addTabRef = useRef(addTab);
@@ -140,6 +149,26 @@ export function GitHubCopilotAccountsPage() {
       // ignore persistence failures
     }
   }, [isFlowNoticeCollapsed]);
+
+  useEffect(() => {
+    if (!currentAccountId) return;
+    const exists = accounts.some((account) => account.id === currentAccountId);
+    if (!exists) {
+      setCurrentAccountId(null);
+    }
+  }, [accounts, currentAccountId]);
+
+  useEffect(() => {
+    try {
+      if (currentAccountId) {
+        localStorage.setItem(GHCP_CURRENT_ACCOUNT_ID_KEY, currentAccountId);
+      } else {
+        localStorage.removeItem(GHCP_CURRENT_ACCOUNT_ID_KEY);
+      }
+    } catch {
+      // ignore persistence failures
+    }
+  }, [currentAccountId]);
 
   const handleOauthPrepareError = useCallback((e: unknown) => {
     const msg = String(e).replace(/^Error:\s*/, '');
@@ -284,12 +313,19 @@ export function GitHubCopilotAccountsPage() {
   };
 
   const handleInjectToVSCode = async (accountId: string) => {
+    setMessage(null);
     setInjecting(accountId);
+    const account = accounts.find((item) => item.id === accountId);
+    const displayEmail = account?.email ?? account?.github_email ?? account?.github_login ?? accountId;
     try {
-      const result = await githubCopilotService.injectGitHubCopilotToVSCode(accountId);
-      setMessage({ text: result });
+      await githubCopilotService.injectGitHubCopilotToVSCode(accountId);
+      setCurrentAccountId(accountId);
+      setMessage({ text: t('messages.switched', { email: displayEmail }) });
     } catch (e: any) {
-      setMessage({ text: e?.toString() || t('common.failed', 'Failed'), tone: 'error' });
+      setMessage({
+        text: t('messages.switchFailed', { error: e?.toString() || t('common.failed', 'Failed') }),
+        tone: 'error',
+      });
     }
     setInjecting(null);
   };
@@ -739,11 +775,12 @@ export function GitHubCopilotAccountsPage() {
       const planKey = getGitHubCopilotPlanDisplayName(account.plan_type);
       const planLabel = t(`githubCopilot.plan.${planKey.toLowerCase()}`, planKey);
       const isSelected = selected.has(account.id);
+      const isCurrent = currentAccountId === account.id;
 
       return (
         <div
           key={groupKey ? `${groupKey}-${account.id}` : account.id}
-          className={`ghcp-account-card ${isSelected ? 'selected' : ''}`}
+          className={`ghcp-account-card ${isCurrent ? 'current' : ''} ${isSelected ? 'selected' : ''}`}
         >
           <div className="card-top">
             <div className="card-select">
@@ -756,6 +793,11 @@ export function GitHubCopilotAccountsPage() {
             <span className="account-email" title={displayEmail}>
               {displayEmail}
             </span>
+            {isCurrent && (
+              <span className="current-tag">
+                {t('accounts.status.current')}
+              </span>
+            )}
             <span className={`tier-badge ${planKey.toLowerCase()}`}>{planLabel}</span>
           </div>
 
@@ -811,12 +853,16 @@ export function GitHubCopilotAccountsPage() {
             <span className="card-date">{formatDate(account.created_at)}</span>
             <div className="card-actions">
               <button
-                className="card-action-btn"
+                className="card-action-btn success"
                 onClick={() => handleInjectToVSCode(account.id)}
-                disabled={injecting === account.id}
+                disabled={!!injecting}
                 title={t('githubCopilot.injectToVSCode', 'Switch to VS Code')}
               >
-                <ExternalLink size={14} className={injecting === account.id ? 'loading-spinner' : ''} />
+                {injecting === account.id ? (
+                  <RefreshCw size={14} className="loading-spinner" />
+                ) : (
+                  <Play size={14} />
+                )}
               </button>
               <button
                 className="card-action-btn"
@@ -854,8 +900,9 @@ export function GitHubCopilotAccountsPage() {
       const displayEmail = account.email ?? account.github_email ?? account.github_login;
       const planKey = getGitHubCopilotPlanDisplayName(account.plan_type);
       const planLabel = t(`githubCopilot.plan.${planKey.toLowerCase()}`, planKey);
+      const isCurrent = currentAccountId === account.id;
       return (
-        <tr key={groupKey ? `${groupKey}-${account.id}` : account.id}>
+        <tr key={groupKey ? `${groupKey}-${account.id}` : account.id} className={isCurrent ? 'current' : ''}>
           <td>
             <input
               type="checkbox"
@@ -867,6 +914,7 @@ export function GitHubCopilotAccountsPage() {
             <div className="account-cell">
               <div className="account-main-line">
                 <span className="account-email-text" title={displayEmail}>{displayEmail}</span>
+                {isCurrent && <span className="mini-tag current">{t('accounts.status.current')}</span>}
               </div>
             </div>
           </td>
@@ -922,12 +970,12 @@ export function GitHubCopilotAccountsPage() {
           <td className="sticky-action-cell table-action-cell">
             <div className="action-buttons">
               <button
-                className="action-btn"
+                className="action-btn success"
                 onClick={() => handleInjectToVSCode(account.id)}
-                disabled={injecting === account.id}
+                disabled={!!injecting}
                 title={t('githubCopilot.injectToVSCode', 'Switch to VS Code')}
               >
-                <ExternalLink size={14} className={injecting === account.id ? 'loading-spinner' : ''} />
+                {injecting === account.id ? <RefreshCw size={14} className="loading-spinner" /> : <Play size={14} />}
               </button>
               <button
                 className="action-btn"
@@ -978,20 +1026,20 @@ export function GitHubCopilotAccountsPage() {
             <div className="ghcp-flow-notice-desc">
               {t(
                 'githubCopilot.flowNotice.desc',
-                'Flow: add account via OAuth → view quotas → click switch button to inject into VS Code (Windows), or use multi-instance isolation.',
+                'Switching accounts requires reading VS Code local auth storage and using the system credential service for decrypt/re-encrypt. Data is processed locally only.',
               )}
             </div>
             <ul className="ghcp-flow-notice-list">
               <li>
                 {t(
-                  'githubCopilot.flowNotice.inject',
-                  'Windows one-click switching: This tool reads your local VS Code encryption key (via DPAPI), decrypts the auth session in state.vscdb, replaces the GitHub Copilot token, and re-encrypts it — all locally on your machine.',
+                  'githubCopilot.flowNotice.reason',
+                  'Permission scope: read VS Code auth database (state.vscdb) and call system credential capability (Windows DPAPI / macOS Keychain / Linux Secret Service) for decrypt/write-back.',
                 )}
               </li>
               <li>
                 {t(
-                  'githubCopilot.flowNotice.alternative',
-                  'Other platforms: Use multi-instance isolation (different --user-data-dir) and log in once per instance to achieve quick account switching.',
+                  'githubCopilot.flowNotice.storage',
+                  'Data scope: only GitHub auth-session related entries are read/updated; system secrets are not modified and no key/token is uploaded.',
                 )}
               </li>
             </ul>
