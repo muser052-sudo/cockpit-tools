@@ -1,10 +1,10 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 use std::process::{Command, Stdio};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::process::Child;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use sysinfo::{Pid, System};
 use crate::modules::config;
 
@@ -976,6 +976,750 @@ fn normalize_path_for_compare(raw: &str) -> String {
     }
 }
 
+fn is_helper_command_line(cmdline_lower: &str) -> bool {
+    cmdline_lower.contains("--type=")
+        || cmdline_lower.contains("helper")
+        || cmdline_lower.contains("plugin")
+        || cmdline_lower.contains("renderer")
+        || cmdline_lower.contains("gpu")
+        || cmdline_lower.contains("crashpad")
+        || cmdline_lower.contains("utility")
+        || cmdline_lower.contains("audio")
+        || cmdline_lower.contains("sandbox")
+}
+
+#[cfg(target_os = "macos")]
+fn collect_antigravity_process_entries_from_ps() -> Vec<(u32, Option<String>)> {
+    let mut result = Vec::new();
+    let output = Command::new("ps").args(["-axo", "pid,command"]).output();
+    let output = match output {
+        Ok(value) => value,
+        Err(_) => return result,
+    };
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for line in stdout.lines().skip(1) {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let mut parts = line.splitn(2, |ch: char| ch.is_whitespace());
+        let pid_str = parts.next().unwrap_or("").trim();
+        let cmdline = parts.next().unwrap_or("").trim();
+        let pid = match pid_str.parse::<u32>() {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        let lower = cmdline.to_lowercase();
+        if !lower.contains("antigravity.app/contents/") {
+            continue;
+        }
+        if lower.contains("antigravity tools.app/contents/")
+            || lower.contains("crashpad_handler")
+            || is_helper_command_line(&lower)
+        {
+            continue;
+        }
+        let dir = extract_user_data_dir_from_command_line(cmdline);
+        result.push((pid, dir));
+    }
+    result
+}
+
+#[cfg(target_os = "windows")]
+fn collect_antigravity_process_entries_from_powershell() -> Vec<(u32, Option<String>)> {
+    let mut result = Vec::new();
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            "Get-CimInstance Win32_Process -Filter \"Name='Antigravity.exe'\" | ForEach-Object { \"$($_.ProcessId)|$($_.CommandLine)\" }",
+        ])
+        .output();
+    let output = match output {
+        Ok(value) => value,
+        Err(_) => return result,
+    };
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for line in stdout.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let mut parts = line.splitn(2, '|');
+        let pid_str = parts.next().unwrap_or("").trim();
+        let cmdline = parts.next().unwrap_or("").trim();
+        let pid = match pid_str.parse::<u32>() {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        let lower = cmdline.to_lowercase();
+        if lower.contains("antigravity tools") || is_helper_command_line(&lower) {
+            continue;
+        }
+        let dir = extract_user_data_dir_from_command_line(cmdline);
+        result.push((pid, dir));
+    }
+    result
+}
+
+#[cfg(target_os = "linux")]
+fn collect_antigravity_process_entries_from_proc() -> Vec<(u32, Option<String>)> {
+    let mut result = Vec::new();
+    let entries = match std::fs::read_dir("/proc") {
+        Ok(value) => value,
+        Err(_) => return result,
+    };
+    for entry in entries.flatten() {
+        let file_name = entry.file_name();
+        let pid_str = file_name.to_string_lossy();
+        if !pid_str.chars().all(|ch| ch.is_ascii_digit()) {
+            continue;
+        }
+        let pid = match pid_str.parse::<u32>() {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        let cmdline_path = format!("/proc/{}/cmdline", pid);
+        let cmdline = match std::fs::read(&cmdline_path) {
+            Ok(value) => value,
+            Err(_) => continue,
+        };
+        if cmdline.is_empty() {
+            continue;
+        }
+        let cmdline_str = String::from_utf8_lossy(&cmdline).replace('\0', " ");
+        let cmd_lower = cmdline_str.to_lowercase();
+        let exe_path = std::fs::read_link(format!("/proc/{}/exe", pid))
+            .ok()
+            .and_then(|p| p.to_str().map(|s| s.to_lowercase()))
+            .unwrap_or_default();
+        if !cmd_lower.contains("antigravity") && !exe_path.contains("antigravity") {
+            continue;
+        }
+        if cmd_lower.contains("tools") || exe_path.contains("tools") {
+            continue;
+        }
+        if is_helper_command_line(&cmd_lower) {
+            continue;
+        }
+        let dir = extract_user_data_dir_from_command_line(&cmdline_str);
+        result.push((pid, dir));
+    }
+    result
+}
+
+pub fn collect_antigravity_process_entries() -> Vec<(u32, Option<String>)> {
+    #[cfg(target_os = "macos")]
+    {
+        let entries = collect_antigravity_process_entries_macos();
+        if !entries.is_empty() {
+            return entries;
+        }
+        let entries = collect_antigravity_process_entries_from_ps();
+        if !entries.is_empty() {
+            return entries;
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let entries = collect_antigravity_process_entries_from_powershell();
+        if !entries.is_empty() {
+            return entries;
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let entries = collect_antigravity_process_entries_from_proc();
+        if !entries.is_empty() {
+            return entries;
+        }
+    }
+
+    let mut result = Vec::new();
+    let mut system = System::new();
+    system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+
+    let current_pid = std::process::id();
+
+    for (pid, process) in system.processes() {
+        let pid_u32 = pid.as_u32();
+        if pid_u32 == current_pid {
+            continue;
+        }
+
+        #[cfg(target_os = "macos")]
+        let _name = process.name().to_string_lossy().to_lowercase();
+        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        let name = process.name().to_string_lossy().to_lowercase();
+        let exe_path = process
+            .exe()
+            .and_then(|p| p.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+
+        #[cfg(target_os = "macos")]
+        let is_antigravity =
+            exe_path.contains("antigravity.app") && !exe_path.contains("antigravity tools.app");
+        #[cfg(target_os = "windows")]
+        let is_antigravity = name == "antigravity.exe" || exe_path.ends_with("\\antigravity.exe");
+        #[cfg(target_os = "linux")]
+        let is_antigravity = (name.contains("antigravity") || exe_path.contains("/antigravity"))
+            && !name.contains("tools")
+            && !exe_path.contains("tools");
+
+        if !is_antigravity {
+            continue;
+        }
+
+        let args = process.cmd();
+        let dir = extract_user_data_dir(&args);
+        result.push((pid_u32, dir));
+    }
+
+    result
+}
+
+fn pick_preferred_pid(mut pids: Vec<u32>) -> Option<u32> {
+    if pids.is_empty() {
+        return None;
+    }
+    pids.sort();
+    pids.dedup();
+    pids.first().copied()
+}
+
+pub fn resolve_antigravity_pid_from_entries(
+    last_pid: Option<u32>,
+    user_data_dir: Option<&str>,
+    entries: &[(u32, Option<String>)],
+) -> Option<u32> {
+    if let Some(pid) = last_pid {
+        if is_pid_running(pid) {
+            return Some(pid);
+        }
+    }
+
+    let target = user_data_dir
+        .map(|value| normalize_path_for_compare(value))
+        .filter(|value| !value.is_empty());
+
+    let mut matches = Vec::new();
+    for (pid, dir) in entries {
+        match (&target, dir.as_ref()) {
+            (Some(target_dir), Some(dir)) => {
+                let normalized = normalize_path_for_compare(dir);
+                if !normalized.is_empty() && &normalized == target_dir {
+                    matches.push(*pid);
+                }
+            }
+            (None, None) => {
+                matches.push(*pid);
+            }
+            (None, Some(dir)) => {
+                let normalized = normalize_path_for_compare(dir);
+                if normalized.is_empty() {
+                    matches.push(*pid);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pick_preferred_pid(matches)
+}
+
+pub fn resolve_antigravity_pid(last_pid: Option<u32>, user_data_dir: Option<&str>) -> Option<u32> {
+    if let Some(pid) = last_pid {
+        if is_pid_running(pid) {
+            return Some(pid);
+        }
+    }
+    let entries = collect_antigravity_process_entries();
+    resolve_antigravity_pid_from_entries(None, user_data_dir, &entries)
+}
+
+#[cfg(target_os = "macos")]
+fn focus_window_by_pid(pid: u32) -> Result<(), String> {
+    let script = format!(
+        "tell application \"System Events\" to set frontmost of (first process whose unix id is {}) to true",
+        pid
+    );
+    crate::modules::logger::log_info(&format!(
+        "[Focus] macOS osascript start pid={}",
+        pid
+    ));
+    let output = Command::new("osascript")
+        .args(["-e", &script])
+        .output()
+        .map_err(|e| format!("调用 osascript 失败: {}", e))?;
+    if output.status.success() {
+        crate::modules::logger::log_info(&format!(
+            "[Focus] macOS osascript success pid={}",
+            pid
+        ));
+        return Ok(());
+    }
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    Err(format!(
+        "窗口聚焦失败，请检查系统辅助功能权限: {}",
+        stderr.trim()
+    ))
+}
+
+#[cfg(target_os = "windows")]
+fn focus_window_by_pid(pid: u32) -> Result<(), String> {
+    let command = format!(
+        r#"$pid={pid};$p=Get-Process -Id $pid -ErrorAction Stop;$h=$p.MainWindowHandle;if ($h -eq 0) {{ throw 'MAIN_WINDOW_HANDLE_EMPTY' }};Add-Type @' 
+using System; 
+using System.Runtime.InteropServices; 
+public class Win32 {{ 
+  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd); 
+  [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow); 
+}} 
+'@;[Win32]::ShowWindowAsync($h, 9) | Out-Null;[Win32]::SetForegroundWindow($h) | Out-Null;"#
+    );
+    crate::modules::logger::log_info(&format!(
+        "[Focus] Windows PowerShell start pid={}",
+        pid
+    ));
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-Command", &command])
+        .output()
+        .map_err(|e| format!("调用 PowerShell 失败: {}", e))?;
+    if output.status.success() {
+        crate::modules::logger::log_info(&format!(
+            "[Focus] Windows PowerShell success pid={}",
+            pid
+        ));
+        return Ok(());
+    }
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    Err(format!("窗口聚焦失败: {}", stderr.trim()))
+}
+
+#[cfg(target_os = "linux")]
+fn focus_window_by_pid(pid: u32) -> Result<(), String> {
+    if let Ok(output) = Command::new("wmctrl").arg("-lp").output() {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let mut parts = line.split_whitespace();
+                let win_id = parts.next();
+                let _desktop = parts.next();
+                let pid_str = parts.next();
+                if let (Some(win_id), Some(pid_str)) = (win_id, pid_str) {
+                    if pid_str == pid.to_string() {
+                        let focus = Command::new("wmctrl")
+                            .args(["-ia", win_id])
+                            .output();
+                        if let Ok(focus) = focus {
+                            if focus.status.success() {
+                                crate::modules::logger::log_info(&format!(
+                                    "[Focus] Linux wmctrl success pid={}",
+                                    pid
+                                ));
+                                return Ok(());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    crate::modules::logger::log_info(&format!(
+        "[Focus] Linux wmctrl not available or failed, trying xdotool pid={}",
+        pid
+    ));
+    let output = Command::new("xdotool")
+        .args(["search", "--pid", &pid.to_string(), "windowactivate"])
+        .output()
+        .map_err(|e| format!("调用 xdotool 失败: {}", e))?;
+    if output.status.success() {
+        crate::modules::logger::log_info(&format!(
+            "[Focus] Linux xdotool success pid={}",
+            pid
+        ));
+        return Ok(());
+    }
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    Err(format!("窗口聚焦失败: {}", stderr.trim()))
+}
+
+pub fn focus_antigravity_instance(
+    last_pid: Option<u32>,
+    user_data_dir: Option<&str>,
+) -> Result<u32, String> {
+    let resolve_start = Instant::now();
+    let pid = resolve_antigravity_pid(last_pid, user_data_dir)
+        .ok_or_else(|| "实例未运行，无法定位窗口".to_string())?;
+    crate::modules::logger::log_info(&format!(
+        "[Focus] Antigravity resolve pid={} elapsed={}ms",
+        pid,
+        resolve_start.elapsed().as_millis()
+    ));
+    let focus_start = Instant::now();
+    focus_window_by_pid(pid)?;
+    crate::modules::logger::log_info(&format!(
+        "[Focus] Antigravity focus pid={} elapsed={}ms",
+        pid,
+        focus_start.elapsed().as_millis()
+    ));
+    Ok(pid)
+}
+
+#[cfg(target_os = "macos")]
+pub fn resolve_codex_pid_from_entries(
+    last_pid: Option<u32>,
+    codex_home: Option<&str>,
+    entries: &[(u32, Option<String>)],
+) -> Option<u32> {
+    if let Some(pid) = last_pid {
+        if is_pid_running(pid) {
+            return Some(pid);
+        }
+    }
+
+    let target = codex_home
+        .map(|value| normalize_path_for_compare(value))
+        .filter(|value| !value.is_empty());
+
+    let mut matches = Vec::new();
+    for (pid, home) in entries {
+        match (&target, home.as_ref()) {
+            (Some(target_home), Some(home)) => {
+                let normalized = normalize_path_for_compare(home);
+                if !normalized.is_empty() && &normalized == target_home {
+                    matches.push(*pid);
+                }
+            }
+            (None, None) => {
+                matches.push(*pid);
+            }
+            (None, Some(home)) => {
+                let normalized = normalize_path_for_compare(home);
+                if normalized.is_empty() {
+                    matches.push(*pid);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pick_preferred_pid(matches)
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn resolve_codex_pid_from_entries(
+    _last_pid: Option<u32>,
+    _codex_home: Option<&str>,
+    _entries: &[(u32, Option<String>)],
+) -> Option<u32> {
+    None
+}
+
+#[cfg(target_os = "macos")]
+pub fn resolve_codex_pid(last_pid: Option<u32>, codex_home: Option<&str>) -> Option<u32> {
+    let entries = collect_codex_process_entries();
+    resolve_codex_pid_from_entries(last_pid, codex_home, &entries)
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn resolve_codex_pid(_last_pid: Option<u32>, _codex_home: Option<&str>) -> Option<u32> {
+    None
+}
+
+pub fn focus_codex_instance(last_pid: Option<u32>, codex_home: Option<&str>) -> Result<u32, String> {
+    let resolve_start = Instant::now();
+    let pid =
+        resolve_codex_pid(last_pid, codex_home).ok_or_else(|| "实例未运行，无法定位窗口".to_string())?;
+    crate::modules::logger::log_info(&format!(
+        "[Focus] Codex resolve pid={} elapsed={}ms",
+        pid,
+        resolve_start.elapsed().as_millis()
+    ));
+    let focus_start = Instant::now();
+    focus_window_by_pid(pid)?;
+    crate::modules::logger::log_info(&format!(
+        "[Focus] Codex focus pid={} elapsed={}ms",
+        pid,
+        focus_start.elapsed().as_millis()
+    ));
+    Ok(pid)
+}
+
+pub fn collect_vscode_process_entries() -> Vec<(u32, Option<String>)> {
+    let mut entries = Vec::new();
+    let mut system = System::new();
+    system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+
+    let current_pid = std::process::id();
+
+    for (pid, process) in system.processes() {
+        let pid_u32 = pid.as_u32();
+        if pid_u32 == current_pid {
+            continue;
+        }
+
+        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        let name = process.name().to_string_lossy().to_lowercase();
+        let exe_path = process
+            .exe()
+            .and_then(|p| p.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+
+        let args_str = process
+            .cmd()
+            .iter()
+            .map(|arg| arg.to_string_lossy().to_lowercase())
+            .collect::<Vec<String>>()
+            .join(" ");
+        let is_helper = is_helper_command_line(&args_str) || args_str.contains("crashpad");
+
+        #[cfg(target_os = "macos")]
+        let is_vscode = exe_path.contains("visual studio code.app");
+        #[cfg(target_os = "windows")]
+        let is_vscode = name == "code.exe" || exe_path.ends_with("\\code.exe");
+        #[cfg(target_os = "linux")]
+        let is_vscode = name == "code" || exe_path.ends_with("/code");
+
+        if !is_vscode || is_helper {
+            continue;
+        }
+
+        let dir = extract_user_data_dir(process.cmd());
+        entries.push((pid_u32, dir));
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let output = Command::new("ps").args(["-axo", "pid,command"]).output();
+        if let Ok(output) = output {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines().skip(1) {
+                let line = line.trim();
+                if line.is_empty() {
+                    continue;
+                }
+                let mut parts = line.splitn(2, |ch: char| ch.is_whitespace());
+                let pid_str = parts.next().unwrap_or("").trim();
+                let cmdline = parts.next().unwrap_or("").trim();
+                let pid = match pid_str.parse::<u32>() {
+                    Ok(value) => value,
+                    Err(_) => continue,
+                };
+                let lower = cmdline.to_lowercase();
+                if !lower.contains("visual studio code.app/contents/") {
+                    continue;
+                }
+                if lower.contains("crashpad_handler") || is_helper_command_line(&lower) {
+                    continue;
+                }
+                let dir = extract_user_data_dir_from_command_line(cmdline);
+                entries.push((pid, dir));
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let output = Command::new("powershell")
+            .args([
+                "-NoProfile",
+                "-Command",
+                "Get-CimInstance Win32_Process -Filter \"Name='Code.exe'\" | ForEach-Object { \"$($_.ProcessId)|$($_.CommandLine)\" }",
+            ])
+            .output();
+        if let Ok(output) = output {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let line = line.trim();
+                if line.is_empty() {
+                    continue;
+                }
+                let mut parts = line.splitn(2, '|');
+                let pid_str = parts.next().unwrap_or("").trim();
+                let cmdline = parts.next().unwrap_or("").trim();
+                let pid = match pid_str.parse::<u32>() {
+                    Ok(value) => value,
+                    Err(_) => continue,
+                };
+                let lower = cmdline.to_lowercase();
+                if is_helper_command_line(&lower) {
+                    continue;
+                }
+                let dir = extract_user_data_dir_from_command_line(cmdline);
+                entries.push((pid, dir));
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(proc_entries) = std::fs::read_dir("/proc") {
+            for entry in proc_entries.flatten() {
+                let file_name = entry.file_name();
+                let pid_str = file_name.to_string_lossy();
+                if !pid_str.chars().all(|ch| ch.is_ascii_digit()) {
+                    continue;
+                }
+                let pid = match pid_str.parse::<u32>() {
+                    Ok(value) => value,
+                    Err(_) => continue,
+                };
+                let cmdline_path = format!("/proc/{}/cmdline", pid);
+                let cmdline = match std::fs::read(&cmdline_path) {
+                    Ok(value) => value,
+                    Err(_) => continue,
+                };
+                if cmdline.is_empty() {
+                    continue;
+                }
+                let cmdline_str = String::from_utf8_lossy(&cmdline).replace('\0', " ");
+                let cmd_lower = cmdline_str.to_lowercase();
+                let exe_path = std::fs::read_link(format!("/proc/{}/exe", pid))
+                    .ok()
+                    .and_then(|p| p.to_str().map(|s| s.to_lowercase()))
+                    .unwrap_or_default();
+                if !cmd_lower.contains("code") && !exe_path.contains("/code") {
+                    continue;
+                }
+                if is_helper_command_line(&cmd_lower) {
+                    continue;
+                }
+                let dir = extract_user_data_dir_from_command_line(&cmdline_str);
+                entries.push((pid, dir));
+            }
+        }
+    }
+
+    let mut map: HashMap<u32, Option<String>> = HashMap::new();
+    for (pid, dir) in entries {
+        let normalized = dir.and_then(|value| {
+            let value = value.trim().to_string();
+            if value.is_empty() {
+                return None;
+            }
+            let normalized = normalize_path_for_compare(&value);
+            if normalized.is_empty() {
+                None
+            } else {
+                Some(normalized)
+            }
+        });
+        match map.get(&pid) {
+            None => {
+                map.insert(pid, normalized);
+            }
+            Some(existing) => {
+                if existing.is_none() && normalized.is_some() {
+                    map.insert(pid, normalized);
+                }
+            }
+        }
+    }
+
+    let mut result: Vec<(u32, Option<String>)> = map.into_iter().collect();
+    result.sort_by_key(|(pid, _)| *pid);
+    result
+}
+
+pub fn resolve_vscode_pid_from_entries(
+    last_pid: Option<u32>,
+    user_data_dir: &str,
+    entries: &[(u32, Option<String>)],
+) -> Option<u32> {
+    let target = normalize_path_for_compare(user_data_dir);
+    if target.is_empty() {
+        return None;
+    }
+
+    if let Some(pid) = last_pid {
+        if is_pid_running(pid)
+            && (entries.iter().any(|(entry_pid, dir)| {
+                *entry_pid == pid && dir.as_ref().map(|value| value == &target).unwrap_or(false)
+            }) || is_vscode_pid_for_user_data_dir(pid, &target))
+        {
+            return Some(pid);
+        }
+    }
+
+    let mut matches = Vec::new();
+    for (pid, dir) in entries {
+        if let Some(dir) = dir {
+            if dir == &target {
+                matches.push(*pid);
+            }
+        }
+    }
+
+    pick_preferred_pid(matches)
+}
+
+pub fn resolve_vscode_pid(last_pid: Option<u32>, user_data_dir: &str) -> Option<u32> {
+    let entries = collect_vscode_process_entries();
+    resolve_vscode_pid_from_entries(last_pid, user_data_dir, &entries)
+}
+
+fn is_vscode_pid_for_user_data_dir(pid: u32, target: &str) -> bool {
+    if pid == 0 || target.is_empty() || !is_pid_running(pid) {
+        return false;
+    }
+
+    let mut system = System::new();
+    system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+    let process = match system.process(Pid::from_u32(pid)) {
+        Some(value) => value,
+        None => return false,
+    };
+
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
+    let name = process.name().to_string_lossy().to_lowercase();
+    let exe_path = process
+        .exe()
+        .and_then(|p| p.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    #[cfg(target_os = "macos")]
+    let is_vscode = exe_path.contains("visual studio code.app");
+    #[cfg(target_os = "windows")]
+    let is_vscode = name == "code.exe" || exe_path.ends_with("\\code.exe");
+    #[cfg(target_os = "linux")]
+    let is_vscode = name == "code" || exe_path.ends_with("/code");
+
+    if !is_vscode {
+        return false;
+    }
+
+    let args = process.cmd();
+    let dir = extract_user_data_dir(args)
+        .map(|value| normalize_path_for_compare(&value))
+        .filter(|value| !value.is_empty());
+    dir.map(|value| value == target).unwrap_or(false)
+}
+
+pub fn focus_vscode_instance(last_pid: Option<u32>, user_data_dir: &str) -> Result<u32, String> {
+    let resolve_start = Instant::now();
+    let pid =
+        resolve_vscode_pid(last_pid, user_data_dir).ok_or_else(|| "实例未运行，无法定位窗口".to_string())?;
+    crate::modules::logger::log_info(&format!(
+        "[Focus] VS Code resolve pid={} elapsed={}ms",
+        pid,
+        resolve_start.elapsed().as_millis()
+    ));
+    let focus_start = Instant::now();
+    focus_window_by_pid(pid)?;
+    crate::modules::logger::log_info(&format!(
+        "[Focus] VS Code focus pid={} elapsed={}ms",
+        pid,
+        focus_start.elapsed().as_millis()
+    ));
+    Ok(pid)
+}
+
 #[cfg(target_os = "macos")]
 
 #[allow(dead_code)]
@@ -1568,75 +2312,51 @@ fn get_antigravity_pids() -> Vec<u32> {
     pids
 }
 
+fn collect_antigravity_main_pids() -> Vec<u32> {
+    let entries = collect_antigravity_process_entries();
+    if entries.is_empty() {
+        return Vec::new();
+    }
+
+    let mut groups: HashMap<String, Vec<u32>> = HashMap::new();
+    for (pid, dir) in entries {
+        let key = dir
+            .as_ref()
+            .map(|value| normalize_path_for_compare(value))
+            .filter(|value| !value.is_empty())
+            .unwrap_or_default();
+        groups.entry(key).or_default().push(pid);
+    }
+
+    let mut result: Vec<u32> = Vec::new();
+    for (_, pids) in groups {
+        if let Some(pid) = pick_preferred_pid(pids) {
+            result.push(pid);
+        }
+    }
+    result.sort();
+    result.dedup();
+    result
+}
+
 /// 关闭 Antigravity 进程
 pub fn close_antigravity(timeout_secs: u64) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let _ = timeout_secs; // Silence unused warning on Windows
     crate::modules::logger::log_info("正在关闭 Antigravity...");
 
-    let pids = get_antigravity_pids();
+    let pids = collect_antigravity_main_pids();
     if pids.is_empty() {
         crate::modules::logger::log_info("Antigravity 未在运行，无需关闭");
         return Ok(());
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        crate::modules::logger::log_info(&format!(
-            "正在 Windows 上关闭 {} 个 Antigravity 进程...",
-            pids.len()
-        ));
-        for pid in &pids {
-            let _ = Command::new("taskkill")
-                .args(["/F", "/PID", &pid.to_string()])
-                .creation_flags(0x08000000) // CREATE_NO_WINDOW
-                .output();
-        }
-        thread::sleep(Duration::from_millis(200));
-    }
+    crate::modules::logger::log_info(&format!(
+        "准备关闭 {} 个 Antigravity 主进程...",
+        pids.len()
+    ));
+    let _ = close_pids(&pids, timeout_secs);
 
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        // 阶段 1: 优雅退出 (SIGTERM)
-        crate::modules::logger::log_info(&format!(
-            "向 {} 个 Antigravity 进程发送 SIGTERM...",
-            pids.len()
-        ));
-        for pid in &pids {
-            let _ = Command::new("kill")
-                .args(["-15", &pid.to_string()])
-                .output();
-        }
-
-        // 等待优雅退出（最多 timeout_secs 的 70%）
-        let graceful_timeout = (timeout_secs * 7) / 10;
-        let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(graceful_timeout) {
-            if !is_antigravity_running() {
-                crate::modules::logger::log_info("所有 Antigravity 进程已优雅关闭");
-                return Ok(());
-            }
-            thread::sleep(Duration::from_millis(500));
-        }
-
-        // 阶段 2: 强制杀死 (SIGKILL)
-        if is_antigravity_running() {
-            let remaining_pids = get_antigravity_pids();
-            if !remaining_pids.is_empty() {
-                crate::modules::logger::log_warn(&format!(
-                    "优雅关闭超时，强制杀死 {} 个残留进程 (SIGKILL)",
-                    remaining_pids.len()
-                ));
-                for pid in &remaining_pids {
-                    let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-                }
-                thread::sleep(Duration::from_secs(1));
-            }
-        }
-    }
-
-    // 最终检查
     if is_antigravity_running() {
         return Err("无法关闭 Antigravity 进程，请手动关闭后重试".to_string());
     }
@@ -1649,8 +2369,6 @@ pub fn close_antigravity(timeout_secs: u64) -> Result<(), String> {
 
 #[allow(dead_code)]
 pub fn close_antigravity_instance(user_data_dir: &str, timeout_secs: u64) -> Result<(), String> {
-    #[cfg(target_os = "windows")]
-    let _ = timeout_secs;
     let target = normalize_path_for_compare(user_data_dir);
     if target.is_empty() {
         return Err("实例目录为空，无法关闭".to_string());
@@ -1661,40 +2379,7 @@ pub fn close_antigravity_instance(user_data_dir: &str, timeout_secs: u64) -> Res
         return Ok(());
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        for pid in &pids {
-            let _ = Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &pid.to_string()])
-                .output();
-        }
-        thread::sleep(Duration::from_millis(200));
-    }
-
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        let mut pids = pids;
-        for pid in &pids {
-            let _ = Command::new("kill").args(["-15", &pid.to_string()]).output();
-        }
-
-        let graceful_timeout = (timeout_secs * 7) / 10;
-        let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(graceful_timeout) {
-            if collect_antigravity_pids_by_user_data_dir(user_data_dir).is_empty() {
-                return Ok(());
-            }
-            thread::sleep(Duration::from_millis(400));
-        }
-
-        pids = collect_antigravity_pids_by_user_data_dir(user_data_dir);
-        if !pids.is_empty() {
-            for pid in &pids {
-                let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-            }
-            thread::sleep(Duration::from_millis(800));
-        }
-    }
+    let _ = close_pids(&pids, timeout_secs);
 
     if !collect_antigravity_pids_by_user_data_dir(user_data_dir).is_empty() {
         return Err("无法关闭实例进程，请手动关闭后重试".to_string());
@@ -1711,36 +2396,11 @@ pub fn close_pid(pid: u32, timeout_secs: u64) -> Result<(), String> {
         return Ok(());
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        let _ = timeout_secs;
-        let _ = Command::new("taskkill")
-            .args(["/F", "/T", "/PID", &pid.to_string()])
-            .output();
-        thread::sleep(Duration::from_millis(300));
-        if is_pid_running(pid) {
-            return Err("无法关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
-    }
-
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        let _ = Command::new("kill").args(["-15", &pid.to_string()]).output();
-        let graceful_timeout = (timeout_secs * 7) / 10;
-        let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(graceful_timeout) {
-            if !is_pid_running(pid) {
-                return Ok(());
-            }
-            thread::sleep(Duration::from_millis(400));
-        }
-        let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-        thread::sleep(Duration::from_millis(400));
-        if is_pid_running(pid) {
-            return Err("无法关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
+    send_close_signal(pid);
+    if wait_pids_exit(&[pid], timeout_secs) {
+        Ok(())
+    } else {
+        Err("无法关闭实例进程，请手动关闭后重试".to_string())
     }
 }
 
@@ -1752,30 +2412,100 @@ pub fn force_kill_pid(pid: u32) -> Result<(), String> {
         return Ok(());
     }
 
+    send_force_signal(pid);
+    if wait_pids_exit(&[pid], 5) {
+        Ok(())
+    } else {
+        Err("无法强制关闭实例进程，请手动关闭后重试".to_string())
+    }
+}
+
+fn send_close_signal(pid: u32) {
+    if pid == 0 || !is_pid_running(pid) {
+        return;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let _ = Command::new("taskkill")
+            .args(["/PID", &pid.to_string()])
+            .output();
+    }
+
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    {
+        let _ = Command::new("kill").args(["-15", &pid.to_string()]).output();
+    }
+}
+
+fn send_force_signal(pid: u32) {
+    if pid == 0 || !is_pid_running(pid) {
+        return;
+    }
+
     #[cfg(target_os = "windows")]
     {
         let _ = Command::new("taskkill")
             .args(["/F", "/T", "/PID", &pid.to_string()])
             .output();
-        thread::sleep(Duration::from_millis(200));
-        if is_pid_running(pid) {
-            return Err("无法强制关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
     }
 
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     {
         let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-        thread::sleep(Duration::from_millis(300));
-        if is_pid_running(pid) {
-            return Err("无法强制关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
     }
 }
 
-/// 强制关闭指定实例（按 user-data-dir 匹配，直接 SIGKILL / taskkill /F）
+fn wait_pids_exit(pids: &[u32], timeout_secs: u64) -> bool {
+    if pids.is_empty() {
+        return true;
+    }
+    let start = std::time::Instant::now();
+    loop {
+        let mut any_alive = false;
+        for pid in pids {
+            if *pid != 0 && is_pid_running(*pid) {
+                any_alive = true;
+                break;
+            }
+        }
+        if !any_alive {
+            return true;
+        }
+        if start.elapsed() >= Duration::from_secs(timeout_secs) {
+            return false;
+        }
+        thread::sleep(Duration::from_millis(350));
+    }
+}
+
+fn close_pids(pids: &[u32], timeout_secs: u64) -> Result<(), String> {
+    if pids.is_empty() {
+        return Ok(());
+    }
+    let mut targets: Vec<u32> = pids
+        .iter()
+        .copied()
+        .filter(|pid| *pid != 0 && is_pid_running(*pid))
+        .collect();
+    targets.sort();
+    targets.dedup();
+    if targets.is_empty() {
+        return Ok(());
+    }
+
+    for pid in &targets {
+        send_close_signal(*pid);
+    }
+
+    if wait_pids_exit(&targets, timeout_secs) {
+        Ok(())
+    } else {
+        Err("无法关闭实例进程，请手动关闭后重试".to_string())
+    }
+}
+
+/// 关闭指定实例（按 user-data-dir 匹配）
 
 #[allow(dead_code)]
 pub fn force_kill_antigravity_instance(user_data_dir: &str) -> Result<(), String> {
@@ -1789,26 +2519,12 @@ pub fn force_kill_antigravity_instance(user_data_dir: &str) -> Result<(), String
         return Ok(());
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        for pid in &pids {
-            let _ = Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &pid.to_string()])
-                .output();
-        }
-        thread::sleep(Duration::from_millis(200));
-    }
-
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        for pid in &pids {
-            let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-        }
-        thread::sleep(Duration::from_millis(300));
+    for pid in &pids {
+        let _ = force_kill_pid(*pid);
     }
 
     if !collect_antigravity_pids_by_user_data_dir(user_data_dir).is_empty() {
-        return Err("无法强制关闭实例进程，请手动关闭后重试".to_string());
+        return Err("无法关闭实例进程，请手动关闭后重试".to_string());
     }
 
     Ok(())
@@ -1955,7 +2671,7 @@ pub fn start_antigravity_with_args(user_data_dir: &str, extra_args: &[String]) -
 }
 
 #[cfg(target_os = "macos")]
-fn collect_codex_process_entries() -> Vec<(u32, Option<String>)> {
+pub fn collect_codex_process_entries() -> Vec<(u32, Option<String>)> {
     let mut result = Vec::new();
     let mut pids: Vec<u32> = Vec::new();
     if let Ok(output) = Command::new("pgrep")
@@ -2021,10 +2737,6 @@ fn collect_codex_process_entries() -> Vec<(u32, Option<String>)> {
         if !lower.contains("codex.app/contents/macos/codex") {
             continue;
         }
-        crate::modules::logger::log_info(&format!(
-            "[Codex Instances] ps line pid={} cmdline={}",
-            pid, cmdline
-        ));
         let tokens = split_command_tokens(&cmdline);
         let mut args: Vec<String> = Vec::new();
         let mut env_tokens: Vec<String> = Vec::new();
@@ -2067,13 +2779,25 @@ fn collect_codex_process_entries() -> Vec<(u32, Option<String>)> {
         if codex_home.is_none() {
             codex_home = extract_env_value(&cmdline, "CODEX_HOME");
         }
-        crate::modules::logger::log_info(&format!(
-            "[Codex Instances] pid={} parsed CODEX_HOME={:?}",
-            pid, codex_home
-        ));
+        if let Some(ref home) = codex_home {
+            crate::modules::logger::log_info(&format!(
+                "[Codex Instances] pid={} CODEX_HOME={}",
+                pid, home
+            ));
+        } else {
+            crate::modules::logger::log_info(&format!(
+                "[Codex Instances] pid={} CODEX_HOME not found",
+                pid
+            ));
+        }
         result.push((pid, codex_home));
     }
     result
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn collect_codex_process_entries() -> Vec<(u32, Option<String>)> {
+    Vec::new()
 }
 
 #[cfg(target_os = "macos")]
@@ -2260,24 +2984,7 @@ pub fn close_codex(timeout_secs: u64) -> Result<(), String> {
             return Ok(());
         }
 
-        for pid in &pids {
-            let _ = Command::new("kill").args(["-15", &pid.to_string()]).output();
-        }
-
-        let graceful_timeout = (timeout_secs * 7) / 10;
-        let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(graceful_timeout) {
-            if collect_codex_process_entries().is_empty() {
-                return Ok(());
-            }
-            thread::sleep(Duration::from_millis(500));
-        }
-
-        let remaining: Vec<u32> = collect_codex_process_entries().into_iter().map(|(pid, _)| pid).collect();
-        for pid in &remaining {
-            let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-        }
-        thread::sleep(Duration::from_secs(1));
+        let _ = close_pids(&pids, timeout_secs);
 
         if !collect_codex_process_entries().is_empty() {
             return Err("无法关闭 Codex 进程，请手动关闭后重试".to_string());
@@ -2306,30 +3013,13 @@ pub fn close_codex_instance(codex_home: &str, timeout_secs: u64) -> Result<(), S
             return Err("实例目录为空，无法关闭".to_string());
         }
 
-        let mut pids = collect_codex_pids_by_home(codex_home, &default_home);
+        let pids = collect_codex_pids_by_home(codex_home, &default_home);
         if pids.is_empty() {
             return Ok(());
         }
 
         for pid in &pids {
-            let _ = Command::new("kill").args(["-15", &pid.to_string()]).output();
-        }
-
-        let graceful_timeout = (timeout_secs * 7) / 10;
-        let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(graceful_timeout) {
-            if collect_codex_pids_by_home(codex_home, &default_home).is_empty() {
-                return Ok(());
-            }
-            thread::sleep(Duration::from_millis(400));
-        }
-
-        pids = collect_codex_pids_by_home(codex_home, &default_home);
-        if !pids.is_empty() {
-            for pid in &pids {
-                let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-            }
-            thread::sleep(Duration::from_millis(800));
+            let _ = close_pid(*pid, timeout_secs);
         }
 
         if !collect_codex_pids_by_home(codex_home, &default_home).is_empty() {
@@ -2345,7 +3035,7 @@ pub fn close_codex_instance(codex_home: &str, timeout_secs: u64) -> Result<(), S
     }
 }
 
-/// 强制关闭指定 Codex 实例（按 CODEX_HOME 匹配）
+/// 关闭指定 Codex 实例（按 CODEX_HOME 匹配）
 
 #[allow(dead_code)]
 pub fn force_kill_codex_instance(codex_home: &str) -> Result<(), String> {
@@ -2365,12 +3055,11 @@ pub fn force_kill_codex_instance(codex_home: &str) -> Result<(), String> {
         }
 
         for pid in &pids {
-            let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
+            let _ = force_kill_pid(*pid);
         }
-        thread::sleep(Duration::from_millis(300));
 
         if !collect_codex_pids_by_home(codex_home, &default_home).is_empty() {
-            return Err("无法强制关闭实例进程，请手动关闭后重试".to_string());
+            return Err("无法关闭实例进程，请手动关闭后重试".to_string());
         }
         return Ok(());
     }
@@ -2539,54 +3228,11 @@ pub fn close_opencode(timeout_secs: u64) -> Result<(), String> {
         return Ok(());
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        for pid in &pids {
-            let _ = Command::new("taskkill")
-                .args(["/F", "/PID", &pid.to_string()])
-                .creation_flags(0x08000000)
-                .output();
-        }
-        thread::sleep(Duration::from_millis(200));
-    }
-
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    {
-        crate::modules::logger::log_info(&format!(
-            "向 {} 个 OpenCode 进程发送 SIGTERM...",
-            pids.len()
-        ));
-        for pid in &pids {
-            let _ = Command::new("kill")
-                .args(["-15", &pid.to_string()])
-                .output();
-        }
-
-        let graceful_timeout = (timeout_secs * 7) / 10;
-        let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(graceful_timeout) {
-            if !is_opencode_running() {
-                crate::modules::logger::log_info("所有 OpenCode 进程已优雅关闭");
-                return Ok(());
-            }
-            thread::sleep(Duration::from_millis(500));
-        }
-
-        if is_opencode_running() {
-            let remaining = get_opencode_pids();
-            if !remaining.is_empty() {
-                crate::modules::logger::log_warn(&format!(
-                    "优雅关闭超时，强制杀死 {} 个残留进程 (SIGKILL)",
-                    remaining.len()
-                ));
-                for pid in &remaining {
-                    let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-                }
-                thread::sleep(Duration::from_secs(1));
-            }
-        }
-    }
+    crate::modules::logger::log_info(&format!(
+        "准备关闭 {} 个 OpenCode 进程...",
+        pids.len()
+    ));
+    let _ = close_pids(&pids, timeout_secs);
 
     if is_opencode_running() {
         return Err("无法关闭 OpenCode 进程，请手动关闭后重试".to_string());
@@ -2797,12 +3443,8 @@ pub fn kill_port_processes(port: u16) -> Result<usize, String> {
     Ok(pids.len())
 }
 
-fn collect_vscode_pids_by_user_data_dir(user_data_dir: &str) -> Vec<u32> {
-    let target = normalize_path_for_compare(user_data_dir);
-    if target.is_empty() {
-        return Vec::new();
-    }
-
+#[allow(dead_code)]
+fn get_vscode_pids() -> Vec<u32> {
     let mut result = Vec::new();
     let mut system = System::new();
     system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
@@ -2823,6 +3465,14 @@ fn collect_vscode_pids_by_user_data_dir(user_data_dir: &str) -> Vec<u32> {
             .unwrap_or("")
             .to_lowercase();
 
+        let args_str = process
+            .cmd()
+            .iter()
+            .map(|arg| arg.to_string_lossy().to_lowercase())
+            .collect::<Vec<String>>()
+            .join(" ");
+        let is_helper = is_helper_command_line(&args_str) || args_str.contains("crashpad");
+
         #[cfg(target_os = "macos")]
         let is_vscode = exe_path.contains("visual studio code.app");
         #[cfg(target_os = "windows")]
@@ -2830,22 +3480,13 @@ fn collect_vscode_pids_by_user_data_dir(user_data_dir: &str) -> Vec<u32> {
         #[cfg(target_os = "linux")]
         let is_vscode = name == "code" || exe_path.ends_with("/code");
 
-        if !is_vscode {
-            continue;
-        }
-
-        let args = process.cmd();
-        if let Some(dir) = extract_user_data_dir(&args) {
-            let normalized = normalize_path_for_compare(&dir);
-            if normalized == target {
-                result.push(pid_u32);
-            }
+        if is_vscode && !is_helper {
+            result.push(pid_u32);
         }
     }
 
     #[cfg(target_os = "macos")]
     {
-        // sysinfo 在 macOS 上偶尔拿不到完整 cmdline，这里补一个 ps 兜底。
         let output = Command::new("ps").args(["-axo", "pid,command"]).output();
         if let Ok(output) = output {
             let stdout = String::from_utf8_lossy(&output.stdout);
@@ -2865,12 +3506,10 @@ fn collect_vscode_pids_by_user_data_dir(user_data_dir: &str) -> Vec<u32> {
                 if !lower.contains("visual studio code.app/contents/") {
                     continue;
                 }
-                if let Some(dir) = extract_user_data_dir_from_command_line(cmdline) {
-                    let normalized = normalize_path_for_compare(&dir);
-                    if normalized == target {
-                        result.push(pid);
-                    }
+                if lower.contains("crashpad_handler") || is_helper_command_line(&lower) {
+                    continue;
                 }
+                result.push(pid);
             }
         }
     }
@@ -2898,12 +3537,11 @@ fn collect_vscode_pids_by_user_data_dir(user_data_dir: &str) -> Vec<u32> {
                     Ok(value) => value,
                     Err(_) => continue,
                 };
-                if let Some(dir) = extract_user_data_dir_from_command_line(cmdline) {
-                    let normalized = normalize_path_for_compare(&dir);
-                    if normalized == target {
-                        result.push(pid);
-                    }
+                let lower = cmdline.to_lowercase();
+                if is_helper_command_line(&lower) {
+                    continue;
                 }
+                result.push(pid);
             }
         }
     }
@@ -3027,160 +3665,63 @@ pub fn start_vscode_with_args(user_data_dir: &str, extra_args: &[String]) -> Res
     start_vscode_with_args_with_new_window(user_data_dir, extra_args, false)
 }
 
-pub fn close_vscode_instance(user_data_dir: &str, timeout_secs: u64) -> Result<(), String> {
+pub fn close_vscode(user_data_dirs: &[String], timeout_secs: u64) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let _ = timeout_secs;
-    let target = normalize_path_for_compare(user_data_dir);
-    if target.is_empty() {
-        return Err("实例目录为空，无法关闭".to_string());
+    crate::modules::logger::log_info("正在关闭 VS Code...");
+
+    let target_dirs: HashSet<String> = user_data_dirs
+        .iter()
+        .map(|value| normalize_path_for_compare(value))
+        .filter(|value| !value.is_empty())
+        .collect();
+    if target_dirs.is_empty() {
+        crate::modules::logger::log_info("未提供可关闭的实例目录");
+        return Ok(());
     }
 
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
-    let pids = collect_vscode_pids_by_user_data_dir(user_data_dir);
-    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-    let pids: Vec<u32> = Vec::new();
-
+    let entries = collect_vscode_process_entries();
+    let mut pids: Vec<u32> = entries
+        .iter()
+        .filter_map(|(pid, dir)| {
+            if let Some(dir) = dir {
+                if target_dirs.contains(dir) {
+                    return Some(*pid);
+                }
+            } else {
+                for target in &target_dirs {
+                    if is_vscode_pid_for_user_data_dir(*pid, target) {
+                        return Some(*pid);
+                    }
+                }
+            }
+            None
+        })
+        .collect();
+    pids.sort();
+    pids.dedup();
     if pids.is_empty() {
+        crate::modules::logger::log_info("受管 VS Code 实例未在运行，无需关闭");
         return Ok(());
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        for pid in &pids {
-            let _ = Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &pid.to_string()])
-                .output();
+    crate::modules::logger::log_info(&format!(
+        "准备关闭 {} 个 VS Code 主进程...",
+        pids.len()
+    ));
+    let _ = close_pids(&pids, timeout_secs);
+
+    let still_running = collect_vscode_process_entries().into_iter().any(|(pid, dir)| {
+        if let Some(dir) = dir {
+            target_dirs.contains(&dir)
+        } else {
+            target_dirs
+                .iter()
+                .any(|target| is_vscode_pid_for_user_data_dir(pid, target))
         }
-        thread::sleep(Duration::from_millis(200));
-        if !collect_vscode_pids_by_user_data_dir(user_data_dir).is_empty() {
-            return Err("无法关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
+    });
+    if still_running {
+        return Err("无法关闭受管 VS Code 实例进程，请手动关闭后重试".to_string());
     }
-
-    #[cfg(target_os = "macos")]
-    {
-        let mut pids = pids;
-        for pid in &pids {
-            let _ = Command::new("kill").args(["-15", &pid.to_string()]).output();
-        }
-
-        let graceful_timeout = (timeout_secs * 7) / 10;
-        let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(graceful_timeout) {
-            if collect_vscode_pids_by_user_data_dir(user_data_dir).is_empty() {
-                return Ok(());
-            }
-            thread::sleep(Duration::from_millis(400));
-        }
-
-        pids = collect_vscode_pids_by_user_data_dir(user_data_dir);
-        if !pids.is_empty() {
-            for pid in &pids {
-                let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-            }
-            thread::sleep(Duration::from_millis(800));
-        }
-
-        if !collect_vscode_pids_by_user_data_dir(user_data_dir).is_empty() {
-            return Err("无法关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
-    }
-
-    #[cfg(target_os = "linux")]
-    {
-        let mut pids = pids;
-        for pid in &pids {
-            let _ = Command::new("kill").args(["-15", &pid.to_string()]).output();
-        }
-
-        let graceful_timeout = (timeout_secs * 7) / 10;
-        let start = std::time::Instant::now();
-        while start.elapsed() < Duration::from_secs(graceful_timeout) {
-            if collect_vscode_pids_by_user_data_dir(user_data_dir).is_empty() {
-                return Ok(());
-            }
-            thread::sleep(Duration::from_millis(400));
-        }
-
-        pids = collect_vscode_pids_by_user_data_dir(user_data_dir);
-        if !pids.is_empty() {
-            for pid in &pids {
-                let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-            }
-            thread::sleep(Duration::from_millis(800));
-        }
-
-        if !collect_vscode_pids_by_user_data_dir(user_data_dir).is_empty() {
-            return Err("无法关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
-    }
-
-    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-    {
-        let _ = user_data_dir;
-        Err("GitHub Copilot 多开实例仅支持 macOS、Windows 和 Linux".to_string())
-    }
-}
-
-pub fn force_kill_vscode_instance(user_data_dir: &str) -> Result<(), String> {
-    let target = normalize_path_for_compare(user_data_dir);
-    if target.is_empty() {
-        return Err("实例目录为空，无法关闭".to_string());
-    }
-
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
-    let pids = collect_vscode_pids_by_user_data_dir(user_data_dir);
-    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-    let pids: Vec<u32> = Vec::new();
-
-    if pids.is_empty() {
-        return Ok(());
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        for pid in &pids {
-            let _ = Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &pid.to_string()])
-                .output();
-        }
-        thread::sleep(Duration::from_millis(200));
-        if !collect_vscode_pids_by_user_data_dir(user_data_dir).is_empty() {
-            return Err("无法强制关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
-    }
-
-    #[cfg(target_os = "macos")]
-    {
-        for pid in &pids {
-            let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-        }
-        thread::sleep(Duration::from_millis(500));
-        if !collect_vscode_pids_by_user_data_dir(user_data_dir).is_empty() {
-            return Err("无法强制关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
-    }
-
-    #[cfg(target_os = "linux")]
-    {
-        for pid in &pids {
-            let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
-        }
-        thread::sleep(Duration::from_millis(500));
-        if !collect_vscode_pids_by_user_data_dir(user_data_dir).is_empty() {
-            return Err("无法强制关闭实例进程，请手动关闭后重试".to_string());
-        }
-        return Ok(());
-    }
-
-    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-    {
-        let _ = user_data_dir;
-        Err("GitHub Copilot 多开实例仅支持 macOS、Windows 和 Linux".to_string())
-    }
+    Ok(())
 }

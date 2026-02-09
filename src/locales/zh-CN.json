@@ -57,7 +57,8 @@
       "openFolder": "打开目录",
       "edit": "编辑",
       "openRootDir": "打开目录",
-      "selectPath": "选择目录"
+      "selectPath": "选择目录",
+      "openWindow": "定位窗口"
     },
     "bulkConfirm": {
       "startAll": "确认启动所有未运行实例？",
@@ -322,7 +323,7 @@
       "actions": "操作"
     },
     "status": {
-      "current": "当前使用",
+      "current": "当前",
       "disabled": "已禁用",
       "authInvalid": "凭证无效",
       "refreshFailed": "刷新失败",

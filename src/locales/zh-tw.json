@@ -154,7 +154,7 @@
       "actions": "操作"
     },
     "status": {
-      "current": "目前使用",
+      "current": "目前",
       "disabled": "已停用",
       "authInvalid": "憑證失效",
       "refreshFailed": "刷新失敗",

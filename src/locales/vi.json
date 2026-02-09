@@ -154,7 +154,7 @@
       "actions": "Thao tác"
     },
     "status": {
-      "current": "Đang sử dụng",
+      "current": "Hiện tại",
       "disabled": "Đã vô hiệu hóa",
       "authInvalid": "Invalid credentials",
       "refreshFailed": "Refresh failed",

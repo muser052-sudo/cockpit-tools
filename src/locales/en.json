@@ -57,7 +57,8 @@
       "openFolder": "Open Folder",
       "edit": "Edit",
       "openRootDir": "Open Folder",
-      "selectPath": "Select Folder"
+      "selectPath": "Select Folder",
+      "openWindow": "Open Window"
     },
     "bulkConfirm": {
       "startAll": "Start all stopped instances?",

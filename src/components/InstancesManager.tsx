@@ -13,6 +13,7 @@ import {
   X,
   Search,
   ArrowDownWideNarrow,
+  ExternalLink,
 } from 'lucide-react';
 import { confirm as confirmDialog, open } from '@tauri-apps/plugin-dialog';
 import md5 from 'blueimp-md5';
@@ -463,6 +464,21 @@ export function InstancesManager<TAccount extends AccountLike>({
       setRunningNoticeInstance(null);
     } catch (e) {
       setMessage({ text: String(e), tone: 'error' });
+    }
+  };
+
+  const handleLocateInstance = async (instance: InstanceProfile) => {
+    if (!instance.running) return;
+    setActionLoading(instance.id);
+    try {
+      await openInstanceWindow(instance.id);
+    } catch (e) {
+      if (handleMissingPathError(e, instance.id)) {
+        return;
+      }
+      setMessage({ text: String(e), tone: 'error' });
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -1206,6 +1222,14 @@ export function InstancesManager<TAccount extends AccountLike>({
                     disabled={actionLoading === instance.id || restartingAll || bulkActionLoading}
                   >
                     <Play size={16} />
+                  </button>
+                  <button
+                    className="icon-button"
+                    title={t('instances.actions.openWindow', '定位窗口')}
+                    onClick={() => handleLocateInstance(instance)}
+                    disabled={!instance.running || actionLoading === instance.id || restartingAll || bulkActionLoading}
+                  >
+                    <ExternalLink size={16} />
                   </button>
                   <button
                     className="icon-button danger"

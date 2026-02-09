@@ -154,7 +154,7 @@
       "actions": "الإجراءات"
     },
     "status": {
-      "current": "قيد الاستخدام",
+      "current": "الحالي",
       "disabled": "معطل",
       "authInvalid": "Invalid credentials",
       "refreshFailed": "Refresh failed",

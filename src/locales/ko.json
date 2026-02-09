@@ -154,7 +154,7 @@
       "actions": "작업"
     },
     "status": {
-      "current": "현재 사용 중",
+      "current": "현재",
       "disabled": "비활성화됨",
       "authInvalid": "Invalid credentials",
       "refreshFailed": "Refresh failed",

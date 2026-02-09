@@ -154,7 +154,7 @@
       "actions": "操作"
     },
     "status": {
-      "current": "使用中",
+      "current": "現在",
       "disabled": "無効",
       "authInvalid": "Invalid credentials",
       "refreshFailed": "Refresh failed",
