@@ -134,13 +134,15 @@ pub fn inject_copilot_token(
         .map_err(|e| format!("Failed to open VS Code database: {}", e))?;
 
     let secret_key = r#"secret://{"extensionId":"vscode.github-authentication","key":"github.auth"}"#;
-    let existing: Option<String> = conn
-        .query_row(
-            "SELECT value FROM ItemTable WHERE key = ?",
-            [secret_key],
-            |row| row.get(0),
-        )
-        .ok();
+    let existing: Option<String> = match conn.query_row(
+        "SELECT value FROM ItemTable WHERE key = ?",
+        [secret_key],
+        |row| row.get(0),
+    ) {
+        Ok(val) => Some(val),
+        Err(rusqlite::Error::QueryReturnedNoRows) => None,
+        Err(e) => return Err(format!("Failed to query github.auth from database: {}", e)),
+    };
 
     let new_sessions =
         build_github_auth_sessions(existing.as_deref(), &key, username, token, github_user_id)?;
@@ -156,17 +158,23 @@ pub fn inject_copilot_token(
     let buffer_str = serde_json::to_string(&buffer_json)
         .map_err(|e| format!("Failed to serialize Buffer: {}", e))?;
 
-    conn.execute(
+    let tx = conn.unchecked_transaction()
+        .map_err(|e| format!("Failed to begin transaction: {}", e))?;
+
+    tx.execute(
         "INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)",
         [secret_key, &buffer_str.as_str()],
     )
     .map_err(|e| format!("Failed to write github.auth: {}", e))?;
 
-    conn.execute(
+    tx.execute(
         "INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)",
         ["github.copilot-github", username],
     )
     .map_err(|e| format!("Failed to write github.copilot-github: {}", e))?;
+
+    tx.commit()
+        .map_err(|e| format!("Failed to commit transaction: {}", e))?;
 
     Ok(format!("Successfully injected {} into VS Code", username))
 }
@@ -225,15 +233,25 @@ fn build_github_auth_sessions(
         let data_arr = buffer["data"]
             .as_array()
             .ok_or("Secret data is not in Buffer format")?;
-        let encrypted_bytes: Vec<u8> = data_arr
-            .iter()
-            .map(|v| v.as_u64().unwrap_or(0) as u8)
-            .collect();
+        let mut encrypted_bytes: Vec<u8> = Vec::with_capacity(data_arr.len());
+        for (idx, v) in data_arr.iter().enumerate() {
+            let n = v
+                .as_u64()
+                .ok_or_else(|| format!("Secret data element at index {} is not a non-negative integer", idx))?;
+            if n > 255 {
+                return Err(format!(
+                    "Secret data element at index {} is out of range ({} > 255)",
+                    idx, n
+                ));
+            }
+            encrypted_bytes.push(n as u8);
+        }
 
         let decrypted = decrypt_v10(key, &encrypted_bytes)?;
         let json_str = String::from_utf8(decrypted)
             .map_err(|e| format!("Decrypted data is not valid UTF-8: {}", e))?;
-        serde_json::from_str(&json_str).unwrap_or_else(|_| Vec::new())
+        serde_json::from_str(&json_str)
+            .map_err(|e| format!("Decrypted github.auth is not a valid sessions array: {}", e))?
     } else {
         Vec::new()
     };

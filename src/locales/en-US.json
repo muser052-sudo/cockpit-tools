@@ -1052,7 +1052,7 @@
       "actions": "Actions"
     },
     "export": "Export",
-    "injectToVSCode": "Switch to VSCode",
+    "injectToVSCode": "Switch to VS Code",
     "injecting": "Injecting...",
     "injectSuccess": "Token injected to VS Code successfully. VS Code is launching.",
     "injectRequireClose": "Please close VS Code before injecting.",

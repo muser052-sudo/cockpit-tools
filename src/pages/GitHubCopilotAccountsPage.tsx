@@ -289,7 +289,7 @@ export function GitHubCopilotAccountsPage() {
       const result = await githubCopilotService.injectGitHubCopilotToVSCode(accountId);
       setMessage({ text: result });
     } catch (e: any) {
-      setMessage({ text: e?.toString() || 'Inject failed', tone: 'error' });
+      setMessage({ text: e?.toString() || t('common.failed', 'Failed'), tone: 'error' });
     }
     setInjecting(null);
   };

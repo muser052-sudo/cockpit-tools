@@ -111,33 +111,34 @@ pub fn get_github_copilot_accounts_index_path() -> Result<String, String> {
 /// Requires VS Code to be closed first (SQLite database lock).
 #[tauri::command]
 pub async fn inject_github_copilot_to_vscode(account_id: String) -> Result<String, String> {
-    let account = github_copilot_account::load_account(&account_id)
-        .ok_or_else(|| format!("GitHub Copilot account not found: {}", account_id))?;
-
-    // Check if VS Code is running
+    #[cfg(not(target_os = "windows"))]
     {
-        let mut system = sysinfo::System::new();
-        system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
-        for (_pid, process) in system.processes() {
-            let name = process.name().to_string_lossy().to_lowercase();
-            #[cfg(target_os = "windows")]
-            let is_vscode = name == "code.exe";
-            #[cfg(not(target_os = "windows"))]
-            let is_vscode = name == "code" || name == "electron";
-
-            if is_vscode {
-                let args = process.cmd();
-                let args_str = args.iter().map(|a| a.to_string_lossy().to_lowercase()).collect::<Vec<_>>().join(" ");
-                let is_helper = args_str.contains("--type=");
-                if !is_helper {
-                    return Err("Please close VS Code before switching accounts. The database is locked while VS Code is running.".to_string());
-                }
-            }
-        }
+        let _ = account_id;
+        return Err("This feature is only available on Windows".to_string());
     }
 
     #[cfg(target_os = "windows")]
     {
+        let account = github_copilot_account::load_account(&account_id)
+            .ok_or_else(|| format!("GitHub Copilot account not found: {}", account_id))?;
+
+        // Check if VS Code is running
+        {
+            let mut system = sysinfo::System::new();
+            system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+            for (_pid, process) in system.processes() {
+                let name = process.name().to_string_lossy().to_lowercase();
+                if name == "code.exe" {
+                    let args = process.cmd();
+                    let args_str = args.iter().map(|a| a.to_string_lossy().to_lowercase()).collect::<Vec<_>>().join(" ");
+                    let is_helper = args_str.contains("--type=");
+                    if !is_helper {
+                        return Err("Please close VS Code before switching accounts. The database is locked while VS Code is running.".to_string());
+                    }
+                }
+            }
+        }
+
         let result = crate::modules::vscode_inject::inject_copilot_token(
             &account.github_login,
             &account.github_access_token,
@@ -151,11 +152,6 @@ pub async fn inject_github_copilot_to_vscode(account_id: String) -> Result<Strin
         };
 
         Ok(format!("{}{}", result, launch_msg))
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        Err("This feature is only available on Windows".to_string())
     }
 }
 

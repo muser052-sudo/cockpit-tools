@@ -1058,7 +1058,7 @@
       "alternative": "其他平台：使用多开实例（不同 --user-data-dir）做账号隔离；每个实例登录一次，后续按实例启动即可实现“快速切换到对应账号环境”。",
       "inject": "Windows 一键切号：本工具读取本地 VS Code 加密密钥（通过 DPAPI），解密 state.vscdb 中的认证会话，替换 GitHub Copilot 令牌并重新加密 —— 全部在本机完成。"
     },
-    "injectToVSCode": "切换到 VSCode",
+    "injectToVSCode": "切换到 VS Code",
     "injecting": "注入中...",
     "injectSuccess": "已成功将令牌注入 VS Code，VS Code 正在启动。",
     "injectRequireClose": "请先关闭 VS Code 再进行注入。"
