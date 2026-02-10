@@ -2443,12 +2443,24 @@ pub fn close_antigravity_instances(user_data_dirs: &[String], timeout_secs: u64)
         crate::modules::logger::log_info("未提供可关闭的 Antigravity 实例目录");
         return Ok(());
     }
+    crate::modules::logger::log_info(&format!(
+        "[AG Close] target_dirs={:?}, timeout_secs={}",
+        target_dirs, timeout_secs
+    ));
 
     let default_dir = crate::modules::instance::get_default_user_data_dir()
         .ok()
         .map(|value| normalize_path_for_compare(&value.to_string_lossy()))
         .filter(|value| !value.is_empty());
+    crate::modules::logger::log_info(&format!(
+        "[AG Close] default_dir={:?}",
+        default_dir
+    ));
     let entries = collect_antigravity_process_entries();
+    crate::modules::logger::log_info(&format!(
+        "[AG Close] collected_entries={:?}",
+        entries
+    ));
     let mut pids: Vec<u32> = entries
         .iter()
         .filter_map(|(pid, dir)| {
@@ -2474,16 +2486,25 @@ pub fn close_antigravity_instances(user_data_dirs: &[String], timeout_secs: u64)
         crate::modules::logger::log_info("受管 Antigravity 实例未在运行，无需关闭");
         return Ok(());
     }
+    crate::modules::logger::log_info(&format!(
+        "[AG Close] matched_main_pids={:?}",
+        pids
+    ));
 
     crate::modules::logger::log_info(&format!(
         "准备关闭 {} 个受管 Antigravity 主进程...",
         pids.len()
     ));
-    let _ = close_pids(&pids, timeout_secs);
+    if let Err(err) = close_pids(&pids, timeout_secs) {
+        crate::modules::logger::log_warn(&format!(
+            "[AG Close] close_pids returned error: {}",
+            err
+        ));
+    }
 
-    let still_running = collect_antigravity_process_entries()
+    let remaining_entries: Vec<(u32, Option<String>)> = collect_antigravity_process_entries()
         .into_iter()
-        .any(|(_, dir)| {
+        .filter(|(_, dir)| {
             let resolved_dir = dir
                 .as_ref()
                 .map(|value| normalize_path_for_compare(value))
@@ -2493,8 +2514,13 @@ pub fn close_antigravity_instances(user_data_dirs: &[String], timeout_secs: u64)
                 .as_ref()
                 .map(|value| target_dirs.contains(value))
                 .unwrap_or(false)
-        });
-    if still_running {
+        })
+        .collect();
+    if !remaining_entries.is_empty() {
+        crate::modules::logger::log_error(&format!(
+            "[AG Close] still_running_entries={:?}",
+            remaining_entries
+        ));
         return Err("无法关闭受管 Antigravity 实例进程，请手动关闭后重试".to_string());
     }
 
@@ -2549,13 +2575,41 @@ fn send_close_signal(pid: u32) {
     {
         use std::os::windows::process::CommandExt;
 
-        let _ = Command::new("taskkill")
+        crate::modules::logger::log_info(&format!(
+            "[AG Close] taskkill start pid={}",
+            pid
+        ));
+        let output = Command::new("taskkill")
             .args(["/PID", &pid.to_string(), "/T", "/F"])
             .creation_flags(CREATE_NO_WINDOW)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .output();
+        match output {
+            Ok(value) => {
+                if value.status.success() {
+                    crate::modules::logger::log_info(&format!(
+                        "[AG Close] taskkill success pid={} status={}",
+                        pid, value.status
+                    ));
+                } else {
+                    let stderr = String::from_utf8_lossy(&value.stderr);
+                    crate::modules::logger::log_warn(&format!(
+                        "[AG Close] taskkill failed pid={} status={} stderr={}",
+                        pid,
+                        value.status,
+                        stderr.trim()
+                    ));
+                }
+            }
+            Err(err) => {
+                crate::modules::logger::log_warn(&format!(
+                    "[AG Close] taskkill error pid={} err={}",
+                    pid, err
+                ));
+            }
+        }
     }
 
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -2601,14 +2655,31 @@ fn close_pids(pids: &[u32], timeout_secs: u64) -> Result<(), String> {
     if targets.is_empty() {
         return Ok(());
     }
+    crate::modules::logger::log_info(&format!(
+        "[ClosePids] targets={:?}, timeout_secs={}",
+        targets, timeout_secs
+    ));
 
     for pid in &targets {
         send_close_signal(*pid);
     }
 
     if wait_pids_exit(&targets, timeout_secs) {
+        crate::modules::logger::log_info(&format!(
+            "[ClosePids] all exited, targets={:?}",
+            targets
+        ));
         Ok(())
     } else {
+        let remaining: Vec<u32> = targets
+            .iter()
+            .copied()
+            .filter(|pid| is_pid_running(*pid))
+            .collect();
+        crate::modules::logger::log_error(&format!(
+            "[ClosePids] timeout, remaining={:?}",
+            remaining
+        ));
         Err("无法关闭实例进程，请手动关闭后重试".to_string())
     }
 }
