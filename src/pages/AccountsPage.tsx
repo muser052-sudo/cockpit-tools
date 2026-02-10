@@ -2814,7 +2814,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                     <div className="quota-list">
                       {account.quota.models.map((model) => (
                         <div key={model.name} className="quota-card">
-                          <h4>{model.name}</h4>
+                          <h4>{model.display_name?.trim() || model.name}</h4>
                           <div className="quota-value-row">
                             <span
                               className={`quota-value ${getQuotaClass(model.percentage)}`}
