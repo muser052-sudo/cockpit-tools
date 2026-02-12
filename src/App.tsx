@@ -74,6 +74,7 @@ function App() {
   const [showPlatformLayoutModal, setShowPlatformLayoutModal] = useState(false);
   const [appPathMissing, setAppPathMissing] = useState<AppPathMissingDetail | null>(null);
   const [appPathSetting, setAppPathSetting] = useState(false);
+  const [appPathDetecting, setAppPathDetecting] = useState(false);
   const [appPathDraft, setAppPathDraft] = useState('');
   
   // 启用自动刷新 hook
@@ -308,6 +309,7 @@ function App() {
     let active = true;
     if (!appPathMissing) {
       setAppPathDraft('');
+      setAppPathDetecting(false);
       return () => {
         active = false;
       };
@@ -352,7 +354,7 @@ function App() {
   };
 
   const handleSaveMissingAppPath = async () => {
-    if (!appPathMissing || appPathSetting) return;
+    if (!appPathMissing || appPathSetting || appPathDetecting) return;
     const path = appPathDraft.trim();
     if (!path) return;
     setAppPathSetting(true);
@@ -386,6 +388,22 @@ function App() {
     } catch (error) {
       console.error('设置应用路径失败:', error);
       setAppPathSetting(false);
+    }
+  };
+
+  const handleResetMissingAppPath = async () => {
+    if (!appPathMissing || appPathSetting || appPathDetecting) return;
+    setAppPathDetecting(true);
+    try {
+      const detected = await invoke<string | null>('detect_app_path', {
+        app: appPathMissing.app,
+        force: true,
+      });
+      setAppPathDraft((detected || '').trim());
+    } catch (error) {
+      console.error('自动探测应用路径失败:', error);
+    } finally {
+      setAppPathDetecting(false);
     }
   };
 
@@ -480,20 +498,41 @@ function App() {
                     onChange={(e) => setAppPathDraft(e.target.value)}
                     disabled={appPathSetting}
                   />
-                  <button className="btn btn-secondary" onClick={handlePickMissingAppPath} disabled={appPathSetting}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handlePickMissingAppPath}
+                    disabled={appPathSetting || appPathDetecting}
+                  >
                     {t('settings.general.codexPathSelect', '选择')}
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleResetMissingAppPath}
+                    disabled={appPathSetting || appPathDetecting}
+                  >
+                    {appPathMissing.app === 'vscode'
+                      ? t('settings.general.vscodePathReset', '重置默认')
+                      : appPathMissing.app === 'windsurf'
+                        ? t('settings.general.windsurfPathReset', '重置默认')
+                      : appPathMissing.app === 'codex'
+                          ? t('settings.general.codexPathReset', '重置默认')
+                          : t('settings.general.codexPathReset', '重置默认')}
                   </button>
                 </div>
               </div>
             </div>
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setAppPathMissing(null)} disabled={appPathSetting}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setAppPathMissing(null)}
+                disabled={appPathSetting || appPathDetecting}
+              >
                 {t('common.cancel', '取消')}
               </button>
               <button
                 className="btn btn-primary"
                 onClick={handleSaveMissingAppPath}
-                disabled={appPathSetting || !appPathDraft.trim()}
+                disabled={appPathSetting || appPathDetecting || !appPathDraft.trim()}
               >
                 {t('common.save', '保存')}
               </button>
