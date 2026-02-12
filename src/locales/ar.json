@@ -31,7 +31,9 @@
     "codex": "حسابات Codex",
     "githubCopilot": "GitHub Copilot",
     "dashboard": "لوحة التحكم",
-    "instances": "مثيلات متعددة"
+    "instances": "مثيلات متعددة",
+    "windsurf": "Windsurf",
+    "morePlatforms": "المزيد من المنصات"
   },
   "settings": {
     "title": "إعدادات التطبيق",
@@ -99,7 +101,15 @@
       "codexSettingsTitle": "إعدادات Codex",
       "githubCopilotSettingsTitle": "إعدادات GitHub Copilot",
       "ghcpAutoRefresh": "تحديث حصة GitHub Copilot تلقائيا",
-      "ghcpAutoRefreshDesc": "تكرار التحديث في الخلفية"
+      "ghcpAutoRefreshDesc": "تكرار التحديث في الخلفية",
+      "windsurfSettingsTitle": "إعدادات Windsurf",
+      "windsurfAutoRefresh": "تحديث تلقائي لحصة Windsurf",
+      "windsurfAutoRefreshDesc": "تردد التحديث التلقائي في الخلفية",
+      "windsurfAppPath": "مسار تطبيق Windsurf",
+      "windsurfAppPathDesc": "اتركه فارغًا لاستخدام المسار الافتراضي",
+      "windsurfAppPathPlaceholder": "المسار الافتراضي",
+      "windsurfPathSelect": "اختيار",
+      "windsurfPathReset": "إعادة التعيين إلى الافتراضي"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -903,7 +913,7 @@
       "title": "دليل حسابات GitHub Copilot (انقر للتوسيع/الطي)",
       "desc": "يتطلب تبديل الحساب قراءة مخزن المصادقة المحلي في VS Code واستخدام خدمة بيانات الاعتماد في النظام لفك التشفير وإعادة الكتابة؛ وتتم معالجة البيانات محليًا فقط.",
       "reason": "نطاق الأذونات: قراءة قاعدة بيانات مصادقة VS Code ‏(state.vscdb) واستدعاء قدرات التشفير في النظام (Windows DPAPI / macOS Keychain / Linux Secret Service) لفك التشفير وإعادة الكتابة.",
-      "storage": "نطاق القراءة: تتم معالجة بيانات جلسات تسجيل الدخول المرتبطة بـ GitHub فقط، ولن يتم تعديل المفاتيح السرية في النظام أو رفع أي مفاتيح أو رموز.",
+      "storage": "نطاق القراءة: تتم معالجة بيانات جلسات تسجيل الدخول المرتبطة بـ GitHub فقط، وجميع العمليات تُنفّذ محليًا.",
       "alternative": "بديل: استخدم العزل عبر المثيلات المتعددة (باستخدام --user-data-dir مختلف). سجّل الدخول مرة واحدة لكل مثيل، ثم شغّل حسب المثيل للتبديل السريع إلى بيئة الحساب المستهدف.",
       "inject": "تبديل بنقرة واحدة: تقرأ هذه الأداة مواد التشفير المحلية في VS Code (DPAPI/Keychain/Secret Service)، وتفك تشفير جلسة المصادقة في state.vscdb، وتستبدل رمز GitHub Copilot ثم تعيد التشفير — وكل ذلك محليًا على جهازك."
     },
@@ -1168,10 +1178,171 @@
     "customInput": "مخصص",
     "apply": "تطبيق",
     "inputMinutes": "أدخل الدقائق",
-    "inputPercent": "أدخل النسبة المئوية"
+    "inputPercent": "أدخل النسبة المئوية",
+    "windsurf": {
+      "title": "إعدادات Windsurf",
+      "appPath": "مسار Windsurf"
+    },
+    "windsurfRefreshInterval": "تحديث الحصة تلقائياً"
   },
   "privacy": {
     "hideSensitive": "إخفاء البريد الإلكتروني",
     "showSensitive": "إظهار البريد الإلكتروني"
+  },
+  "windsurf": {
+    "title": "إدارة حسابات Windsurf",
+    "subtitle": "مراقبة حالة الحصة لجميع الحسابات في الوقت الفعلي.",
+    "overview": {
+      "title": "نظرة عامة على الحسابات"
+    },
+    "instances": {
+      "title": "مثيلات متعددة",
+      "subtitle": "إعدادات مستقلة لكل مثيل لتشغيل متوازٍ بعدة حسابات.",
+      "unsupported": {
+        "title": "غير مدعوم على هذا النظام",
+        "desc": "ميزة المثيلات المتعددة لـ Windsurf متاحة على macOS فقط."
+      },
+      "quota": {
+        "inline": "الاقتراحات المضمنة",
+        "chat": "رسائل الدردشة"
+      }
+    },
+    "addAccount": "إضافة حساب",
+    "refreshAll": "تحديث الكل",
+    "refreshQuota": "تحديث الحصة",
+    "empty": {
+      "title": "لا توجد حسابات",
+      "description": "انقر على \"إضافة حساب\" لبدء إدارة حسابات Windsurf"
+    },
+    "noMatch": {
+      "title": "لا توجد حسابات مطابقة",
+      "desc": "حاول تعديل البحث أو المرشحات"
+    },
+    "addModal": {
+      "title": "إضافة حساب Windsurf",
+      "oauth": "OAuth",
+      "token": "Token / JSON",
+      "import": "استيراد محلي"
+    },
+    "oauth": {
+      "desc": "انقر الزر أدناه وأكمل تفويض Windsurf في المتصفح.",
+      "preparing": "جارٍ تجهيز معلومات التفويض...",
+      "openBrowser": "فتح في المتصفح",
+      "hint": "بعد إكمال التفويض سيتم تحديث هذه النافذة تلقائيًا",
+      "success": "تم التفويض بنجاح",
+      "failed": "فشل التفويض",
+      "retry": "إعادة إنشاء معلومات التفويض",
+      "timeoutRetry": "تحديث رابط التفويض",
+      "waiting": "بانتظار التفويض...",
+      "meta": "تنتهي الصلاحية خلال: {{expires}}s؛ فاصل الاستطلاع: {{interval}}s"
+    },
+    "token": {
+      "desc": "الصق رمز وصول Windsurf أو بيانات JSON المصدّرة.",
+      "placeholder": "الصق Token أو JSON...",
+      "import": "استيراد",
+      "importing": "جارٍ الاستيراد...",
+      "importSuccessMsg": "تم استيراد {{count}} حساب(ات) بنجاح",
+      "importFailedMsg": "فشل الاستيراد: {{error}}",
+      "empty": "يرجى إدخال Token أو JSON"
+    },
+    "import": {
+      "label": "استيراد",
+      "localDesc": "استيراد بيانات حسابات Windsurf من ملف JSON.",
+      "localClient": "استيراد من Windsurf المحلي",
+      "orJson": "أو الاستيراد من ملف JSON",
+      "importing": "جارٍ الاستيراد...",
+      "failedMsg": "فشل الاستيراد: {{error}}",
+      "pickFile": "اختر ملف JSON للاستيراد"
+    },
+    "quota": {
+      "hourly": "الاقتراحات المضمنة",
+      "weekly": "رسائل الدردشة",
+      "noData": "لا توجد بيانات حصة",
+      "resetDone": "تمت إعادة الضبط"
+    },
+    "credits": {
+      "title": "الباقة",
+      "renewMonthly": "تتجدد الأرصدة كل شهر",
+      "planEndsIn": "تتم إعادة ضبط الدورة خلال {{days}} يومًا",
+      "planEndsUnknown": "توقيت الدورة غير متاح",
+      "periodRange": "الدورة: {{start}} - {{end}}",
+      "periodEndOnly": "نهاية الدورة: {{end}}",
+      "left": "متبقي {{count}} رصيد",
+      "leftUnknown": "الأرصدة المتبقية -",
+      "promptLeft": "متبقي {{remaining}}/{{total}} من أرصدة الأوامر",
+      "promptLeftNoTotal": "متبقي {{remaining}} من أرصدة الأوامر",
+      "promptLeftUnknown": "أرصدة الأوامر المتبقية -",
+      "addOnAvailable": "{{count}} رصيد إضافي متاح",
+      "usedLine": "تم استخدام {{used}} / {{total}}",
+      "leftInline": "{{left}} متبقي"
+    },
+    "usage": {
+      "resetUnknown": "إعادة تعيين الحصة بعد -",
+      "resetLine": "تتم إعادة تعيين الحصة {{dateText}}."
+    },
+    "time": {
+      "relativeDays": "{{days}}d",
+      "relativeDaysHours": "{{days}}d {{hours}}h",
+      "relativeHours": "{{hours}}h",
+      "relativeHoursMinutes": "{{hours}}h {{minutes}}m",
+      "relativeMinutes": "{{minutes}}m",
+      "lessThanMinute": "<1m",
+      "relativeWithAbsolute": "{{relative}} ({{absolute}})"
+    },
+    "search": "البحث في الحسابات...",
+    "view": {
+      "list": "عرض قائمة",
+      "grid": "عرض بطاقات"
+    },
+    "filter": {
+      "all": "الكل ({{count}})",
+      "free": "FREE ({{count}})",
+      "individual": "INDIVIDUAL ({{count}})",
+      "pro": "PRO ({{count}})",
+      "business": "BUSINESS ({{count}})",
+      "enterprise": "ENTERPRISE ({{count}})"
+    },
+    "filterLabel": "تصفية",
+    "sortLabel": "ترتيب",
+    "sort": {
+      "createdAt": "وقت الإنشاء",
+      "credits": "حسب الأرصدة المتبقية",
+      "planEnd": "حسب نهاية الدورة",
+      "descTooltip": "الحالي: تنازلي. انقر للتبديل إلى تصاعدي",
+      "ascTooltip": "الحالي: تصاعدي. انقر للتبديل إلى تنازلي",
+      "toggleDirection": "تبديل اتجاه الترتيب"
+    },
+    "columns": {
+      "email": "البريد الإلكتروني",
+      "plan": "الوسم",
+      "promptCredits": "أرصدة الأوامر",
+      "addOnPromptCredits": "أرصدة الأوامر الإضافية",
+      "credits": "الأرصدة",
+      "actions": "الإجراءات"
+    },
+    "export": "تصدير",
+    "injectToVSCode": "التبديل إلى Windsurf",
+    "injecting": "جارٍ الحقن...",
+    "injectSuccess": "اكتمل التبديل. جارٍ تشغيل Windsurf.",
+    "injectRequireClose": "يرجى إغلاق Windsurf قبل التبديل.",
+    "flowNotice": {
+      "title": "دليل حسابات Windsurf (انقر للتوسيع/الطي)",
+      "desc": "يتطلب تبديل الحساب قراءة مخزن المصادقة المحلي في Windsurf واستخدام خدمة بيانات الاعتماد في النظام لفك التشفير وإعادة الكتابة؛ وتتم معالجة البيانات محليًا فقط.",
+      "inject": "تبديل بنقرة واحدة: تقرأ هذه الأداة مواد التشفير المحلية في Windsurf (DPAPI/Keychain/Secret Service)، وتفك تشفير جلسة المصادقة في state.vscdb، وتستبدل رمز Windsurf ثم تعيد التشفير — وكل ذلك محليًا على جهازك.",
+      "alternative": "بديل: استخدم العزل عبر المثيلات المتعددة (باستخدام --user-data-dir مختلف). سجّل الدخول مرة واحدة لكل مثيل، ثم شغّل حسب المثيل للتبديل السريع إلى بيئة الحساب المستهدف.",
+      "reason": "نطاق الأذونات: قراءة قاعدة بيانات مصادقة Windsurf ‏(state.vscdb) واستدعاء قدرات التشفير في النظام (Windows DPAPI / macOS Keychain / Linux Secret Service) لفك التشفير وإعادة الكتابة.",
+      "storage": "نطاق القراءة: تتم معالجة بيانات جلسات تسجيل الدخول المرتبطة بـ Windsurf فقط، وجميع العمليات تُنفّذ محليًا."
+    }
+  },
+  "platformLayout": {
+    "title": "تخطيط المنصات",
+    "sidebarSelected": "المحدد في الشريط الجانبي {{count}}/{{max}}",
+    "reset": "إعادة إلى الافتراضي",
+    "tip": "اسحب لإعادة الترتيب. يمكن عرض منصتين كحد أقصى في الشريط الجانبي. إذا تم اختيار منصة واحدة فقط، فستُعرض منصة واحدة فقط.",
+    "sidebarToggle": "إظهار في الشريط الجانبي",
+    "dashboardToggle": "إظهار في لوحة المعلومات",
+    "hiddenBadge": "مخفي",
+    "openFromMore": "إدارة تخطيط المنصات",
+    "dragHandleLabel": "اسحب لإعادة الترتيب"
   }
 }

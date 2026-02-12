@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use serde_json::json;
 use crate::models::QuotaData;
 use crate::modules;
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::PathBuf;
@@ -51,7 +51,8 @@ fn api_cache_path(source: &str, email: &str) -> Result<PathBuf, String> {
     let data_dir = modules::account::get_data_dir()?;
     let dir = data_dir.join(API_CACHE_DIR).join(source);
     if !dir.exists() {
-        fs::create_dir_all(&dir).map_err(|e| format!("Failed to create quota api cache dir: {}", e))?;
+        fs::create_dir_all(&dir)
+            .map_err(|e| format!("Failed to create quota api cache dir: {}", e))?;
     }
     Ok(dir.join(format!("{}.json", hash_email(email))))
 }
@@ -91,7 +92,13 @@ fn api_cache_age_secs(record: &QuotaApiCacheRecord) -> i64 {
     std::cmp::max(0, (now_ms - record.updated_at) / 1000)
 }
 
-fn write_api_cache(source: &str, custom_source: &str, email: &str, project_id: Option<String>, payload: serde_json::Value) {
+fn write_api_cache(
+    source: &str,
+    custom_source: &str,
+    email: &str,
+    project_id: Option<String>,
+    payload: serde_json::Value,
+) {
     if let Ok(path) = api_cache_path(source, email) {
         let record = QuotaApiCacheRecord {
             version: API_CACHE_VERSION,
@@ -320,45 +327,54 @@ pub async fn fetch_project_id(access_token: &str, email: &str) -> (Option<String
                         match text_result {
                             Ok(text) => match serde_json::from_str::<LoadProjectResponse>(&text) {
                                 Ok(data) => {
-                                subscription_tier = data.paid_tier
-                                    .and_then(|t| t.id)
-                                    .or_else(|| data.current_tier.and_then(|t| t.id));
+                                    subscription_tier = data
+                                        .paid_tier
+                                        .and_then(|t| t.id)
+                                        .or_else(|| data.current_tier.and_then(|t| t.id));
 
-                                if let Some(ref tier) = subscription_tier {
-                                    crate::modules::logger::log_info(&format!(
-                                        "📊 [{}] 订阅识别成功: {}", email, tier
-                                    ));
-                                }
-
-                                if let Some(project) = data.project {
-                                    if let Some(project_id) = extract_project_id(&project) {
-                                        return (Some(project_id), subscription_tier);
+                                    if let Some(ref tier) = subscription_tier {
+                                        crate::modules::logger::log_info(&format!(
+                                            "📊 [{}] 订阅识别成功: {}",
+                                            email, tier
+                                        ));
                                     }
-                                }
 
-                                if let Some(tiers) = data.allowed_tiers {
-                                    allowed_tiers = tiers;
-                                }
+                                    if let Some(project) = data.project {
+                                        if let Some(project_id) = extract_project_id(&project) {
+                                            return (Some(project_id), subscription_tier);
+                                        }
+                                    }
 
-                                let onboard_tier = pick_onboard_tier(&allowed_tiers)
-                                    .or_else(|| subscription_tier.clone());
-                                if let Some(tier_id) = onboard_tier {
-                                    match try_onboard_user(&client, base, access_token, &tier_id).await {
-                                        Ok(project_id) => {
-                                            if let Some(project_id) = project_id {
-                                                return (Some(project_id), subscription_tier);
+                                    if let Some(tiers) = data.allowed_tiers {
+                                        allowed_tiers = tiers;
+                                    }
+
+                                    let onboard_tier = pick_onboard_tier(&allowed_tiers)
+                                        .or_else(|| subscription_tier.clone());
+                                    if let Some(tier_id) = onboard_tier {
+                                        match try_onboard_user(
+                                            &client,
+                                            base,
+                                            access_token,
+                                            &tier_id,
+                                        )
+                                        .await
+                                        {
+                                            Ok(project_id) => {
+                                                if let Some(project_id) = project_id {
+                                                    return (Some(project_id), subscription_tier);
+                                                }
+                                            }
+                                            Err(err) => {
+                                                crate::modules::logger::log_warn(&format!(
+                                                    "⚠️ [{}] onboardUser 失败: {}",
+                                                    email, err
+                                                ));
                                             }
                                         }
-                                        Err(err) => {
-                                            crate::modules::logger::log_warn(&format!(
-                                                "⚠️ [{}] onboardUser 失败: {}",
-                                                email, err
-                                            ));
-                                        }
                                     }
-                                }
 
-                                return (None, subscription_tier);
+                                    return (None, subscription_tier);
                                 }
                                 Err(err) => {
                                     last_error = Some(format!("loadCodeAssist 解析失败: {}", err));
@@ -436,9 +452,13 @@ pub async fn fetch_project_id(access_token: &str, email: &str) -> (Option<String
 
 /// 查询账号配额
 /// skip_cache: 是否跳过缓存，单个账号刷新应传 true，批量刷新传 false
-pub async fn fetch_quota(access_token: &str, email: &str, skip_cache: bool) -> crate::error::AppResult<QuotaFetchResult> {
+pub async fn fetch_quota(
+    access_token: &str,
+    email: &str,
+    skip_cache: bool,
+) -> crate::error::AppResult<QuotaFetchResult> {
     use crate::error::AppError;
-    
+
     let (project_id, subscription_tier) = fetch_project_id(access_token, email).await;
 
     if !skip_cache {
@@ -449,7 +469,9 @@ pub async fn fetch_quota(access_token: &str, email: &str, skip_cache: bool) -> c
                     email,
                     api_cache_age_secs(&record),
                 ));
-                if let Ok(quota_response) = serde_json::from_value::<QuotaResponse>(record.payload.clone()) {
+                if let Ok(quota_response) =
+                    serde_json::from_value::<QuotaResponse>(record.payload.clone())
+                {
                     let mut quota_data = QuotaData::new();
                     for (name, info) in quota_response.models {
                         let display_name = info
@@ -459,7 +481,8 @@ pub async fn fetch_quota(access_token: &str, email: &str, skip_cache: bool) -> c
                             .filter(|value| !value.is_empty())
                             .map(str::to_string);
                         if let Some(quota_info) = info.quota_info {
-                            let percentage = quota_info.remaining_fraction
+                            let percentage = quota_info
+                                .remaining_fraction
                                 .map(|f| (f * 100.0) as i32)
                                 .unwrap_or(0);
                             let reset_time = quota_info.reset_time.unwrap_or_default();
@@ -484,13 +507,13 @@ pub async fn fetch_quota(access_token: &str, email: &str, skip_cache: bool) -> c
             }
         }
     }
-    
+
     let client = create_client();
     let payload = project_id
         .as_ref()
         .map(|id| json!({ "project": id }))
         .unwrap_or_else(|| json!({}));
-    
+
     let max_retries = 3;
 
     for attempt in 1..=max_retries {
@@ -506,10 +529,11 @@ pub async fn fetch_quota(access_token: &str, email: &str, skip_cache: bool) -> c
             Ok(response) => {
                 if let Err(_) = response.error_for_status_ref() {
                     let status = response.status();
-                    
+
                     if status == reqwest::StatusCode::FORBIDDEN {
                         crate::modules::logger::log_warn(&format!(
-                            "账号无权限 (403 Forbidden), 标记为 forbidden 状态: {}", email
+                            "账号无权限 (403 Forbidden), 标记为 forbidden 状态: {}",
+                            email
                         ));
                         let text = response.text().await.unwrap_or_default();
                         let mut q = QuotaData::new();
@@ -529,26 +553,32 @@ pub async fn fetch_quota(access_token: &str, email: &str, skip_cache: bool) -> c
                             }),
                         });
                     }
-                    
+
                     if attempt < max_retries {
                         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
                         continue;
                     } else {
                         let text = response.text().await.unwrap_or_default();
-                        return Err(AppError::Unknown(format!("API 错误: {} - {}", status, text)));
+                        return Err(AppError::Unknown(format!(
+                            "API 错误: {} - {}",
+                            status, text
+                        )));
                     }
                 }
 
-                let body = response
-                    .text()
-                    .await
-                    .map_err(|e| AppError::Network(e))?;
+                let body = response.text().await.map_err(|e| AppError::Network(e))?;
                 let payload_value: serde_json::Value = serde_json::from_str(&body)
                     .map_err(|e| AppError::Unknown(format!("API 响应解析失败: {}", e)))?;
-                write_api_cache("authorized", "desktop", email, project_id.clone(), payload_value.clone());
+                write_api_cache(
+                    "authorized",
+                    "desktop",
+                    email,
+                    project_id.clone(),
+                    payload_value.clone(),
+                );
                 let quota_response: QuotaResponse = serde_json::from_value(payload_value)
                     .map_err(|e| AppError::Unknown(format!("API 响应解析失败: {}", e)))?;
-                
+
                 let mut quota_data = QuotaData::new();
 
                 for (name, info) in quota_response.models {
@@ -559,26 +589,27 @@ pub async fn fetch_quota(access_token: &str, email: &str, skip_cache: bool) -> c
                         .filter(|value| !value.is_empty())
                         .map(str::to_string);
                     if let Some(quota_info) = info.quota_info {
-                        let percentage = quota_info.remaining_fraction
+                        let percentage = quota_info
+                            .remaining_fraction
                             .map(|f| (f * 100.0) as i32)
                             .unwrap_or(0);
-                        
+
                         let reset_time = quota_info.reset_time.unwrap_or_default();
-                        
+
                         if name.contains("gemini") || name.contains("claude") {
                             quota_data.add_model(name, display_name, percentage, reset_time);
                         }
                     }
                 }
-                
+
                 quota_data.subscription_tier = subscription_tier.clone();
-                
+
                 return Ok(QuotaFetchResult {
                     quota: quota_data,
                     project_id: project_id.clone(),
                     error: None,
                 });
-            },
+            }
             Err(e) => {
                 if attempt < max_retries {
                     tokio::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -588,6 +619,6 @@ pub async fn fetch_quota(access_token: &str, email: &str, skip_cache: bool) -> c
             }
         }
     }
-    
+
     Err(AppError::Unknown("配额查询失败".to_string()))
 }

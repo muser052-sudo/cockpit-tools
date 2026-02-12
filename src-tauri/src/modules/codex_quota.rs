@@ -1,6 +1,6 @@
 use crate::models::codex::{CodexAccount, CodexQuota, CodexQuotaErrorInfo};
 use crate::modules::{codex_account, logger};
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, ACCEPT};
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION};
 use serde::{Deserialize, Serialize};
 
 // 使用 wham/usage 端点（Quotio 使用的）
@@ -87,7 +87,7 @@ struct UsageResponse {
 /// 查询单个账号的配额
 pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
     let client = reqwest::Client::new();
-    
+
     let mut headers = HeaderMap::new();
     headers.insert(
         AUTHORIZATION,
@@ -95,13 +95,12 @@ pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
             .map_err(|e| format!("构建 Authorization 头失败: {}", e))?,
     );
     headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
-    
+
     // 添加 ChatGPT-Account-Id 头（关键！）
-    let account_id = account
-        .account_id
-        .clone()
-        .or_else(|| codex_account::extract_chatgpt_account_id_from_access_token(&account.tokens.access_token));
-    
+    let account_id = account.account_id.clone().or_else(|| {
+        codex_account::extract_chatgpt_account_id_from_access_token(&account.tokens.access_token)
+    });
+
     if let Some(ref acc_id) = account_id {
         if !acc_id.is_empty() {
             headers.insert(
@@ -111,19 +110,24 @@ pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
             );
         }
     }
-    
-    logger::log_info(&format!("Codex 配额请求: {} (account_id: {:?})", USAGE_URL, account_id));
-    
+
+    logger::log_info(&format!(
+        "Codex 配额请求: {} (account_id: {:?})",
+        USAGE_URL, account_id
+    ));
+
     let response = client
         .get(USAGE_URL)
         .headers(headers)
         .send()
         .await
         .map_err(|e| format!("请求失败: {}", e))?;
-    
+
     let status = response.status();
     let headers = response.headers().clone();
-    let body = response.text().await
+    let body = response
+        .text()
+        .await
         .map_err(|e| format!("读取响应失败: {}", e))?;
 
     let request_id = get_header_value(&headers, "request-id");
@@ -144,7 +148,11 @@ pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
             USAGE_URL, status, request_id, x_request_id, cf_ray, detail_code, body
         ));
 
-        let body_preview = if body.len() > 200 { &body[..200] } else { &body };
+        let body_preview = if body.len() > 200 {
+            &body[..200]
+        } else {
+            &body
+        };
         let mut error_message = format!("API 返回错误 {}", status);
         if let Some(code) = detail_code {
             error_message.push_str(&format!(" [error_code:{}]", code));
@@ -152,41 +160,43 @@ pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
         error_message.push_str(&format!(" - {}", body_preview));
         return Err(error_message);
     }
-    
+
     // 解析响应
-    let usage: UsageResponse = serde_json::from_str(&body)
-        .map_err(|e| format!("解析 JSON 失败: {}", e))?;
-    
+    let usage: UsageResponse =
+        serde_json::from_str(&body).map_err(|e| format!("解析 JSON 失败: {}", e))?;
+
     parse_quota_from_usage(&usage, &body)
 }
 
 /// 从使用率响应中解析配额信息
 fn parse_quota_from_usage(usage: &UsageResponse, raw_body: &str) -> Result<CodexQuota, String> {
     let rate_limit = usage.rate_limit.as_ref();
-    
+
     // Primary window = 5小时配额（session）
-    let (hourly_percentage, hourly_reset_time) = if let Some(primary) = rate_limit.and_then(|r| r.primary_window.as_ref()) {
-        let used = primary.used_percent.unwrap_or(0);
-        let remaining = 100 - used;
-        let reset_at = primary.reset_at;
-        (remaining, reset_at)
-    } else {
-        (100, None)
-    };
-    
+    let (hourly_percentage, hourly_reset_time) =
+        if let Some(primary) = rate_limit.and_then(|r| r.primary_window.as_ref()) {
+            let used = primary.used_percent.unwrap_or(0);
+            let remaining = 100 - used;
+            let reset_at = primary.reset_at;
+            (remaining, reset_at)
+        } else {
+            (100, None)
+        };
+
     // Secondary window = 周配额
-    let (weekly_percentage, weekly_reset_time) = if let Some(secondary) = rate_limit.and_then(|r| r.secondary_window.as_ref()) {
-        let used = secondary.used_percent.unwrap_or(0);
-        let remaining = 100 - used;
-        let reset_at = secondary.reset_at;
-        (remaining, reset_at)
-    } else {
-        (100, None)
-    };
-    
+    let (weekly_percentage, weekly_reset_time) =
+        if let Some(secondary) = rate_limit.and_then(|r| r.secondary_window.as_ref()) {
+            let used = secondary.used_percent.unwrap_or(0);
+            let remaining = 100 - used;
+            let reset_at = secondary.reset_at;
+            (remaining, reset_at)
+        } else {
+            (100, None)
+        };
+
     // 保存原始响应
     let raw_data: Option<serde_json::Value> = serde_json::from_str(raw_body).ok();
-    
+
     Ok(CodexQuota {
         hourly_percentage,
         hourly_reset_time,
@@ -200,11 +210,11 @@ fn parse_quota_from_usage(usage: &UsageResponse, raw_body: &str) -> Result<Codex
 pub async fn refresh_account_quota(account_id: &str) -> Result<CodexQuota, String> {
     let mut account = codex_account::load_account(account_id)
         .ok_or_else(|| format!("账号不存在: {}", account_id))?;
-    
+
     // 检查 token 是否过期，如果过期则刷新
     if crate::modules::codex_oauth::is_token_expired(&account.tokens.access_token) {
         logger::log_info(&format!("账号 {} 的 Token 已过期，尝试刷新", account.email));
-        
+
         if let Some(ref refresh_token) = account.tokens.refresh_token {
             match crate::modules::codex_oauth::refresh_access_token(refresh_token).await {
                 Ok(new_tokens) => {
@@ -246,7 +256,7 @@ pub async fn refresh_account_quota(account_id: &str) -> Result<CodexQuota, Strin
     account.quota = Some(quota.clone());
     account.quota_error = None;
     codex_account::save_account(&account)?;
-    
+
     Ok(quota)
 }
 
@@ -254,11 +264,11 @@ pub async fn refresh_account_quota(account_id: &str) -> Result<CodexQuota, Strin
 pub async fn refresh_all_quotas() -> Result<Vec<(String, Result<CodexQuota, String>)>, String> {
     let accounts = codex_account::list_accounts();
     let mut results = Vec::new();
-    
+
     for account in accounts {
         let result = refresh_account_quota(&account.id).await;
         results.push((account.id.clone(), result));
     }
-    
+
     Ok(results)
 }

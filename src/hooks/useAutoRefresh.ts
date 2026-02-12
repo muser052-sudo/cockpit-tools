@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useAccountStore } from '../stores/useAccountStore';
 import { useCodexAccountStore } from '../stores/useCodexAccountStore';
 import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
+import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
 
 interface GeneralConfig {
   language: string;
@@ -10,12 +11,14 @@ interface GeneralConfig {
   auto_refresh_minutes: number;
   codex_auto_refresh_minutes: number;
   ghcp_auto_refresh_minutes: number;
+  windsurf_auto_refresh_minutes: number;
   auto_switch_enabled: boolean;
   close_behavior: string;
   opencode_app_path?: string;
   antigravity_app_path?: string;
   codex_app_path?: string;
   vscode_app_path?: string;
+  windsurf_app_path?: string;
   opencode_sync_on_switch?: boolean;
 }
 
@@ -23,10 +26,12 @@ export function useAutoRefresh() {
   const { refreshAllQuotas, syncCurrentFromClient, fetchAccounts, fetchCurrentAccount } = useAccountStore();
   const { refreshAllQuotas: refreshAllCodexQuotas } = useCodexAccountStore();
   const { refreshAllTokens: refreshAllGhcpTokens } = useGitHubCopilotAccountStore();
+  const { refreshAllTokens: refreshAllWindsurfTokens } = useWindsurfAccountStore();
   const agIntervalRef = useRef<number | null>(null);
   const autoSwitchIntervalRef = useRef<number | null>(null);
   const codexIntervalRef = useRef<number | null>(null);
   const ghcpIntervalRef = useRef<number | null>(null);
+  const windsurfIntervalRef = useRef<number | null>(null);
   const autoSwitchRefreshingRef = useRef(false);
 
   const setupAutoRefresh = async () => {
@@ -52,11 +57,14 @@ export function useAutoRefresh() {
                 theme: config.theme,
                 autoRefreshMinutes: 2,
                 codexAutoRefreshMinutes: config.codex_auto_refresh_minutes,
+                ghcpAutoRefreshMinutes: config.ghcp_auto_refresh_minutes,
+                windsurfAutoRefreshMinutes: config.windsurf_auto_refresh_minutes,
                 closeBehavior: config.close_behavior || 'ask',
                 opencodeAppPath: config.opencode_app_path ?? '',
                 antigravityAppPath: config.antigravity_app_path ?? '',
                 codexAppPath: config.codex_app_path ?? '',
                 vscodeAppPath: config.vscode_app_path ?? '',
+                windsurfAppPath: config.windsurf_app_path ?? '',
                 opencodeSyncOnSwitch: config.opencode_sync_on_switch ?? true,
               });
               config.auto_refresh_minutes = 2;
@@ -82,6 +90,10 @@ export function useAutoRefresh() {
       if (autoSwitchIntervalRef.current) {
         window.clearInterval(autoSwitchIntervalRef.current);
         autoSwitchIntervalRef.current = null;
+      }
+      if (windsurfIntervalRef.current) {
+        window.clearInterval(windsurfIntervalRef.current);
+        windsurfIntervalRef.current = null;
       }
 
       if (config.auto_refresh_minutes > 0) {
@@ -133,6 +145,21 @@ export function useAutoRefresh() {
         }, ghcpMs);
       } else {
         console.log('[AutoRefresh] GitHub Copilot 已禁用');
+      }
+
+      if (config.windsurf_auto_refresh_minutes > 0) {
+        console.log(`[AutoRefresh] Windsurf 已启用: 每 ${config.windsurf_auto_refresh_minutes} 分钟`);
+        const windsurfMs = config.windsurf_auto_refresh_minutes * 60 * 1000;
+        windsurfIntervalRef.current = window.setInterval(async () => {
+          console.log('[AutoRefresh] 触发 Windsurf 配额刷新...');
+          try {
+            await refreshAllWindsurfTokens();
+          } catch (e) {
+            console.error('[AutoRefresh] Windsurf 刷新失败:', e);
+          }
+        }, windsurfMs);
+      } else {
+        console.log('[AutoRefresh] Windsurf 已禁用');
       }
 
       // 自动切号开启时，额外每 60 秒刷新当前账号（不影响原有配额自动刷新规则）
@@ -187,6 +214,9 @@ export function useAutoRefresh() {
       if (autoSwitchIntervalRef.current) {
         window.clearInterval(autoSwitchIntervalRef.current);
       }
+      if (windsurfIntervalRef.current) {
+        window.clearInterval(windsurfIntervalRef.current);
+      }
       window.removeEventListener('config-updated', handleConfigUpdate);
     };
   }, [
@@ -195,6 +225,7 @@ export function useAutoRefresh() {
     refreshAllCodexQuotas,
     refreshAllQuotas,
     refreshAllGhcpTokens,
+    refreshAllWindsurfTokens,
     syncCurrentFromClient,
   ]);
 }

@@ -1058,6 +1058,132 @@
   box-shadow: 0 0 8px rgba(239, 68, 68, 0.35);
 }
 
+/* Platform layout modal */
+.platform-layout-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.platform-layout-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.platform-layout-tip {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.platform-layout-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.platform-layout-list.is-sorting {
+  user-select: none;
+}
+
+.platform-layout-list.is-sorting .platform-layout-row,
+.platform-layout-list.is-sorting .platform-layout-drag-trigger {
+  cursor: grabbing;
+}
+
+.platform-layout-row {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+  min-height: 52px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+.platform-layout-row.is-dragging {
+  border-color: var(--text-primary);
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-sm);
+  transform: scale(1.01);
+}
+
+.platform-layout-row.is-drop-candidate {
+  border-style: dashed;
+}
+
+.platform-layout-row.is-drop-target {
+  border-color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.platform-layout-row.is-hidden {
+  opacity: 0.68;
+}
+
+.platform-layout-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.platform-layout-drag-trigger {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: grab;
+}
+
+.platform-layout-row.is-dragging .platform-layout-drag-trigger {
+  cursor: grabbing;
+}
+
+.platform-layout-main .drag-handle {
+  color: inherit;
+}
+
+.platform-layout-icon {
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+}
+
+.platform-layout-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.platform-layout-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.platform-layout-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.platform-layout-toggle.is-disabled {
+  opacity: 0.5;
+}
+
 .modal .quota-reset-info {
   font-size: 13px;
   color: var(--text-secondary);

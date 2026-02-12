@@ -1,8 +1,8 @@
-use tracing::{info, warn, error};
-use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use crate::modules::account::get_data_dir;
 use std::fs;
 use std::path::PathBuf;
-use crate::modules::account::get_data_dir;
+use tracing::{error, info, warn};
+use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
 struct LocalTimer;
 
@@ -16,18 +16,18 @@ impl tracing_subscriber::fmt::time::FormatTime for LocalTimer {
 pub fn get_log_dir() -> Result<PathBuf, String> {
     let data_dir = get_data_dir()?;
     let log_dir = data_dir.join("logs");
-    
+
     if !log_dir.exists() {
         fs::create_dir_all(&log_dir).map_err(|e| format!("创建日志目录失败: {}", e))?;
     }
-    
+
     Ok(log_dir)
 }
 
 /// 初始化日志系统
 pub fn init_logger() {
     let _ = tracing_log::LogTracer::init();
-    
+
     let log_dir = match get_log_dir() {
         Ok(dir) => dir,
         Err(e) => {
@@ -35,16 +35,16 @@ pub fn init_logger() {
             return;
         }
     };
-    
+
     let file_appender = tracing_appender::rolling::daily(log_dir, "app.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
-    
+
     let console_layer = fmt::Layer::new()
         .with_target(false)
         .with_thread_ids(false)
         .with_level(true)
         .with_timer(LocalTimer);
-        
+
     let file_layer = fmt::Layer::new()
         .with_writer(non_blocking)
         .with_ansi(false)
@@ -52,8 +52,7 @@ pub fn init_logger() {
         .with_level(true)
         .with_timer(LocalTimer);
 
-    let filter_layer = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info"));
+    let filter_layer = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     let _ = tracing_subscriber::registry()
         .with(filter_layer)
@@ -62,7 +61,7 @@ pub fn init_logger() {
         .try_init();
 
     std::mem::forget(_guard);
-    
+
     info!("日志系统已完成初始化");
 }
 

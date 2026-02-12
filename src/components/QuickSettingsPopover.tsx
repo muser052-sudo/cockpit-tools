@@ -13,17 +13,19 @@ interface GeneralConfig {
   auto_refresh_minutes: number;
   codex_auto_refresh_minutes: number;
   ghcp_auto_refresh_minutes: number;
+  windsurf_auto_refresh_minutes: number;
   close_behavior: string;
   opencode_app_path: string;
   antigravity_app_path: string;
   codex_app_path: string;
   vscode_app_path: string;
+  windsurf_app_path: string;
   opencode_sync_on_switch: boolean;
   auto_switch_enabled: boolean;
   auto_switch_threshold: number;
 }
 
-export type QuickSettingsType = 'antigravity' | 'codex' | 'github_copilot';
+export type QuickSettingsType = 'antigravity' | 'codex' | 'github_copilot' | 'windsurf';
 
 interface QuickSettingsPopoverProps {
   type: QuickSettingsType;
@@ -34,6 +36,7 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [config, setConfig] = useState<GeneralConfig | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pathDetecting, setPathDetecting] = useState(false);
   const [customRefresh, setCustomRefresh] = useState('');
   const [customThreshold, setCustomThreshold] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
@@ -90,6 +93,7 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
       case 'antigravity': return 'auto_refresh_minutes';
       case 'codex': return 'codex_auto_refresh_minutes';
       case 'github_copilot': return 'ghcp_auto_refresh_minutes';
+      case 'windsurf': return 'windsurf_auto_refresh_minutes';
     }
   };
 
@@ -106,11 +110,13 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
           autoRefreshMinutes: merged.auto_refresh_minutes,
           codexAutoRefreshMinutes: merged.codex_auto_refresh_minutes,
           ghcpAutoRefreshMinutes: merged.ghcp_auto_refresh_minutes,
+          windsurfAutoRefreshMinutes: merged.windsurf_auto_refresh_minutes,
           closeBehavior: merged.close_behavior,
           opencodeAppPath: merged.opencode_app_path,
           antigravityAppPath: merged.antigravity_app_path,
           codexAppPath: merged.codex_app_path,
           vscodeAppPath: merged.vscode_app_path,
+          windsurfAppPath: merged.windsurf_app_path,
           opencodeSyncOnSwitch: merged.opencode_sync_on_switch,
           autoSwitchEnabled: merged.auto_switch_enabled,
           autoSwitchThreshold: merged.auto_switch_threshold,
@@ -125,7 +131,7 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
     [config, saving]
   );
 
-  const handlePickAppPath = async (target: 'antigravity' | 'codex' | 'vscode') => {
+  const handlePickAppPath = async (target: 'antigravity' | 'codex' | 'vscode' | 'windsurf') => {
     try {
       const selected = await open({ multiple: false, directory: false });
       const path = Array.isArray(selected) ? selected[0] : selected;
@@ -136,7 +142,9 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
           ? 'antigravity_app_path'
           : target === 'codex'
             ? 'codex_app_path'
-            : 'vscode_app_path';
+            : target === 'vscode'
+              ? 'vscode_app_path'
+              : 'windsurf_app_path';
 
       saveConfig({ [key]: path });
     } catch (err) {
@@ -144,19 +152,25 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
     }
   };
 
-  const handleResetAppPath = async (target: 'antigravity' | 'codex' | 'vscode') => {
+  const handleResetAppPath = async (target: 'antigravity' | 'codex' | 'vscode' | 'windsurf') => {
+    if (pathDetecting) return;
+    setPathDetecting(true);
     try {
-      const detected = await invoke<string | null>('detect_app_path', { app: target });
+      const detected = await invoke<string | null>('detect_app_path', { app: target, force: true });
       const path = detected || '';
       const key =
         target === 'antigravity'
           ? 'antigravity_app_path'
           : target === 'codex'
             ? 'codex_app_path'
-            : 'vscode_app_path';
+            : target === 'vscode'
+              ? 'vscode_app_path'
+              : 'windsurf_app_path';
       saveConfig({ [key]: path });
     } catch (err) {
       console.error('Failed to reset path:', err);
+    } finally {
+      setPathDetecting(false);
     }
   };
 
@@ -168,6 +182,8 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
         return t('quickSettings.codex.title', 'Codex 设置');
       case 'github_copilot':
         return t('quickSettings.githubCopilot.title', 'GitHub Copilot 设置');
+      case 'windsurf':
+        return t('quickSettings.windsurf.title', 'Windsurf 设置');
     }
   };
 
@@ -183,6 +199,8 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
         return t('quickSettings.codexRefreshInterval', '配额自动刷新');
       case 'github_copilot':
         return t('quickSettings.ghcpRefreshInterval', '配额自动刷新');
+      case 'windsurf':
+        return t('quickSettings.windsurfRefreshInterval', '配额自动刷新');
     }
   };
 
@@ -195,6 +213,8 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
         return config.codex_app_path;
       case 'github_copilot':
         return config.vscode_app_path;
+      case 'windsurf':
+        return config.windsurf_app_path;
     }
   };
 
@@ -206,10 +226,12 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
         return t('quickSettings.codex.appPath', '启动路径');
       case 'github_copilot':
         return t('quickSettings.githubCopilot.appPath', 'VS Code 路径');
+      case 'windsurf':
+        return t('quickSettings.windsurf.appPath', 'Windsurf 路径');
     }
   };
 
-  const getAppTarget = (): 'antigravity' | 'codex' | 'vscode' => {
+  const getAppTarget = (): 'antigravity' | 'codex' | 'vscode' | 'windsurf' => {
     switch (type) {
       case 'antigravity':
         return 'antigravity';
@@ -217,6 +239,8 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
         return 'codex';
       case 'github_copilot':
         return 'vscode';
+      case 'windsurf':
+        return 'windsurf';
     }
   };
 
@@ -329,7 +353,9 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
                         ? 'antigravity_app_path'
                         : type === 'codex'
                           ? 'codex_app_path'
-                          : 'vscode_app_path';
+                          : type === 'github_copilot'
+                            ? 'vscode_app_path'
+                            : 'windsurf_app_path';
                     saveConfig({ [key]: e.target.value });
                   }}
                 />
@@ -337,6 +363,7 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
                   <button
                     className="qs-btn"
                     onClick={() => handlePickAppPath(getAppTarget())}
+                    disabled={pathDetecting}
                     title={t('settings.general.codexPathSelect', '选择')}
                   >
                     {t('settings.general.codexPathSelect', '选择')}
@@ -344,9 +371,14 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
                   <button
                     className="qs-btn"
                     onClick={() => handleResetAppPath(getAppTarget())}
-                    title={t('settings.general.codexPathReset', '恢复默认')}
+                    disabled={pathDetecting}
+                    title={
+                      pathDetecting
+                        ? t('common.loading', '加载中...')
+                        : t('settings.general.codexPathReset', '恢复默认')
+                    }
                   >
-                    <RefreshCw size={12} />
+                    <RefreshCw size={12} className={pathDetecting ? 'spin' : undefined} />
                   </button>
                 </div>
               </div>

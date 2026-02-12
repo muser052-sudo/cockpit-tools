@@ -86,17 +86,22 @@ pub async fn codex_create_instance(
     copy_source_instance_id: Option<String>,
     init_mode: Option<String>,
 ) -> Result<InstanceProfileView, String> {
-    let instance = modules::codex_instance::create_instance(modules::codex_instance::CreateInstanceParams {
-        name,
-        user_data_dir,
-        extra_args: extra_args.unwrap_or_default(),
-        bind_account_id,
-        copy_source_instance_id,
-        init_mode,
-    })?;
+    let instance =
+        modules::codex_instance::create_instance(modules::codex_instance::CreateInstanceParams {
+            name,
+            user_data_dir,
+            extra_args: extra_args.unwrap_or_default(),
+            bind_account_id,
+            copy_source_instance_id,
+            init_mode,
+        })?;
 
     let initialized = is_profile_initialized(&instance.user_data_dir);
-    Ok(InstanceProfileView::from_profile(instance, false, initialized))
+    Ok(InstanceProfileView::from_profile(
+        instance,
+        false,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -145,25 +150,31 @@ pub async fn codex_update_instance(
         if let Some(target) = store.instances.iter().find(|item| item.id == instance_id) {
             if !is_profile_initialized(&target.user_data_dir) {
                 return Err(
-                    "INSTANCE_NOT_INITIALIZED:请先启动一次实例创建数据后，再进行账号绑定".to_string(),
+                    "INSTANCE_NOT_INITIALIZED:请先启动一次实例创建数据后，再进行账号绑定"
+                        .to_string(),
                 );
             }
         }
     }
 
-    let instance = modules::codex_instance::update_instance(modules::codex_instance::UpdateInstanceParams {
-        instance_id,
-        name,
-        extra_args,
-        bind_account_id,
-    })?;
+    let instance =
+        modules::codex_instance::update_instance(modules::codex_instance::UpdateInstanceParams {
+            instance_id,
+            name,
+            extra_args,
+            bind_account_id,
+        })?;
 
     let running = instance
         .last_pid
         .map(modules::process::is_pid_running)
         .unwrap_or(false);
     let initialized = is_profile_initialized(&instance.user_data_dir);
-    Ok(InstanceProfileView::from_profile(instance, running, initialized))
+    Ok(InstanceProfileView::from_profile(
+        instance,
+        running,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -214,16 +225,19 @@ pub async fn codex_start_instance(instance_id: String) -> Result<InstanceProfile
         .find(|item| item.id == instance_id)
         .ok_or("实例不存在")?;
 
-    if let Some(pid) = modules::process::resolve_codex_pid(
-        instance.last_pid,
-        Some(&instance.user_data_dir),
-    ) {
+    if let Some(pid) =
+        modules::process::resolve_codex_pid(instance.last_pid, Some(&instance.user_data_dir))
+    {
         modules::process::close_pid(pid, 20)?;
         let _ = modules::codex_instance::update_instance_pid(&instance.id, None)?;
     }
 
     if let Some(ref account_id) = instance.bind_account_id {
-        modules::codex_instance::inject_account_to_profile(Path::new(&instance.user_data_dir), account_id).await?;
+        modules::codex_instance::inject_account_to_profile(
+            Path::new(&instance.user_data_dir),
+            account_id,
+        )
+        .await?;
     }
 
     let extra_args = modules::process::parse_extra_args(&instance.extra_args);
@@ -231,7 +245,11 @@ pub async fn codex_start_instance(instance_id: String) -> Result<InstanceProfile
     let updated = modules::codex_instance::update_instance_after_start(&instance.id, pid)?;
     let running = modules::process::is_pid_running(pid);
     let initialized = is_profile_initialized(&updated.user_data_dir);
-    Ok(InstanceProfileView::from_profile(updated, running, initialized))
+    Ok(InstanceProfileView::from_profile(
+        updated,
+        running,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -269,15 +287,18 @@ pub async fn codex_stop_instance(instance_id: String) -> Result<InstanceProfileV
         .find(|item| item.id == instance_id)
         .ok_or("实例不存在")?;
 
-    if let Some(pid) = modules::process::resolve_codex_pid(
-        instance.last_pid,
-        Some(&instance.user_data_dir),
-    ) {
+    if let Some(pid) =
+        modules::process::resolve_codex_pid(instance.last_pid, Some(&instance.user_data_dir))
+    {
         modules::process::close_pid(pid, 20)?;
     }
     let updated = modules::codex_instance::update_instance_pid(&instance.id, None)?;
     let initialized = is_profile_initialized(&updated.user_data_dir);
-    Ok(InstanceProfileView::from_profile(updated, false, initialized))
+    Ok(InstanceProfileView::from_profile(
+        updated,
+        false,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -320,10 +341,9 @@ pub async fn codex_open_instance_window(instance_id: String) -> Result<(), Strin
         .find(|item| item.id == instance_id)
         .ok_or("实例不存在")?;
 
-    if let Err(err) = modules::process::focus_codex_instance(
-        instance.last_pid,
-        Some(&instance.user_data_dir),
-    ) {
+    if let Err(err) =
+        modules::process::focus_codex_instance(instance.last_pid, Some(&instance.user_data_dir))
+    {
         modules::logger::log_warn(&format!(
             "定位 Codex 实例窗口失败，回退为启动实例: instance_id={}, err={}",
             instance.id, err

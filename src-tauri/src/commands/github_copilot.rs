@@ -1,4 +1,4 @@
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 
 use crate::models::github_copilot::{GitHubCopilotAccount, GitHubCopilotOAuthStartResponse};
 use crate::modules::{github_copilot_account, github_copilot_oauth, logger};
@@ -120,7 +120,10 @@ pub fn get_github_copilot_accounts_index_path() -> Result<String, String> {
 
 /// 切换 GitHub Copilot 账号并按默认实例启动流程生效（PID 精准关闭 + 注入 + 启动）。
 #[tauri::command]
-pub async fn inject_github_copilot_to_vscode(account_id: String) -> Result<String, String> {
+pub async fn inject_github_copilot_to_vscode(
+    app: AppHandle,
+    account_id: String,
+) -> Result<String, String> {
     logger::log_info(&format!("开始切换 GitHub Copilot 账号: {}", account_id));
     let account = github_copilot_account::load_account(&account_id)
         .ok_or_else(|| format!("GitHub Copilot account not found: {}", account_id))?;
@@ -143,21 +146,28 @@ pub async fn inject_github_copilot_to_vscode(account_id: String) -> Result<Strin
         ));
     }
 
-    let launch_warning = match crate::commands::github_copilot_instance::github_copilot_start_instance(
-        "__default__".to_string(),
-    )
-    .await
-    {
-        Ok(_) => None,
-        Err(e) => {
-            if e.starts_with("APP_PATH_NOT_FOUND:") || e.contains("启动 VS Code 失败") {
-                logger::log_warn(&format!("GitHub Copilot 默认实例启动失败: {}", e));
-                Some(e)
-            } else {
-                return Err(e);
+    let launch_warning =
+        match crate::commands::github_copilot_instance::github_copilot_start_instance(
+            "__default__".to_string(),
+        )
+        .await
+        {
+            Ok(_) => None,
+            Err(e) => {
+                if e.starts_with("APP_PATH_NOT_FOUND:") || e.contains("启动 VS Code 失败") {
+                    logger::log_warn(&format!("GitHub Copilot 默认实例启动失败: {}", e));
+                    if e.starts_with("APP_PATH_NOT_FOUND:") || e.contains("APP_PATH_NOT_FOUND:") {
+                        let _ = app.emit(
+                            "app:path_missing",
+                            serde_json::json!({ "app": "vscode", "retry": { "kind": "default" } }),
+                        );
+                    }
+                    Some(e)
+                } else {
+                    return Err(e);
+                }
             }
-        }
-    };
+        };
 
     logger::log_info(&format!(
         "GitHub Copilot 账号切换完成: {}",

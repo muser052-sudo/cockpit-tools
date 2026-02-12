@@ -116,7 +116,11 @@ pub async fn create_instance(
     })?;
 
     let initialized = is_profile_initialized(&instance.user_data_dir);
-    Ok(InstanceProfileView::from_profile(instance, false, initialized))
+    Ok(InstanceProfileView::from_profile(
+        instance,
+        false,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -165,7 +169,8 @@ pub async fn update_instance(
         if let Some(target) = store.instances.iter().find(|item| item.id == instance_id) {
             if !is_profile_initialized(&target.user_data_dir) {
                 return Err(
-                    "INSTANCE_NOT_INITIALIZED:请先启动一次实例创建数据后，再进行账号绑定".to_string(),
+                    "INSTANCE_NOT_INITIALIZED:请先启动一次实例创建数据后，再进行账号绑定"
+                        .to_string(),
                 );
             }
         }
@@ -183,7 +188,11 @@ pub async fn update_instance(
         .map(modules::process::is_pid_running)
         .unwrap_or(false);
     let initialized = is_profile_initialized(&instance.user_data_dir);
-    Ok(InstanceProfileView::from_profile(instance, running, initialized))
+    Ok(InstanceProfileView::from_profile(
+        instance,
+        running,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -237,10 +246,9 @@ pub async fn start_instance(instance_id: String) -> Result<InstanceProfileView, 
         .find(|item| item.id == instance_id)
         .ok_or("实例不存在")?;
 
-    if let Some(pid) = modules::process::resolve_antigravity_pid(
-        instance.last_pid,
-        Some(&instance.user_data_dir),
-    ) {
+    if let Some(pid) =
+        modules::process::resolve_antigravity_pid(instance.last_pid, Some(&instance.user_data_dir))
+    {
         modules::process::close_pid(pid, 20)?;
         let _ = modules::instance::update_instance_pid(&instance.id, None)?;
     }
@@ -256,7 +264,11 @@ pub async fn start_instance(instance_id: String) -> Result<InstanceProfileView, 
     let updated = modules::instance::update_instance_after_start(&instance.id, pid)?;
     let running = modules::process::is_pid_running(pid);
     let initialized = is_profile_initialized(&updated.user_data_dir);
-    Ok(InstanceProfileView::from_profile(updated, running, initialized))
+    Ok(InstanceProfileView::from_profile(
+        updated,
+        running,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -296,15 +308,18 @@ pub async fn stop_instance(instance_id: String) -> Result<InstanceProfileView, S
         .find(|item| item.id == instance_id)
         .ok_or("实例不存在")?;
 
-    if let Some(pid) = modules::process::resolve_antigravity_pid(
-        instance.last_pid,
-        Some(&instance.user_data_dir),
-    ) {
+    if let Some(pid) =
+        modules::process::resolve_antigravity_pid(instance.last_pid, Some(&instance.user_data_dir))
+    {
         modules::process::close_pid(pid, 20)?;
     }
     let updated = modules::instance::update_instance_pid(&instance.id, None)?;
     let initialized = is_profile_initialized(&updated.user_data_dir);
-    Ok(InstanceProfileView::from_profile(updated, false, initialized))
+    Ok(InstanceProfileView::from_profile(
+        updated,
+        false,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -329,7 +344,9 @@ pub async fn close_all_instances() -> Result<(), String> {
 pub async fn open_instance_window(instance_id: String) -> Result<(), String> {
     if instance_id == DEFAULT_INSTANCE_ID {
         let default_settings = modules::instance::load_default_settings()?;
-        if let Err(err) = modules::process::focus_antigravity_instance(default_settings.last_pid, None) {
+        if let Err(err) =
+            modules::process::focus_antigravity_instance(default_settings.last_pid, None)
+        {
             modules::logger::log_warn(&format!(
                 "定位 Antigravity 默认实例窗口失败，回退为启动实例: {}",
                 err
@@ -356,7 +373,8 @@ pub async fn open_instance_window(instance_id: String) -> Result<(), String> {
             instance.id, err
         ));
         let extra_args = modules::process::parse_extra_args(&instance.extra_args);
-        let pid = modules::process::start_antigravity_with_args(&instance.user_data_dir, &extra_args)?;
+        let pid =
+            modules::process::start_antigravity_with_args(&instance.user_data_dir, &extra_args)?;
         let _ = modules::instance::update_instance_after_start(&instance.id, pid)?;
     }
     Ok(())

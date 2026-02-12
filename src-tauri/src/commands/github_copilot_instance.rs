@@ -50,16 +50,14 @@ fn inject_bound_account_for_instance_start(
         format!("按绑定账号注入实例失败（{}）: {}", account.github_login, e)
     })?;
 
-    modules::logger::log_info(&format!(
-        "实例绑定账号注入完成: {}",
-        account.github_login
-    ));
+    modules::logger::log_info(&format!("实例绑定账号注入完成: {}", account.github_login));
 
     Ok(())
 }
 
 #[tauri::command]
-pub async fn github_copilot_get_instance_defaults() -> Result<modules::instance::InstanceDefaults, String> {
+pub async fn github_copilot_get_instance_defaults(
+) -> Result<modules::instance::InstanceDefaults, String> {
     modules::github_copilot_instance::get_instance_defaults()
 }
 
@@ -133,7 +131,11 @@ pub async fn github_copilot_create_instance(
     )?;
 
     let initialized = is_profile_initialized(&instance.user_data_dir);
-    Ok(InstanceProfileView::from_profile(instance, false, initialized))
+    Ok(InstanceProfileView::from_profile(
+        instance,
+        false,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -181,7 +183,8 @@ pub async fn github_copilot_update_instance(
         if let Some(target) = store.instances.iter().find(|item| item.id == instance_id) {
             if !is_profile_initialized(&target.user_data_dir) {
                 return Err(
-                    "INSTANCE_NOT_INITIALIZED:请先启动一次实例创建数据后，再进行账号绑定".to_string(),
+                    "INSTANCE_NOT_INITIALIZED:请先启动一次实例创建数据后，再进行账号绑定"
+                        .to_string(),
                 );
             }
         }
@@ -201,7 +204,11 @@ pub async fn github_copilot_update_instance(
         .map(modules::process::is_pid_running)
         .unwrap_or(false);
     let initialized = is_profile_initialized(&instance.user_data_dir);
-    Ok(InstanceProfileView::from_profile(instance, running, initialized))
+    Ok(InstanceProfileView::from_profile(
+        instance,
+        running,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -213,7 +220,9 @@ pub async fn github_copilot_delete_instance(instance_id: String) -> Result<(), S
 }
 
 #[tauri::command]
-pub async fn github_copilot_start_instance(instance_id: String) -> Result<InstanceProfileView, String> {
+pub async fn github_copilot_start_instance(
+    instance_id: String,
+) -> Result<InstanceProfileView, String> {
     modules::logger::log_info(&format!("开始启动 GitHub Copilot 实例: {}", instance_id));
     if instance_id == DEFAULT_INSTANCE_ID {
         let default_dir = modules::github_copilot_instance::get_default_vscode_user_data_dir()?;
@@ -229,10 +238,8 @@ pub async fn github_copilot_start_instance(instance_id: String) -> Result<Instan
             default_settings.bind_account_id.as_deref(),
         )?;
         let extra_args = modules::process::parse_extra_args(&default_settings.extra_args);
-        let pid = modules::process::start_vscode_default_with_args_with_new_window(
-            &extra_args,
-            true,
-        )?;
+        let pid =
+            modules::process::start_vscode_default_with_args_with_new_window(&extra_args, true)?;
         modules::logger::log_info(&format!("GitHub Copilot 默认实例已启动: pid={}", pid));
         let _ = modules::github_copilot_instance::update_default_pid(Some(pid))?;
         let running = modules::process::is_pid_running(pid);
@@ -259,7 +266,9 @@ pub async fn github_copilot_start_instance(instance_id: String) -> Result<Instan
         .find(|item| item.id == instance_id)
         .ok_or("实例不存在")?;
 
-    if let Some(pid) = modules::process::resolve_vscode_pid(instance.last_pid, Some(&instance.user_data_dir)) {
+    if let Some(pid) =
+        modules::process::resolve_vscode_pid(instance.last_pid, Some(&instance.user_data_dir))
+    {
         modules::process::close_pid(pid, 20)?;
         let _ = modules::github_copilot_instance::update_instance_pid(&instance.id, None)?;
     }
@@ -282,11 +291,17 @@ pub async fn github_copilot_start_instance(instance_id: String) -> Result<Instan
     let updated = modules::github_copilot_instance::update_instance_after_start(&instance.id, pid)?;
     let running = modules::process::is_pid_running(pid);
     let initialized = is_profile_initialized(&updated.user_data_dir);
-    Ok(InstanceProfileView::from_profile(updated, running, initialized))
+    Ok(InstanceProfileView::from_profile(
+        updated,
+        running,
+        initialized,
+    ))
 }
 
 #[tauri::command]
-pub async fn github_copilot_stop_instance(instance_id: String) -> Result<InstanceProfileView, String> {
+pub async fn github_copilot_stop_instance(
+    instance_id: String,
+) -> Result<InstanceProfileView, String> {
     if instance_id == DEFAULT_INSTANCE_ID {
         let default_dir = modules::github_copilot_instance::get_default_vscode_user_data_dir()?;
         let default_dir_str = default_dir.to_string_lossy().to_string();
@@ -322,12 +337,18 @@ pub async fn github_copilot_stop_instance(instance_id: String) -> Result<Instanc
         .find(|item| item.id == instance_id)
         .ok_or("实例不存在")?;
 
-    if let Some(pid) = modules::process::resolve_vscode_pid(instance.last_pid, Some(&instance.user_data_dir)) {
+    if let Some(pid) =
+        modules::process::resolve_vscode_pid(instance.last_pid, Some(&instance.user_data_dir))
+    {
         modules::process::close_pid(pid, 20)?;
     }
     let updated = modules::github_copilot_instance::update_instance_pid(&instance.id, None)?;
     let initialized = is_profile_initialized(&updated.user_data_dir);
-    Ok(InstanceProfileView::from_profile(updated, false, initialized))
+    Ok(InstanceProfileView::from_profile(
+        updated,
+        false,
+        initialized,
+    ))
 }
 
 #[tauri::command]
@@ -341,8 +362,10 @@ pub async fn github_copilot_open_instance_window(instance_id: String) -> Result<
                 err
             ));
             let extra_args = modules::process::parse_extra_args(&default_settings.extra_args);
-            let pid =
-                modules::process::start_vscode_default_with_args_with_new_window(&extra_args, false)?;
+            let pid = modules::process::start_vscode_default_with_args_with_new_window(
+                &extra_args,
+                false,
+            )?;
             let _ = modules::github_copilot_instance::update_default_pid(Some(pid))?;
         }
         return Ok(());

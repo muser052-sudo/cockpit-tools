@@ -7,6 +7,25 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [0.7.0] - 2026-02-12
+
+### Added
+- **Full Windsurf platform integration**: Added Windsurf account system end-to-end, including OAuth/Token/Local import, account persistence, quota sync, switch/inject/start flow, and multi-instance commands.
+- **Windsurf frontend modules**: Added Windsurf account page, instance page, service/store/type layers, and dedicated icon/navigation assets.
+- **Dashboard support for Windsurf**: Added Windsurf statistics and overview cards with quick refresh/switch actions, aligned with existing platform cards.
+- **Platform layout capability**: Added layout management modal and platform layout store for platform ordering/visibility management in navigation.
+
+### Changed
+- **Navigation structure expansion**: Side navigation and routing were extended to include Windsurf and platform-layout entry points.
+- **Settings model extension**: General settings now include Windsurf auto-refresh and app-path controls, plus corresponding quick-settings behavior.
+- **Windows path detection pipeline**: App detection was upgraded with stronger multi-source probing, PowerShell `-File` fallback, and VS Code registry probing.
+
+### Fixed
+- **Path detection reliability on Windows**: Improved handling for empty/error-prone command output and reduced false-miss cases during VS Code/Windsurf path discovery.
+- **Quota refresh fallback behavior**: Failed refresh now preserves the last valid quota snapshot to avoid clearing displayed quota to zeros.
+- **Switch/injection robustness**: Improved handling and diagnostics around account binding and startup path mismatch cases.
+
+---
 ## [0.6.10] - 2026-02-10
 
 ### Added

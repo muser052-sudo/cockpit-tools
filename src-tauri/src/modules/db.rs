@@ -8,7 +8,8 @@ pub fn get_db_path() -> Result<PathBuf, String> {
     #[cfg(target_os = "macos")]
     {
         let home = dirs::home_dir().ok_or("无法获取 Home 目录")?;
-        let path = home.join("Library/Application Support/Antigravity/User/globalStorage/state.vscdb");
+        let path =
+            home.join("Library/Application Support/Antigravity/User/globalStorage/state.vscdb");
         if path.exists() {
             return Ok(path);
         }
@@ -17,7 +18,8 @@ pub fn get_db_path() -> Result<PathBuf, String> {
 
     #[cfg(target_os = "windows")]
     {
-        let appdata = std::env::var("APPDATA").map_err(|_| "无法获取 APPDATA 环境变量".to_string())?;
+        let appdata =
+            std::env::var("APPDATA").map_err(|_| "无法获取 APPDATA 环境变量".to_string())?;
         let path = PathBuf::from(appdata).join("Antigravity\\User\\globalStorage\\state.vscdb");
         if path.exists() {
             return Ok(path);

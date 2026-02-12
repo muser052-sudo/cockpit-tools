@@ -31,7 +31,9 @@
     "codex": "Contas Codex",
     "githubCopilot": "GitHub Copilot",
     "dashboard": "Painel",
-    "instances": "Multi-Instância"
+    "instances": "Multi-Instância",
+    "windsurf": "Windsurf",
+    "morePlatforms": "Mais plataformas"
   },
   "settings": {
     "title": "Configurações do App",
@@ -99,7 +101,15 @@
       "codexSettingsTitle": "Configurações do Codex",
       "githubCopilotSettingsTitle": "Configurações do GitHub Copilot",
       "ghcpAutoRefresh": "Atualização automática de cota do GitHub Copilot",
-      "ghcpAutoRefreshDesc": "Frequência de atualização em segundo plano"
+      "ghcpAutoRefreshDesc": "Frequência de atualização em segundo plano",
+      "windsurfSettingsTitle": "Configurações do Windsurf",
+      "windsurfAutoRefresh": "Atualização automática da cota Windsurf",
+      "windsurfAutoRefreshDesc": "Frequência de atualização em segundo plano",
+      "windsurfAppPath": "Caminho do app Windsurf",
+      "windsurfAppPathDesc": "Deixe vazio para usar o caminho padrão",
+      "windsurfAppPathPlaceholder": "Caminho padrão",
+      "windsurfPathSelect": "Selecionar",
+      "windsurfPathReset": "Redefinir padrão"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -903,7 +913,7 @@
       "title": "Guia de contas do GitHub Copilot (clique para expandir/recolher)",
       "desc": "A troca de conta exige ler o armazenamento local de autenticação do VS Code e usar o serviço de credenciais do sistema para descriptografar e gravar de volta; os dados são processados apenas localmente.",
       "reason": "Escopo de permissões: ler o banco de autenticação do VS Code (state.vscdb) e chamar a criptografia do sistema (Windows DPAPI / macOS Keychain / Linux Secret Service) para descriptografar e gravar de volta.",
-      "storage": "Escopo de leitura: apenas dados relacionados à sessão de login do GitHub são processados; segredos do sistema não são alterados e nenhuma chave ou token é enviado.",
+      "storage": "Escopo de leitura: apenas dados relacionados à sessão de login do GitHub são processados; todos os processos são executados localmente.",
       "alternative": "Alternativa: usar isolamento por multi-instância (diferente --user-data-dir). Faça login uma vez por instância e depois inicie por instância para alternar rapidamente para o ambiente da conta desejada.",
       "inject": "Troca com um clique: esta ferramenta lê o material de criptografia local do VS Code (DPAPI/Keychain/Secret Service), descriptografa a sessão de autenticação em state.vscdb, substitui o token do GitHub Copilot e criptografa novamente — tudo localmente na sua máquina."
     },
@@ -1168,10 +1178,171 @@
     "customInput": "Personalizado",
     "apply": "Aplicar",
     "inputMinutes": "Digite os minutos",
-    "inputPercent": "Digite a porcentagem"
+    "inputPercent": "Digite a porcentagem",
+    "windsurf": {
+      "title": "Configurações do Windsurf",
+      "appPath": "Caminho do Windsurf"
+    },
+    "windsurfRefreshInterval": "Atualização automática de cota"
   },
   "privacy": {
     "hideSensitive": "Ocultar e-mails",
     "showSensitive": "Mostrar e-mails"
+  },
+  "windsurf": {
+    "title": "Gerenciamento de contas do Windsurf",
+    "subtitle": "Monitore em tempo real o status de cota de todas as contas.",
+    "overview": {
+      "title": "Visão geral das contas"
+    },
+    "instances": {
+      "title": "Multi-Instância",
+      "subtitle": "Configurações independentes por instância para execução paralela com múltiplas contas.",
+      "unsupported": {
+        "title": "Não suportado neste sistema",
+        "desc": "A multi-instância do Windsurf está disponível apenas no macOS."
+      },
+      "quota": {
+        "inline": "Sugestões inline",
+        "chat": "Mensagens de chat"
+      }
+    },
+    "addAccount": "Adicionar conta",
+    "refreshAll": "Atualizar tudo",
+    "refreshQuota": "Atualizar cota",
+    "empty": {
+      "title": "Sem contas",
+      "description": "Clique em \"Adicionar conta\" para começar a gerenciar suas contas do Windsurf"
+    },
+    "noMatch": {
+      "title": "Nenhuma conta correspondente",
+      "desc": "Tente ajustar sua busca ou filtros"
+    },
+    "addModal": {
+      "title": "Adicionar conta do Windsurf",
+      "oauth": "OAuth",
+      "token": "Token / JSON",
+      "import": "Importação local"
+    },
+    "oauth": {
+      "desc": "Clique no botão abaixo e conclua a autorização do Windsurf no navegador.",
+      "preparing": "Preparando informações de autorização...",
+      "openBrowser": "Abrir no navegador",
+      "hint": "Depois da autorização, esta janela será atualizada automaticamente",
+      "success": "Autorização concluída",
+      "failed": "Falha na autorização",
+      "retry": "Gerar novamente as informações de autorização",
+      "timeoutRetry": "Atualizar link de autorização",
+      "waiting": "Aguardando autorização...",
+      "meta": "Expira em: {{expires}}s; Intervalo de polling: {{interval}}s"
+    },
+    "token": {
+      "desc": "Cole seu token de acesso do Windsurf ou dados JSON exportados.",
+      "placeholder": "Cole o token ou JSON...",
+      "import": "Importar",
+      "importing": "Importando...",
+      "importSuccessMsg": "{{count}} conta(s) importada(s) com sucesso",
+      "importFailedMsg": "Falha na importação: {{error}}",
+      "empty": "Digite um token ou JSON"
+    },
+    "import": {
+      "label": "Importar",
+      "localDesc": "Importe dados de contas do Windsurf de um arquivo JSON.",
+      "localClient": "Importar do Windsurf local",
+      "orJson": "Ou importar de arquivo JSON",
+      "importing": "Importando...",
+      "failedMsg": "Falha na importação: {{error}}",
+      "pickFile": "Selecionar arquivo JSON para importar"
+    },
+    "quota": {
+      "hourly": "Sugestões inline",
+      "weekly": "Mensagens de chat",
+      "noData": "Sem dados de cota",
+      "resetDone": "Redefinido"
+    },
+    "credits": {
+      "title": "Plano",
+      "renewMonthly": "Os créditos são renovados todo mês",
+      "planEndsIn": "O ciclo reinicia em {{days}} dias",
+      "planEndsUnknown": "Período do ciclo indisponível",
+      "periodRange": "Ciclo: {{start}} - {{end}}",
+      "periodEndOnly": "Fim do ciclo: {{end}}",
+      "left": "{{count}} créditos restantes",
+      "leftUnknown": "Créditos restantes -",
+      "promptLeft": "{{remaining}}/{{total}} créditos de prompt restantes",
+      "promptLeftNoTotal": "{{remaining}} créditos de prompt restantes",
+      "promptLeftUnknown": "Créditos de prompt restantes -",
+      "addOnAvailable": "{{count}} créditos adicionais disponíveis",
+      "usedLine": "{{used}} / {{total}} usados",
+      "leftInline": "{{left}} restantes"
+    },
+    "usage": {
+      "resetUnknown": "A franquia será redefinida em -",
+      "resetLine": "A franquia será redefinida {{dateText}}."
+    },
+    "time": {
+      "relativeDays": "{{days}}d",
+      "relativeDaysHours": "{{days}}d {{hours}}h",
+      "relativeHours": "{{hours}}h",
+      "relativeHoursMinutes": "{{hours}}h {{minutes}}m",
+      "relativeMinutes": "{{minutes}}m",
+      "lessThanMinute": "<1m",
+      "relativeWithAbsolute": "{{relative}} ({{absolute}})"
+    },
+    "search": "Pesquisar contas...",
+    "view": {
+      "list": "Visualização em lista",
+      "grid": "Visualização em cartões"
+    },
+    "filter": {
+      "all": "Todas ({{count}})",
+      "free": "FREE ({{count}})",
+      "individual": "INDIVIDUAL ({{count}})",
+      "pro": "PRO ({{count}})",
+      "business": "BUSINESS ({{count}})",
+      "enterprise": "ENTERPRISE ({{count}})"
+    },
+    "filterLabel": "Filtrar",
+    "sortLabel": "Ordenar",
+    "sort": {
+      "createdAt": "Data de criação",
+      "credits": "Por créditos restantes",
+      "planEnd": "Por fim do ciclo",
+      "descTooltip": "Atual: decrescente. Clique para mudar para crescente",
+      "ascTooltip": "Atual: crescente. Clique para mudar para decrescente",
+      "toggleDirection": "Alternar direção da ordenação"
+    },
+    "columns": {
+      "email": "E-mail",
+      "plan": "Etiqueta",
+      "promptCredits": "Créditos de prompt",
+      "addOnPromptCredits": "Créditos de prompt adicionais",
+      "credits": "Créditos",
+      "actions": "Ações"
+    },
+    "export": "Exportar",
+    "injectToVSCode": "Alternar para Windsurf",
+    "injecting": "Injetando...",
+    "injectSuccess": "Alternância concluída. O Windsurf está iniciando.",
+    "injectRequireClose": "Feche o Windsurf antes de alternar.",
+    "flowNotice": {
+      "title": "Guia de contas do Windsurf (clique para expandir/recolher)",
+      "desc": "A troca de conta exige ler o armazenamento local de autenticação do Windsurf e usar o serviço de credenciais do sistema para descriptografar e gravar de volta; os dados são processados apenas localmente.",
+      "inject": "Troca com um clique: esta ferramenta lê o material de criptografia local do Windsurf (DPAPI/Keychain/Secret Service), descriptografa a sessão de autenticação em state.vscdb, substitui o token do Windsurf e criptografa novamente — tudo localmente na sua máquina.",
+      "alternative": "Alternativa: usar isolamento por multi-instância (diferente --user-data-dir). Faça login uma vez por instância e depois inicie por instância para alternar rapidamente para o ambiente da conta desejada.",
+      "reason": "Escopo de permissões: ler o banco de autenticação do Windsurf (state.vscdb) e chamar a criptografia do sistema (Windows DPAPI / macOS Keychain / Linux Secret Service) para descriptografar e gravar de volta.",
+      "storage": "Escopo de leitura: apenas dados relacionados à sessão de login do Windsurf são processados; todos os processos são executados localmente."
+    }
+  },
+  "platformLayout": {
+    "title": "Layout de plataformas",
+    "sidebarSelected": "Selecionadas na barra lateral {{count}}/{{max}}",
+    "reset": "Restaurar padrão",
+    "tip": "Arraste para reordenar. É possível exibir no máximo duas plataformas na barra lateral. Se apenas uma for selecionada, apenas uma será exibida.",
+    "sidebarToggle": "Mostrar na barra lateral",
+    "dashboardToggle": "Mostrar no painel",
+    "hiddenBadge": "Oculto",
+    "openFromMore": "Gerenciar layout de plataformas",
+    "dragHandleLabel": "Arrastar para reordenar"
   }
 }

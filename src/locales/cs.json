@@ -31,7 +31,9 @@
     "codex": "Účty Codex",
     "dashboard": "Dashboard",
     "instances": "Více instancí",
-    "githubCopilot": "GitHub Copilot"
+    "githubCopilot": "GitHub Copilot",
+    "windsurf": "Windsurf",
+    "morePlatforms": "Další platformy"
   },
   "settings": {
     "title": "Nastavení aplikace",
@@ -99,7 +101,15 @@
       "codexSettingsTitle": "Nastavení Codex",
       "githubCopilotSettingsTitle": "Nastavení GitHub Copilot",
       "ghcpAutoRefresh": "Automatické obnovení kvóty GitHub Copilot",
-      "ghcpAutoRefreshDesc": "Frekvence aktualizace na pozadí"
+      "ghcpAutoRefreshDesc": "Frekvence aktualizace na pozadí",
+      "windsurfSettingsTitle": "Nastavení Windsurf",
+      "windsurfAutoRefresh": "Automatické obnovení kvóty Windsurf",
+      "windsurfAutoRefreshDesc": "Frekvence aktualizace na pozadí",
+      "windsurfAppPath": "Cesta k aplikaci Windsurf",
+      "windsurfAppPathDesc": "Ponechte prázdné pro použití výchozí cesty",
+      "windsurfAppPathPlaceholder": "Výchozí cesta",
+      "windsurfPathSelect": "Vybrat",
+      "windsurfPathReset": "Obnovit výchozí"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -1133,7 +1143,7 @@
       "title": "Průvodce účty GitHub Copilot (kliknutím rozbalit/sbalit)",
       "desc": "Přepnutí účtu vyžaduje čtení lokálního úložiště ověření ve VS Code a použití systémové služby přihlašovacích údajů pro dešifrování a zpětný zápis; data se zpracovávají pouze lokálně.",
       "reason": "Rozsah oprávnění: čtení databáze ověření VS Code (state.vscdb) a volání systémového šifrování (Windows DPAPI / macOS Keychain / Linux Secret Service) pro dešifrování a zpětný zápis.",
-      "storage": "Rozsah čtení: zpracovávají se pouze položky související s relací přihlášení GitHub, systémové tajné klíče se neupravují a žádné klíče ani tokeny se neodesílají.",
+      "storage": "Rozsah čtení: zpracovávají se pouze položky související s relací přihlášení GitHub a veškeré procesy probíhají lokálně.",
       "alternative": "Alternativa: použijte izolaci více instancí (odlišné --user-data-dir). V každé instanci se přihlaste jednou a poté spouštějte podle instance pro rychlé přepnutí na cílové prostředí účtu.",
       "inject": "Přepnutí jedním kliknutím: Tento nástroj načte lokální šifrovací materiál VS Code (DPAPI/Keychain/Secret Service), dešifruje autentizační relaci ve state.vscdb, nahradí token GitHub Copilot a znovu ji zašifruje — vše lokálně na vašem zařízení."
     },
@@ -1168,10 +1178,171 @@
     "customInput": "Vlastní",
     "apply": "Použít",
     "inputMinutes": "Zadejte minuty",
-    "inputPercent": "Zadejte procento"
+    "inputPercent": "Zadejte procento",
+    "windsurf": {
+      "title": "Nastavení Windsurf",
+      "appPath": "Cesta k Windsurf"
+    },
+    "windsurfRefreshInterval": "Automatická aktualizace kvóty"
   },
   "privacy": {
     "hideSensitive": "Skrýt e-maily",
     "showSensitive": "Zobrazit e-maily"
+  },
+  "windsurf": {
+    "title": "Správa účtů Windsurf",
+    "subtitle": "Spravujte své účty Windsurf",
+    "overview": {
+      "title": "Přehled účtů"
+    },
+    "instances": {
+      "title": "Více instancí",
+      "subtitle": "Nezávislá konfigurace pro každou instanci, paralelní provoz s více účty.",
+      "unsupported": {
+        "title": "Na tomto systému nepodporováno",
+        "desc": "Více instancí Windsurf je aktuálně dostupné pouze na macOS."
+      },
+      "quota": {
+        "inline": "Inline Suggestions",
+        "chat": "Chat messages"
+      }
+    },
+    "addAccount": "Přidat účet",
+    "refreshAll": "Obnovit vše",
+    "refreshQuota": "Obnovit kvótu",
+    "empty": {
+      "title": "Žádné účty",
+      "description": "Klikněte na „Přidat účet“"
+    },
+    "noMatch": {
+      "title": "Žádné vyhovující účty",
+      "desc": "Zkuste upravit hledání nebo filtry"
+    },
+    "addModal": {
+      "title": "Přidat účet Windsurf",
+      "oauth": "OAuth přihlášení",
+      "token": "Import JSON",
+      "import": "Lokální import"
+    },
+    "oauth": {
+      "desc": "Klikněte níže a dokončete autorizaci Windsurf v prohlížeči.",
+      "preparing": "Připravuje se autorizační odkaz...",
+      "openBrowser": "Otevřít v prohlížeči",
+      "hint": "Po autorizaci se toto okno automaticky aktualizuje",
+      "success": "Autorizace úspěšná",
+      "failed": "Autorizace selhala",
+      "retry": "Znovu vygenerovat autorizační údaje",
+      "timeoutRetry": "Obnovit autorizační odkaz",
+      "waiting": "Čekání na autorizaci...",
+      "meta": "Platnost vyprší za: {{expires}}s; interval dotazování: {{interval}}s"
+    },
+    "token": {
+      "desc": "Vložte access token Windsurf nebo exportovaná data JSON.",
+      "placeholder": "Vložte JSON...",
+      "import": "Importovat",
+      "importing": "Importování...",
+      "importSuccessMsg": "Importováno {{count}} účtů",
+      "importFailedMsg": "Import selhal: {{error}}",
+      "empty": "Zadejte token nebo JSON"
+    },
+    "import": {
+      "label": "Importovat",
+      "localDesc": "Importovat účty Windsurf z místně přihlášených relací.",
+      "localClient": "Import z místního Windsurf",
+      "orJson": "Nebo import z JSON souboru",
+      "importing": "Import lokálního účtu...",
+      "failedMsg": "Import se nezdařil: {{error}}",
+      "pickFile": "Vyberte soubor JSON k importu"
+    },
+    "quota": {
+      "hourly": "Kvóta 5 hodin",
+      "weekly": "Týdenní kvóta",
+      "noData": "Žádná data kvóty",
+      "resetDone": "Resetováno"
+    },
+    "credits": {
+      "title": "Tarif",
+      "renewMonthly": "Kredity se obnovují každý měsíc",
+      "planEndsIn": "Cyklus se resetuje za {{days}} dní",
+      "planEndsUnknown": "Časování cyklu není k dispozici",
+      "periodRange": "Cyklus: {{start}} - {{end}}",
+      "periodEndOnly": "Konec cyklu: {{end}}",
+      "left": "Zbývá {{count}} kreditů",
+      "leftUnknown": "Zbývající kredity -",
+      "promptLeft": "Zbývá {{remaining}}/{{total}} kreditů promptů",
+      "promptLeftNoTotal": "Zbývá {{remaining}} kreditů promptů",
+      "promptLeftUnknown": "Zbývající kredity promptů -",
+      "addOnAvailable": "Dostupných {{count}} doplňkových kreditů",
+      "usedLine": "Použito {{used}} / {{total}}",
+      "leftInline": "zbývá {{left}}"
+    },
+    "usage": {
+      "resetUnknown": "Limit se obnoví -",
+      "resetLine": "Limit se obnoví {{dateText}}."
+    },
+    "time": {
+      "relativeDays": "{{days}} d",
+      "relativeDaysHours": "{{days}} d {{hours}} h",
+      "relativeHours": "{{hours}} h",
+      "relativeHoursMinutes": "{{hours}} h {{minutes}} min",
+      "relativeMinutes": "{{minutes}} min",
+      "lessThanMinute": "<1 min",
+      "relativeWithAbsolute": "{{relative}} ({{absolute}})"
+    },
+    "search": "Hledat účty...",
+    "view": {
+      "list": "Seznam",
+      "grid": "Karty"
+    },
+    "filter": {
+      "all": "Vše ({{count}})",
+      "free": "FREE ({{count}})",
+      "individual": "INDIVIDUAL ({{count}})",
+      "pro": "PRO ({{count}})",
+      "business": "BUSINESS ({{count}})",
+      "enterprise": "ENTERPRISE ({{count}})"
+    },
+    "filterLabel": "Filtr",
+    "sortLabel": "Seřadit",
+    "sort": {
+      "createdAt": "Datum vytvoření",
+      "credits": "Podle zbývajících kreditů",
+      "planEnd": "Podle konce cyklu",
+      "descTooltip": "Sestupně (kliknutím přepnete na vzestupně)",
+      "ascTooltip": "Vzestupně (kliknutím přepnete na sestupně)",
+      "toggleDirection": "Přepnout směr"
+    },
+    "columns": {
+      "email": "E-mail",
+      "plan": "Štítek",
+      "promptCredits": "Kredity promptů",
+      "addOnPromptCredits": "Doplňkové kredity promptů",
+      "credits": "Kredity",
+      "actions": "Akce"
+    },
+    "export": "Exportovat",
+    "injectToVSCode": "Přepnout do Windsurf",
+    "injecting": "Probíhá injektování...",
+    "injectSuccess": "Přepnutí dokončeno. Windsurf se spouští.",
+    "injectRequireClose": "Před přepnutím prosím zavřete Windsurf.",
+    "flowNotice": {
+      "title": "Průvodce účty Windsurf (kliknutím rozbalit/sbalit)",
+      "desc": "Přepnutí účtu vyžaduje čtení lokálního úložiště ověření ve Windsurf a použití systémové služby přihlašovacích údajů pro dešifrování a zpětný zápis; data se zpracovávají pouze lokálně.",
+      "inject": "Přepnutí jedním kliknutím: Tento nástroj načte lokální šifrovací materiál Windsurf (DPAPI/Keychain/Secret Service), dešifruje autentizační relaci ve state.vscdb, nahradí token Windsurf a znovu ji zašifruje — vše lokálně na vašem zařízení.",
+      "alternative": "Alternativa: použijte izolaci více instancí (odlišné --user-data-dir). V každé instanci se přihlaste jednou a poté spouštějte podle instance pro rychlé přepnutí na cílové prostředí účtu.",
+      "reason": "Rozsah oprávnění: čtení databáze ověření Windsurf (state.vscdb) a volání systémového šifrování (Windows DPAPI / macOS Keychain / Linux Secret Service) pro dešifrování a zpětný zápis.",
+      "storage": "Rozsah čtení: zpracovávají se pouze položky související s relací přihlášení Windsurf a veškeré procesy probíhají lokálně."
+    }
+  },
+  "platformLayout": {
+    "title": "Rozložení platforem",
+    "sidebarSelected": "Vybráno v postranním panelu {{count}}/{{max}}",
+    "reset": "Obnovit výchozí",
+    "tip": "Přetažením změňte pořadí. V postranním panelu lze zobrazit nejvýše dvě platformy. Pokud je vybrána jen jedna, zobrazí se pouze jedna.",
+    "sidebarToggle": "Zobrazit v postranním panelu",
+    "dashboardToggle": "Zobrazit na nástěnce",
+    "hiddenBadge": "Skryto",
+    "openFromMore": "Spravovat rozložení platforem",
+    "dragHandleLabel": "Přetažením změnit pořadí"
   }
 }

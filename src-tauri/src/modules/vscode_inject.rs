@@ -508,8 +508,11 @@ fn inject_copilot_token_with_data_root(
 
     let sessions_json = serde_json::to_string(&new_sessions)
         .map_err(|e| format!("Failed to serialize sessions: {}", e))?;
-    let encrypted =
-        encrypt_secret_payload(sessions_json.as_bytes(), existing_prefix.as_deref(), Some(data_root))?;
+    let encrypted = encrypt_secret_payload(
+        sessions_json.as_bytes(),
+        existing_prefix.as_deref(),
+        Some(data_root),
+    )?;
 
     let buffer_json = serde_json::json!({
         "type": "Buffer",

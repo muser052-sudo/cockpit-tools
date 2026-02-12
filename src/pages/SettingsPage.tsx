@@ -29,15 +29,19 @@ interface GeneralConfig {
   auto_refresh_minutes: number;
   codex_auto_refresh_minutes: number;
   ghcp_auto_refresh_minutes: number;
+  windsurf_auto_refresh_minutes: number;
   close_behavior: 'ask' | 'minimize' | 'quit';
   opencode_app_path: string;
   antigravity_app_path: string;
   codex_app_path: string;
   vscode_app_path: string;
+  windsurf_app_path: string;
   opencode_sync_on_switch: boolean;
   auto_switch_enabled: boolean;
   auto_switch_threshold: number;
 }
+
+type AppPathTarget = 'antigravity' | 'codex' | 'vscode' | 'opencode' | 'windsurf';
 
 export function SettingsPage() {
   const { t } = useTranslation();
@@ -68,11 +72,14 @@ export function SettingsPage() {
   const [autoRefresh, setAutoRefresh] = useState('5');
   const [codexAutoRefresh, setCodexAutoRefresh] = useState('10');
   const [ghcpAutoRefresh, setGhcpAutoRefresh] = useState('10');
+  const [windsurfAutoRefresh, setWindsurfAutoRefresh] = useState('10');
   const [closeBehavior, setCloseBehavior] = useState<'ask' | 'minimize' | 'quit'>('ask');
   const [opencodeAppPath, setOpencodeAppPath] = useState('');
   const [antigravityAppPath, setAntigravityAppPath] = useState('');
   const [codexAppPath, setCodexAppPath] = useState('');
   const [vscodeAppPath, setVscodeAppPath] = useState('');
+  const [windsurfAppPath, setWindsurfAppPath] = useState('');
+  const [appPathResetDetectingTargets, setAppPathResetDetectingTargets] = useState<Set<AppPathTarget>>(new Set());
   const [opencodeSyncOnSwitch, setOpencodeSyncOnSwitch] = useState(true);
   const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(false);
   const [autoSwitchThreshold, setAutoSwitchThreshold] = useState('5');
@@ -120,13 +127,19 @@ export function SettingsPage() {
       window.clearTimeout(generalSaveTimerRef.current);
     }
 
-    if (!autoRefresh.trim() || !codexAutoRefresh.trim() || !ghcpAutoRefresh.trim()) {
+    if (
+      !autoRefresh.trim() ||
+      !codexAutoRefresh.trim() ||
+      !ghcpAutoRefresh.trim() ||
+      !windsurfAutoRefresh.trim()
+    ) {
       return;
     }
 
     const autoRefreshNum = parseInt(autoRefresh, 10) || -1;
     const codexAutoRefreshNum = parseInt(codexAutoRefresh, 10) || -1;
     const ghcpAutoRefreshNum = parseInt(ghcpAutoRefresh, 10) || -1;
+    const windsurfAutoRefreshNum = parseInt(windsurfAutoRefresh, 10) || -1;
 
     if (suppressGeneralSaveRef.current) {
       suppressGeneralSaveRef.current = false;
@@ -141,11 +154,13 @@ export function SettingsPage() {
           autoRefreshMinutes: autoRefreshNum,
           codexAutoRefreshMinutes: codexAutoRefreshNum,
           ghcpAutoRefreshMinutes: ghcpAutoRefreshNum,
+          windsurfAutoRefreshMinutes: windsurfAutoRefreshNum,
           closeBehavior,
           opencodeAppPath,
           antigravityAppPath,
           codexAppPath,
           vscodeAppPath,
+          windsurfAppPath,
           opencodeSyncOnSwitch,
           autoSwitchEnabled,
           autoSwitchThreshold: parseInt(autoSwitchThreshold, 10) || 5,
@@ -166,6 +181,7 @@ export function SettingsPage() {
     autoRefresh,
     codexAutoRefresh,
     ghcpAutoRefresh,
+    windsurfAutoRefresh,
     closeBehavior,
     generalLoaded,
     language,
@@ -174,6 +190,7 @@ export function SettingsPage() {
     antigravityAppPath,
     codexAppPath,
     vscodeAppPath,
+    windsurfAppPath,
     opencodeSyncOnSwitch,
     autoSwitchEnabled,
     autoSwitchThreshold,
@@ -302,11 +319,13 @@ export function SettingsPage() {
       setAutoRefresh(String(config.auto_refresh_minutes));
       setCodexAutoRefresh(String(config.codex_auto_refresh_minutes ?? 10));
       setGhcpAutoRefresh(String(config.ghcp_auto_refresh_minutes ?? 10));
+      setWindsurfAutoRefresh(String(config.windsurf_auto_refresh_minutes ?? 10));
       setCloseBehavior(config.close_behavior || 'ask');
       setOpencodeAppPath(config.opencode_app_path || '');
       setAntigravityAppPath(config.antigravity_app_path || '');
       setCodexAppPath(config.codex_app_path || '');
       setVscodeAppPath(config.vscode_app_path || '');
+      setWindsurfAppPath(config.windsurf_app_path || '');
       setOpencodeSyncOnSwitch(config.opencode_sync_on_switch ?? true);
       setAutoSwitchEnabled(config.auto_switch_enabled ?? false);
       setAutoSwitchThreshold(String(config.auto_switch_threshold ?? 5));
@@ -359,7 +378,36 @@ export function SettingsPage() {
     openUrl(url);
   };
 
-  const handlePickAppPath = async (target: 'antigravity' | 'codex' | 'vscode' | 'opencode') => {
+  const isAppPathResetDetecting = (target: AppPathTarget) => appPathResetDetectingTargets.has(target);
+
+  const setAppPathForTarget = (target: AppPathTarget, path: string) => {
+    if (target === 'antigravity') {
+      setAntigravityAppPath(path);
+    } else if (target === 'codex') {
+      setCodexAppPath(path);
+    } else if (target === 'vscode') {
+      setVscodeAppPath(path);
+    } else if (target === 'windsurf') {
+      setWindsurfAppPath(path);
+    } else {
+      setOpencodeAppPath(path);
+    }
+  };
+
+  const getResetLabelByTarget = (target: AppPathTarget) => {
+    if (target === 'vscode') {
+      return t('settings.general.vscodePathReset', '重置默认');
+    }
+    if (target === 'windsurf') {
+      return t('settings.general.windsurfPathReset', '重置默认');
+    }
+    if (target === 'opencode') {
+      return t('settings.general.opencodePathReset', '重置默认');
+    }
+    return t('settings.general.codexPathReset', '重置默认');
+  };
+
+  const handlePickAppPath = async (target: AppPathTarget) => {
     try {
       const selected = await open({
         multiple: false,
@@ -369,44 +417,31 @@ export function SettingsPage() {
       const path = Array.isArray(selected) ? selected[0] : selected;
       if (!path) return;
 
-      if (target === 'antigravity') {
-        setAntigravityAppPath(path);
-      } else if (target === 'codex') {
-        setCodexAppPath(path);
-      } else if (target === 'vscode') {
-        setVscodeAppPath(path);
-      } else {
-        setOpencodeAppPath(path);
-      }
+      setAppPathForTarget(target, path);
     } catch (err) {
       console.error('选择启动路径失败:', err);
     }
   };
 
-  const handleResetAppPath = async (target: 'antigravity' | 'codex' | 'vscode' | 'opencode') => {
+  const handleResetAppPath = async (target: AppPathTarget) => {
+    if (isAppPathResetDetecting(target)) return;
+    setAppPathResetDetectingTargets((prev) => {
+      const next = new Set(prev);
+      next.add(target);
+      return next;
+    });
     try {
-      const detected = await invoke<string | null>('detect_app_path', { app: target });
-      const path = detected || '';
-      if (target === 'antigravity') {
-        setAntigravityAppPath(path);
-      } else if (target === 'codex') {
-        setCodexAppPath(path);
-      } else if (target === 'vscode') {
-        setVscodeAppPath(path);
-      } else {
-        setOpencodeAppPath(path);
-      }
+      const detected = await invoke<string | null>('detect_app_path', { app: target, force: true });
+      setAppPathForTarget(target, detected || '');
     } catch (err) {
       console.error('重置启动路径失败:', err);
-      if (target === 'antigravity') {
-        setAntigravityAppPath('');
-      } else if (target === 'codex') {
-        setCodexAppPath('');
-      } else if (target === 'vscode') {
-        setVscodeAppPath('');
-      } else {
-        setOpencodeAppPath('');
-      }
+      setAppPathForTarget(target, '');
+    } finally {
+      setAppPathResetDetectingTargets((prev) => {
+        const next = new Set(prev);
+        next.delete(target);
+        return next;
+      });
     }
   };
 
@@ -611,12 +646,22 @@ export function SettingsPage() {
                       placeholder={t('settings.general.codexAppPathPlaceholder', '默认路径')}
                       onChange={(e) => setAntigravityAppPath(e.target.value)}
                     />
-                    <button className="btn btn-secondary" onClick={() => handlePickAppPath('antigravity')}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handlePickAppPath('antigravity')}
+                      disabled={isAppPathResetDetecting('antigravity')}
+                    >
                       {t('settings.general.codexPathSelect', '选择')}
                     </button>
-                    <button className="btn btn-secondary" onClick={() => handleResetAppPath('antigravity')}>
-                      <RefreshCw size={16} />
-                      {t('settings.general.codexPathReset', '恢复默认')}
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleResetAppPath('antigravity')}
+                      disabled={isAppPathResetDetecting('antigravity')}
+                    >
+                      <RefreshCw size={16} className={isAppPathResetDetecting('antigravity') ? 'spin' : undefined} />
+                      {isAppPathResetDetecting('antigravity')
+                        ? t('common.loading', '加载中...')
+                        : getResetLabelByTarget('antigravity')}
                     </button>
                   </div>
                 </div>
@@ -726,12 +771,22 @@ export function SettingsPage() {
                       placeholder={t('settings.general.codexAppPathPlaceholder', '默认路径')}
                       onChange={(e) => setCodexAppPath(e.target.value)}
                     />
-                    <button className="btn btn-secondary" onClick={() => handlePickAppPath('codex')}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handlePickAppPath('codex')}
+                      disabled={isAppPathResetDetecting('codex')}
+                    >
                       {t('settings.general.codexPathSelect', '选择')}
                     </button>
-                    <button className="btn btn-secondary" onClick={() => handleResetAppPath('codex')}>
-                      <RefreshCw size={16} />
-                      {t('settings.general.codexPathReset', '恢复默认')}
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleResetAppPath('codex')}
+                      disabled={isAppPathResetDetecting('codex')}
+                    >
+                      <RefreshCw size={16} className={isAppPathResetDetecting('codex') ? 'spin' : undefined} />
+                      {isAppPathResetDetecting('codex')
+                        ? t('common.loading', '加载中...')
+                        : getResetLabelByTarget('codex')}
                     </button>
                   </div>
                 </div>
@@ -770,15 +825,22 @@ export function SettingsPage() {
                       placeholder={t('settings.general.opencodeAppPathPlaceholder')}
                       onChange={(e) => setOpencodeAppPath(e.target.value)}
                     />
-                    <button className="btn btn-secondary" onClick={() => handlePickAppPath('opencode')}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handlePickAppPath('opencode')}
+                      disabled={isAppPathResetDetecting('opencode')}
+                    >
                       {t('settings.general.opencodePathSelect', '选择')}
                     </button>
                     <button
                       className="btn btn-secondary"
                       onClick={() => handleResetAppPath('opencode')}
+                      disabled={isAppPathResetDetecting('opencode')}
                     >
-                      <RefreshCw size={16} />
-                      {t('settings.general.opencodePathReset')}
+                      <RefreshCw size={16} className={isAppPathResetDetecting('opencode') ? 'spin' : undefined} />
+                      {isAppPathResetDetecting('opencode')
+                        ? t('common.loading', '加载中...')
+                        : getResetLabelByTarget('opencode')}
                     </button>
                   </div>
                 </div>
@@ -850,12 +912,109 @@ export function SettingsPage() {
                       placeholder={t('settings.general.vscodeAppPathPlaceholder', '默认路径')}
                       onChange={(e) => setVscodeAppPath(e.target.value)}
                     />
-                    <button className="btn btn-secondary" onClick={() => handlePickAppPath('vscode')}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handlePickAppPath('vscode')}
+                      disabled={isAppPathResetDetecting('vscode')}
+                    >
                       {t('settings.general.vscodePathSelect', '选择')}
                     </button>
-                    <button className="btn btn-secondary" onClick={() => handleResetAppPath('vscode')}>
-                      <RefreshCw size={16} />
-                      {t('settings.general.vscodePathReset', '重置默认')}
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleResetAppPath('vscode')}
+                      disabled={isAppPathResetDetecting('vscode')}
+                    >
+                      <RefreshCw size={16} className={isAppPathResetDetecting('vscode') ? 'spin' : undefined} />
+                      {isAppPathResetDetecting('vscode')
+                        ? t('common.loading', '加载中...')
+                        : getResetLabelByTarget('vscode')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="group-title">{t('settings.general.windsurfSettingsTitle', 'Windsurf 设置')}</div>
+            <div className="settings-group">
+              <div className="settings-row">
+                <div className="row-label">
+                  <div className="row-title">{t('settings.general.windsurfAutoRefresh', 'Windsurf 自动刷新配额')}</div>
+                  <div className="row-desc">{t('settings.general.windsurfAutoRefreshDesc', '后台自动更新频率')}</div>
+                </div>
+                <div className="row-control">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select
+                      className="settings-select"
+                      style={{ minWidth: '120px', width: 'auto' }}
+                      value={['-1', '2', '5', '10', '15'].includes(windsurfAutoRefresh) ? windsurfAutoRefresh : 'custom'}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'custom') {
+                          if (['-1', '2', '5', '10', '15'].includes(windsurfAutoRefresh)) {
+                            setWindsurfAutoRefresh('12');
+                          }
+                        } else {
+                          setWindsurfAutoRefresh(val);
+                        }
+                      }}
+                    >
+                      <option value="-1">{t('settings.general.autoRefreshDisabled')}</option>
+                      <option value="2">2 {t('settings.general.minutes')}</option>
+                      <option value="5">5 {t('settings.general.minutes')}</option>
+                      <option value="10">10 {t('settings.general.minutes')}</option>
+                      <option value="15">15 {t('settings.general.minutes')}</option>
+                      <option value="custom">{t('settings.general.autoRefreshCustom')}</option>
+                    </select>
+
+                    {!['-1', '2', '5', '10', '15'].includes(windsurfAutoRefresh) && (
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input
+                          type="number"
+                          min="1"
+                          className="settings-input"
+                          style={{ width: '80px', paddingRight: '24px' }}
+                          value={windsurfAutoRefresh}
+                          onChange={(e) => setWindsurfAutoRefresh(e.target.value)}
+                        />
+                        <span style={{ position: 'absolute', right: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                          {t('settings.general.minutes')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="row-label">
+                  <div className="row-title">{t('settings.general.windsurfAppPath', 'Windsurf 启动路径')}</div>
+                  <div className="row-desc">{t('settings.general.windsurfAppPathDesc', '留空则使用默认路径')}</div>
+                </div>
+                <div className="row-control row-control--grow">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1 }}>
+                    <input
+                      type="text"
+                      className="settings-input settings-input--path"
+                      value={windsurfAppPath}
+                      placeholder={t('settings.general.windsurfAppPathPlaceholder', '默认路径')}
+                      onChange={(e) => setWindsurfAppPath(e.target.value)}
+                    />
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handlePickAppPath('windsurf')}
+                      disabled={isAppPathResetDetecting('windsurf')}
+                    >
+                      {t('settings.general.windsurfPathSelect', '选择')}
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleResetAppPath('windsurf')}
+                      disabled={isAppPathResetDetecting('windsurf')}
+                    >
+                      <RefreshCw size={16} className={isAppPathResetDetecting('windsurf') ? 'spin' : undefined} />
+                      {isAppPathResetDetecting('windsurf')
+                        ? t('common.loading', '加载中...')
+                        : getResetLabelByTarget('windsurf')}
                     </button>
                   </div>
                 </div>
