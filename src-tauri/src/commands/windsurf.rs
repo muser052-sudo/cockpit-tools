@@ -1,5 +1,5 @@
 use std::time::Instant;
-use tauri::AppHandle;
+use tauri::{AppHandle, Emitter};
 
 use crate::models::windsurf::{WindsurfAccount, WindsurfOAuthStartResponse};
 use crate::modules::{logger, windsurf_account, windsurf_oauth};
@@ -157,7 +157,10 @@ pub fn get_windsurf_accounts_index_path() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn inject_windsurf_to_vscode(account_id: String) -> Result<String, String> {
+pub async fn inject_windsurf_to_vscode(
+    app: AppHandle,
+    account_id: String,
+) -> Result<String, String> {
     let started_at = Instant::now();
     logger::log_info(&format!(
         "[Windsurf Switch] 开始切换账号: account_id={}",
@@ -188,6 +191,12 @@ pub async fn inject_windsurf_to_vscode(account_id: String) -> Result<String, Str
         Err(e) => {
             if e.starts_with("APP_PATH_NOT_FOUND:") || e.contains("启动 Windsurf 失败") {
                 logger::log_warn(&format!("Windsurf 默认实例启动失败: {}", e));
+                if e.starts_with("APP_PATH_NOT_FOUND:") || e.contains("APP_PATH_NOT_FOUND:") {
+                    let _ = app.emit(
+                        "app:path_missing",
+                        serde_json::json!({ "app": "windsurf", "retry": { "kind": "default" } }),
+                    );
+                }
                 Some(e)
             } else {
                 return Err(e);

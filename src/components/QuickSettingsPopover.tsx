@@ -153,7 +153,7 @@ export function QuickSettingsPopover({ type }: QuickSettingsPopoverProps) {
 
   const handleResetAppPath = async (target: 'antigravity' | 'codex' | 'vscode' | 'windsurf') => {
     try {
-      const detected = await invoke<string | null>('detect_app_path', { app: target });
+      const detected = await invoke<string | null>('detect_app_path', { app: target, force: true });
       const path = detected || '';
       const key =
         target === 'antigravity'

@@ -407,7 +407,7 @@ export function SettingsPage() {
     target: 'antigravity' | 'codex' | 'vscode' | 'opencode' | 'windsurf'
   ) => {
     try {
-      const detected = await invoke<string | null>('detect_app_path', { app: target });
+      const detected = await invoke<string | null>('detect_app_path', { app: target, force: true });
       const path = detected || '';
       if (target === 'antigravity') {
         setAntigravityAppPath(path);

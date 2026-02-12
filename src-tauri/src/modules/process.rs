@@ -397,14 +397,6 @@ fn app_path_missing_error(app: &str) -> String {
     format!("{}{}", APP_PATH_NOT_FOUND_PREFIX, app)
 }
 
-fn configured_path_exists(value: &str) -> bool {
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        return false;
-    }
-    Path::new(trimmed).exists()
-}
-
 #[cfg(target_os = "macos")]
 fn normalize_macos_app_root(path: &Path) -> Option<String> {
     let path_str = path.to_string_lossy();
@@ -937,11 +929,7 @@ fn resolve_antigravity_launch_path() -> Result<std::path::PathBuf, String> {
         if let Some(exec) = resolve_macos_exec_path(&custom, "Electron") {
             return Ok(exec);
         }
-    }
-
-    if let Some(detected) = detect_antigravity_exec_path() {
-        update_app_path_in_config("antigravity", &detected);
-        return Ok(detected);
+        return Err(app_path_missing_error("antigravity"));
     }
 
     Err(app_path_missing_error("antigravity"))
@@ -961,11 +949,7 @@ fn resolve_vscode_launch_path() -> Result<std::path::PathBuf, String> {
                 return Ok(exec);
             }
         }
-    }
-
-    if let Some(detected) = detect_vscode_exec_path() {
-        update_app_path_in_config("vscode", &detected);
-        return Ok(detected);
+        return Err(app_path_missing_error("vscode"));
     }
 
     Err(app_path_missing_error("vscode"))
@@ -977,21 +961,17 @@ fn resolve_codex_launch_path() -> Result<std::path::PathBuf, String> {
         if let Some(exec) = resolve_macos_exec_path(&custom, "Codex") {
             return Ok(exec);
         }
-    }
-
-    if let Some(detected) = detect_codex_exec_path() {
-        update_app_path_in_config("codex", &detected);
-        return Ok(detected);
+        return Err(app_path_missing_error("codex"));
     }
 
     Err(app_path_missing_error("codex"))
 }
 
-pub fn detect_and_save_app_path(app: &str) -> Option<String> {
+pub fn detect_and_save_app_path(app: &str, force: bool) -> Option<String> {
     let current = config::get_user_config();
     match app {
         "antigravity" => {
-            if configured_path_exists(&current.antigravity_app_path) {
+            if !force && !current.antigravity_app_path.trim().is_empty() {
                 return Some(current.antigravity_app_path);
             }
             if let Some(detected) = detect_antigravity_exec_path() {
@@ -1000,7 +980,7 @@ pub fn detect_and_save_app_path(app: &str) -> Option<String> {
             }
         }
         "codex" => {
-            if configured_path_exists(&current.codex_app_path) {
+            if !force && !current.codex_app_path.trim().is_empty() {
                 return Some(current.codex_app_path);
             }
             if let Some(detected) = detect_codex_exec_path() {
@@ -1009,7 +989,7 @@ pub fn detect_and_save_app_path(app: &str) -> Option<String> {
             }
         }
         "vscode" => {
-            if configured_path_exists(&current.vscode_app_path) {
+            if !force && !current.vscode_app_path.trim().is_empty() {
                 return Some(current.vscode_app_path);
             }
             if let Some(detected) = detect_vscode_exec_path() {
@@ -1018,7 +998,7 @@ pub fn detect_and_save_app_path(app: &str) -> Option<String> {
             }
         }
         "opencode" => {
-            if configured_path_exists(&current.opencode_app_path) {
+            if !force && !current.opencode_app_path.trim().is_empty() {
                 return Some(current.opencode_app_path);
             }
             if let Some(detected) = detect_opencode_exec_path() {

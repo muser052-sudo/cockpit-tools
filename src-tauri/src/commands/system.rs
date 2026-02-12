@@ -274,12 +274,13 @@ pub fn set_app_path(app: String, path: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn detect_app_path(app: String) -> Result<Option<String>, String> {
+pub fn detect_app_path(app: String, force: Option<bool>) -> Result<Option<String>, String> {
+    let force = force.unwrap_or(false);
     match app.as_str() {
-        "windsurf" => Ok(modules::windsurf_instance::detect_and_save_windsurf_launch_path()),
-        "antigravity" | "codex" | "vscode" | "opencode" => {
-            Ok(modules::process::detect_and_save_app_path(app.as_str()))
-        }
+        "windsurf" => Ok(modules::windsurf_instance::detect_and_save_windsurf_launch_path(force)),
+        "antigravity" | "codex" | "vscode" | "opencode" => Ok(
+            modules::process::detect_and_save_app_path(app.as_str(), force),
+        ),
         _ => Err("未知应用类型".to_string()),
     }
 }

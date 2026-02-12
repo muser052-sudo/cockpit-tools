@@ -1337,18 +1337,10 @@ fn normalize_windsurf_path_for_config(path: &Path) -> String {
     }
 }
 
-pub fn detect_and_save_windsurf_launch_path() -> Option<String> {
+pub fn detect_and_save_windsurf_launch_path(force: bool) -> Option<String> {
     let current = modules::config::get_user_config();
-    if let Some(custom) = normalize_custom_path(&current.windsurf_app_path) {
-        if let Some(exec) = resolve_macos_exec_path(&custom) {
-            if path_looks_like_windsurf(&exec) {
-                return Some(current.windsurf_app_path);
-            }
-            modules::logger::log_warn(&format!(
-                "Windsurf 路径不是 Windsurf 可执行文件，已忽略: {}",
-                exec.to_string_lossy()
-            ));
-        }
+    if !force && normalize_custom_path(&current.windsurf_app_path).is_some() {
+        return Some(current.windsurf_app_path);
     }
 
     let detected = detect_windsurf_exec_path()?;
@@ -1375,10 +1367,7 @@ fn resolve_windsurf_launch_path() -> Result<PathBuf, String> {
                 exec.to_string_lossy()
             ));
         }
-    }
-
-    if let Some(detected) = detect_windsurf_exec_path() {
-        return Ok(detected);
+        return Err("APP_PATH_NOT_FOUND:windsurf".to_string());
     }
 
     Err("APP_PATH_NOT_FOUND:windsurf".to_string())
