@@ -291,6 +291,13 @@ foreach ($commandName in $commandNames) {{
         }
     };
     if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        crate::modules::logger::log_warn(&format!(
+            "[Path Detect] {} PowerShell 探测命令执行失败: status={}, stderr={}",
+            app_label,
+            output.status,
+            stderr.trim()
+        ));
         return None;
     }
 
@@ -304,8 +311,13 @@ foreach ($commandName in $commandNames) {{
 
     let mut seen: HashSet<String> = HashSet::new();
     let mut best: Option<(std::path::PathBuf, i32)> = None;
+    let mut raw_lines = 0usize;
+    let mut scored_candidates = 0usize;
     let stdout = String::from_utf8_lossy(&output.stdout);
     for line in stdout.lines() {
+        if !line.trim().is_empty() {
+            raw_lines += 1;
+        }
         let Some(path) = normalize_windows_candidate_path(line) else {
             continue;
         };
@@ -316,6 +328,7 @@ foreach ($commandName in $commandNames) {{
         let Some(score) = score_windows_candidate(&path, &exe_names_lower, &keywords_lower) else {
             continue;
         };
+        scored_candidates += 1;
         match best.as_ref() {
             Some((_, current_score)) if *current_score >= score => {}
             _ => best = Some((path, score)),
@@ -331,6 +344,21 @@ foreach ($commandName in $commandNames) {{
         ));
         return Some(path);
     }
+
+    let local_appdata = std::env::var("LOCALAPPDATA").unwrap_or_else(|_| "<unset>".to_string());
+    let program_files = std::env::var("PROGRAMFILES").unwrap_or_else(|_| "<unset>".to_string());
+    let program_files_x86 =
+        std::env::var("PROGRAMFILES(X86)").unwrap_or_else(|_| "<unset>".to_string());
+    crate::modules::logger::log_warn(&format!(
+        "[Path Detect] {} Windows 多源探测未命中: raw_lines={}, unique_candidates={}, scored_candidates={}, local_appdata={}, program_files={}, program_files_x86={}",
+        app_label,
+        raw_lines,
+        seen.len(),
+        scored_candidates,
+        local_appdata,
+        program_files,
+        program_files_x86
+    ));
     None
 }
 
