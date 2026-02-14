@@ -1,7 +1,7 @@
 import { Pause, Play, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PlatformId } from '../../types/platform';
+import { ALL_PLATFORM_IDS, PlatformId } from '../../types/platform';
 import { renderPlatformIcon } from '../../utils/platformMeta';
 import './BreakoutModal.css';
 
@@ -10,6 +10,8 @@ interface BreakoutModalProps {
 }
 
 type DropType = 'split' | 'triple' | 'expand' | 'shield';
+const DROP_TYPES: DropType[] = ['split', 'triple', 'expand', 'shield'];
+type DropCounts = Record<DropType, number>;
 
 interface Ball {
   id: number;
@@ -76,6 +78,7 @@ interface GameState {
   bricks: Brick[];
   brickLookup: Map<string, number>;
   drops: DropItem[];
+  dropCounts: DropCounts;
   score: number;
   shields: number;
   nextBallId: number;
@@ -97,6 +100,7 @@ interface GameHistoryRecord {
   createdAt: string;
   reason: GameEndReason;
   runSeed: number;
+  dropCounts: DropCounts;
 }
 
 const BOARD_WIDTH = 760;
@@ -129,6 +133,8 @@ const MIN_SEPARATOR_Y = 668;
 const MAX_SEPARATOR_Y = 728;
 const BREAKOUT_HISTORY_STORAGE_KEY = 'agtools.breakout.history';
 const BREAKOUT_HISTORY_LIMIT = 200;
+const PLATFORM_LAYOUT_STORAGE_KEY = 'agtools.platform_layout.v1';
+const FALLBACK_PLATFORM_ICON_ORDER: PlatformId[] = ['antigravity', 'codex', 'github-copilot', 'windsurf'];
 
 const DROP_ICON_MAP: Record<DropType, PlatformId> = {
   split: 'windsurf',
@@ -162,6 +168,87 @@ function alignToBrickGrid(value: number): number {
 
 function buildCellKey(cellX: number, cellY: number): string {
   return `${cellX}:${cellY}`;
+}
+
+function createEmptyDropCounts(): DropCounts {
+  return {
+    split: 0,
+    triple: 0,
+    expand: 0,
+    shield: 0,
+  };
+}
+
+function normalizeDropCounts(value: unknown): DropCounts {
+  const result = createEmptyDropCounts();
+  if (!value || typeof value !== 'object') return result;
+  const candidate = value as Partial<Record<DropType, unknown>>;
+  for (const type of DROP_TYPES) {
+    const raw = candidate[type];
+    if (typeof raw !== 'number' || !Number.isFinite(raw)) continue;
+    result[type] = Math.max(0, Math.floor(raw));
+  }
+  return result;
+}
+
+function getDropTypeByPlatformId(platformId: PlatformId): DropType | null {
+  for (const dropType of DROP_TYPES) {
+    if (DROP_ICON_MAP[dropType] === platformId) return dropType;
+  }
+  return null;
+}
+
+function isPlatformId(value: unknown): value is PlatformId {
+  return typeof value === 'string' && ALL_PLATFORM_IDS.includes(value as PlatformId);
+}
+
+function buildDropTypeOrder(platformOrder: PlatformId[]): DropType[] {
+  const nextOrder: DropType[] = [];
+  for (const platformId of platformOrder) {
+    const dropType = getDropTypeByPlatformId(platformId);
+    if (!dropType || nextOrder.includes(dropType)) continue;
+    nextOrder.push(dropType);
+  }
+  for (const dropType of DROP_TYPES) {
+    if (!nextOrder.includes(dropType)) {
+      nextOrder.push(dropType);
+    }
+  }
+  return nextOrder;
+}
+
+function loadDropTypeOrderSnapshot(): DropType[] {
+  if (typeof window === 'undefined') {
+    return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+  }
+  try {
+    const raw = window.localStorage.getItem(PLATFORM_LAYOUT_STORAGE_KEY);
+    if (!raw) return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+    const parsed = JSON.parse(raw) as { orderedPlatformIds?: unknown };
+    if (!Array.isArray(parsed.orderedPlatformIds)) {
+      return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+    }
+    const orderedPlatformIds = parsed.orderedPlatformIds.filter(isPlatformId);
+    if (orderedPlatformIds.length === 0) {
+      return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+    }
+    return buildDropTypeOrder(orderedPlatformIds);
+  } catch {
+    return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+  }
+}
+
+function getSortedDropTypes(dropCounts: DropCounts, defaultOrder: DropType[]): DropType[] {
+  const indexMap = new Map<DropType, number>();
+  for (let index = 0; index < defaultOrder.length; index += 1) {
+    indexMap.set(defaultOrder[index], index);
+  }
+
+  return [...DROP_TYPES].sort((left, right) => {
+    const diff = dropCounts[right] - dropCounts[left];
+    if (diff !== 0) return diff;
+    return (indexMap.get(left) ?? 999) - (indexMap.get(right) ?? 999);
+  });
 }
 
 interface BrickArea {
@@ -1134,6 +1221,7 @@ function createInitialState(runSeed: number = generateRunSeed()): GameState {
     bricks: layout.bricks,
     brickLookup: layout.brickLookup,
     drops: [],
+    dropCounts: createEmptyDropCounts(),
     score: 0,
     shields: 0,
     nextBallId: 2,
@@ -1272,9 +1360,9 @@ function resolveBallCollisions(balls: Ball[]) {
 
 function randomDropType(): DropType {
   const roll = Math.random();
-  if (roll < 0.42) return 'split';
-  if (roll < 0.74) return 'triple';
-  if (roll < 0.92) return 'expand';
+  if (roll < 0.25) return 'split';
+  if (roll < 0.5) return 'triple';
+  if (roll < 0.75) return 'expand';
   return 'shield';
 }
 
@@ -1336,6 +1424,7 @@ function normalizeHistoryRecord(value: unknown): GameHistoryRecord | null {
     createdAt: candidate.createdAt,
     reason: candidate.reason,
     runSeed: Math.floor(candidate.runSeed),
+    dropCounts: normalizeDropCounts(candidate.dropCounts),
   };
 }
 
@@ -1422,6 +1511,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
   const [historyRecords, setHistoryRecords] = useState<GameHistoryRecord[]>(() =>
     loadBreakoutHistoryRecords(),
   );
+  const [dropTypeOrder] = useState<DropType[]>(() => loadDropTypeOrderSnapshot());
   const historyRecordsRef = useRef<GameHistoryRecord[]>(historyRecords);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [gameOverRank, setGameOverRank] = useState<number | null>(null);
@@ -1487,6 +1577,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
       createdAt: new Date().toISOString(),
       reason,
       runSeed: state.runSeed,
+      dropCounts: normalizeDropCounts(state.dropCounts),
     };
 
     const next = [record, ...historyRecordsRef.current].slice(0, BREAKOUT_HISTORY_LIMIT);
@@ -1764,6 +1855,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
         drop.y <= PADDLE_Y + PADDLE_HEIGHT + 10;
 
       if (hitPaddle) {
+        state.dropCounts[drop.type] += 1;
         if (drop.type === 'split') {
           const freeSlots = Math.max(0, MAX_BALLS - state.balls.length);
           const spawnCount = Math.min(3, freeSlots);
@@ -2178,6 +2270,18 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
                         </span>
                         <span>{formatHistoryTime(record.createdAt)}</span>
                       </div>
+                      <div className="breakout-history-item-drops">
+                        <div className="breakout-drop-counts">
+                          {getSortedDropTypes(record.dropCounts, dropTypeOrder).map((dropType) => (
+                            <span key={`${record.id}-${dropType}`} className="breakout-drop-count-chip">
+                              <span className="breakout-drop-count-icon">
+                                {renderPlatformIcon(DROP_ICON_MAP[dropType], 12)}
+                              </span>
+                              <span className="breakout-drop-count-value">x{record.dropCounts[dropType]}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2264,6 +2368,18 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
           {isGameOver && (
             <div className="breakout-gameover">
               <div className="breakout-gameover-title">{t('breakout.gameOver', '本局结束')}</div>
+              <div className="breakout-gameover-drops">
+                <div className="breakout-drop-counts breakout-drop-counts-gameover">
+                  {getSortedDropTypes(stateRef.current.dropCounts, dropTypeOrder).map((dropType) => (
+                    <span key={`gameover-${dropType}`} className="breakout-drop-count-chip">
+                      <span className="breakout-drop-count-icon">
+                        {renderPlatformIcon(DROP_ICON_MAP[dropType], 13)}
+                      </span>
+                      <span className="breakout-drop-count-value">x{stateRef.current.dropCounts[dropType]}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
               <div className="breakout-rank-summary">
                 <div className="breakout-rank-summary-title">{t('breakout.rankTitle', '历史排名')}</div>
                 <div className="breakout-rank-summary-list">

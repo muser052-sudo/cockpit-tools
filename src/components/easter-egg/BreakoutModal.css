@@ -357,6 +357,49 @@
   line-height: 1.25;
 }
 
+.breakout-history-item-drops {
+  margin-top: 6px;
+}
+
+.breakout-drop-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.breakout-drop-count-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.breakout-drop-count-icon {
+  width: 13px;
+  height: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #dbeafe;
+}
+
+.breakout-drop-count-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.breakout-drop-count-value {
+  color: #dbeafe;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .breakout-gameover {
   position: absolute;
   inset: 0;
@@ -455,6 +498,18 @@
   border: 1px solid rgba(148, 163, 184, 0.3);
   border-radius: 12px;
   background: rgba(15, 23, 42, 0.42);
+}
+
+.breakout-gameover-drops {
+  width: min(360px, calc(100% - 48px));
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.breakout-drop-counts-gameover .breakout-drop-count-chip {
+  height: 22px;
 }
 
 .breakout-rank-summary-title {
