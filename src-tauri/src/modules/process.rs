@@ -1891,24 +1891,7 @@ fn resolve_pid_from_entries_by_user_data_dir(
 
     if let Some(pid) = last_pid {
         if is_pid_running(pid) {
-            // 兜底：极端情况下进程采集失败，仍保留 last_pid 行为。
-            if entries.is_empty() {
-                return Some(pid);
-            }
-
-            // 严格校验：last_pid 必须匹配当前目标目录，避免 PID 复用导致串实例。
-            if let Some((_, dir)) = entries.iter().find(|(entry_pid, _)| *entry_pid == pid) {
-                match dir.as_ref() {
-                    Some(value) => {
-                        let normalized = normalize_path_for_compare(value);
-                        if !normalized.is_empty() && normalized == target_dir {
-                            return Some(pid);
-                        }
-                    }
-                    None if allow_none_for_target => return Some(pid),
-                    _ => {}
-                }
-            }
+            return Some(pid);
         }
     }
 
@@ -2076,30 +2059,7 @@ pub fn resolve_codex_pid_from_entries(
 
     if let Some(pid) = last_pid {
         if is_pid_running(pid) {
-            // 兜底：极端情况下进程采集失败，仍保留 last_pid 行为。
-            if entries.is_empty() {
-                return Some(pid);
-            }
-
-            // 严格校验：last_pid 必须匹配 codex_home 语义，避免 PID 复用导致串实例。
-            if let Some((_, home)) = entries.iter().find(|(entry_pid, _)| *entry_pid == pid) {
-                match (&target, home.as_ref()) {
-                    (Some(target_home), Some(home)) => {
-                        let normalized = normalize_path_for_compare(home);
-                        if !normalized.is_empty() && &normalized == target_home {
-                            return Some(pid);
-                        }
-                    }
-                    (None, None) => return Some(pid),
-                    (None, Some(home)) => {
-                        let normalized = normalize_path_for_compare(home);
-                        if normalized.is_empty() {
-                            return Some(pid);
-                        }
-                    }
-                    _ => {}
-                }
-            }
+            return Some(pid);
         }
     }
 
