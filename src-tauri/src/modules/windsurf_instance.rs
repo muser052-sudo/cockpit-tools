@@ -1105,20 +1105,44 @@ pub fn resolve_windsurf_pid_from_entries(
     user_data_dir: Option<&str>,
     entries: &[(u32, Option<String>)],
 ) -> Option<u32> {
-    if let Some(pid) = last_pid {
-        if modules::process::is_pid_running(pid) {
-            return Some(pid);
-        }
-    }
-
     let default_dir = get_default_windsurf_user_data_dir()
         .ok()
         .map(|dir| normalize_path_for_compare(&dir.to_string_lossy()));
-    let target = normalize_non_empty_path(user_data_dir).or(default_dir.clone())?;
+    let target = normalize_non_empty_path(user_data_dir).or(default_dir.clone());
     let allow_none_for_target = default_dir
         .as_ref()
-        .map(|value| value == &target)
+        .zip(target.as_ref())
+        .map(|(value, current)| value == current)
         .unwrap_or(false);
+
+    if let Some(pid) = last_pid {
+        if modules::process::is_pid_running(pid) {
+            // 兜底：极端情况下进程采集失败，仍保留 last_pid 行为。
+            if entries.is_empty() {
+                return Some(pid);
+            }
+
+            // 严格校验：last_pid 必须匹配当前实例目录，避免 PID 复用导致串实例。
+            if let Some(target_dir) = target.as_ref() {
+                if let Some((_, dir)) = entries.iter().find(|(entry_pid, _)| *entry_pid == pid) {
+                    match dir.as_ref() {
+                        Some(actual_dir) => {
+                            let normalized = normalize_path_for_compare(actual_dir);
+                            if !normalized.is_empty() && normalized == *target_dir {
+                                return Some(pid);
+                            }
+                        }
+                        None if allow_none_for_target => return Some(pid),
+                        _ => {}
+                    }
+                }
+            } else {
+                return Some(pid);
+            }
+        }
+    }
+
+    let target = target?;
 
     let mut matches = Vec::new();
     for (pid, dir) in entries {

@@ -109,7 +109,15 @@
       "windsurfAppPathDesc": "Varsayılan yolu kullanmak için boş bırakın",
       "windsurfAppPathPlaceholder": "Varsayılan yol",
       "windsurfPathSelect": "Seç",
-      "windsurfPathReset": "Varsayılana sıfırla"
+      "windsurfPathReset": "Varsayılana sıfırla",
+      "kiroSettingsTitle": "Kiro Settings",
+      "kiroAutoRefresh": "Kiro Auto Refresh Quota",
+      "kiroAutoRefreshDesc": "Background update frequency",
+      "kiroAppPath": "Kiro App Path",
+      "kiroAppPathDesc": "Leave empty to use default path",
+      "kiroAppPathPlaceholder": "Default path",
+      "kiroPathSelect": "Select",
+      "kiroPathReset": "Reset to default"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -1191,7 +1199,12 @@
       "title": "Windsurf Ayarları",
       "appPath": "Windsurf Yolu"
     },
-    "windsurfRefreshInterval": "Kotayı otomatik yenile"
+    "windsurfRefreshInterval": "Kotayı otomatik yenile",
+    "kiro": {
+      "title": "Kiro Settings",
+      "appPath": "Kiro Path"
+    },
+    "kiroRefreshInterval": "Auto refresh quota"
   },
   "quotaAlert": {
     "bannerText": "{{email}} için kota uyarısı (eşik {{threshold}}%, en düşük {{lowest}}%, modeller: {{models}})",
@@ -1407,5 +1420,143 @@
     "rankingEmpty": "Henüz kayıt yok",
     "rankingClear": "Temizle",
     "rankingRankShort": "#{{rank}}"
+  },
+  "kiro": {
+    "account": {
+      "signedInWith": "Signed in with {{provider}}",
+      "providerUnknown": "Unknown",
+      "userId": "User ID"
+    },
+    "credits": {
+      "planEndsIn": "Döngü {{days}} gün içinde sıfırlanır",
+      "planEndsUnknown": "Döngü zamanı kullanılamıyor",
+      "periodRange": "Döngü: {{start}} - {{end}}",
+      "periodEndOnly": "Döngü sonu: {{end}}",
+      "estimatedResetOn": "Estimated Usage resets on {{date}}",
+      "bonusUsageLine": "{{used}} used / {{total}} total",
+      "planUsageCoveredLine": "{{used}} used / {{total}} covered in plan",
+      "usedLine": "{{used}} / {{total}} kullanıldı",
+      "leftInline": "{{left}} kaldı",
+      "expiryDays": "{{days}} days",
+      "expiryUnknown": "—",
+      "resetNow": "Reset soon",
+      "resetInHours": "Resets in {{hours}}h",
+      "resetInMinutes": "Resets in {{minutes}}m"
+    },
+    "columns": {
+      "email": "E-posta",
+      "plan": "Etiket",
+      "credits": "Krediler",
+      "promptCredits": "İstem kredileri",
+      "addOnPromptCredits": "Ek istem kredileri",
+      "bonusCredits": "Bonus Credits",
+      "estimatedUsage": "Estimated Usage",
+      "expiry": "Expiry",
+      "estUsage": "Est. Usage",
+      "actions": "İşlemler"
+    },
+    "plan": {
+      "free": "Kiro Free",
+      "individual": "Kiro Individual",
+      "pro": "Kiro Pro",
+      "business": "Kiro Business",
+      "enterprise": "Kiro Enterprise",
+      "unknown": "Unknown"
+    },
+    "flowNotice": {
+      "title": "Kiro hesap kılavuzu (genişletmek/daraltmak için tıklayın)",
+      "desc": "Hesap değiştirme, Kiro yerel kimlik doğrulama deposunun okunmasını ve şifre çözme/geri yazma için sistem kimlik bilgisi hizmetinin kullanılmasını gerektirir; veriler yalnızca yerelde işlenir.",
+      "reason": "İzin kapsamı: Kiro kimlik doğrulama veritabanını (state.vscdb) okumak ve şifre çözme/geri yazma için sistem şifreleme yeteneklerini (Windows DPAPI / macOS Keychain / Linux Secret Service) çağırmak.",
+      "storage": "Okuma kapsamı: yalnızca Kiro oturum açma oturumu ile ilgili veriler işlenir; tüm işlemler yerel olarak yürütülür."
+    },
+    "title": "Kiro Account Management",
+    "subtitle": "Monitor quota status for all accounts in real time.",
+    "overview": {
+      "title": "Account Overview"
+    },
+    "instances": {
+      "title": "Multi-Instance",
+      "subtitle": "Independent configs per instance for parallel multi-account runs.",
+      "unsupported": {
+        "title": "Unsupported on this system",
+        "descPlatform": "Kiro multi-instance is available only on macOS, Windows and Linux."
+      },
+      "quota": {
+        "inline": "Inline Suggestions",
+        "chat": "Chat messages"
+      }
+    },
+    "addAccount": "Add Account",
+    "refreshAll": "Refresh All",
+    "refreshQuota": "Refresh Quota",
+    "empty": {
+      "title": "No Accounts",
+      "description": "Click \"Add Account\" to start managing your Kiro accounts"
+    },
+    "noMatch": {
+      "title": "No matching accounts",
+      "desc": "Try adjusting your search or filters"
+    },
+    "addModal": {
+      "title": "Add Kiro Account",
+      "oauth": "OAuth",
+      "token": "Token / JSON",
+      "import": "Local Import"
+    },
+    "oauth": {
+      "desc": "Click the button below and complete Kiro authorization in your browser.",
+      "preparing": "Preparing authorization info...",
+      "openBrowser": "Open in Browser",
+      "hint": "Once authorized, this window will update automatically",
+      "success": "Authorization successful",
+      "failed": "Authorization failed",
+      "retry": "Regenerate authorization info",
+      "timeoutRetry": "Refresh authorization link",
+      "waiting": "Waiting for authorization...",
+      "meta": "Expires in: {{expires}}s; Poll interval: {{interval}}s"
+    },
+    "token": {
+      "desc": "Paste your Kiro access token or exported JSON data.",
+      "placeholder": "Paste token or JSON...",
+      "import": "Import",
+      "importing": "Importing...",
+      "importSuccessMsg": "Imported {{count}} account(s) successfully",
+      "importFailedMsg": "Import failed: {{error}}",
+      "empty": "Please enter a token or JSON"
+    },
+    "import": {
+      "label": "Import",
+      "localDesc": "Import Kiro account data from local Kiro client or a JSON file.",
+      "localClient": "Import from local Kiro",
+      "orJson": "Or import from JSON file",
+      "importing": "Importing...",
+      "failedMsg": "Import failed: {{error}}",
+      "pickFile": "Select JSON file to import"
+    },
+    "search": "Search accounts...",
+    "view": {
+      "list": "List view",
+      "grid": "Card view"
+    },
+    "filter": {
+      "all": "All ({{count}})",
+      "free": "FREE ({{count}})",
+      "individual": "INDIVIDUAL ({{count}})",
+      "pro": "PRO ({{count}})",
+      "business": "BUSINESS ({{count}})",
+      "enterprise": "ENTERPRISE ({{count}})"
+    },
+    "filterLabel": "Filter",
+    "sortLabel": "Sort",
+    "sort": {
+      "createdAt": "Created time",
+      "credits": "By remaining credits",
+      "planEnd": "By cycle end time",
+      "descTooltip": "Current: Descending. Click to switch to ascending",
+      "ascTooltip": "Current: Ascending. Click to switch to descending",
+      "toggleDirection": "Toggle sort direction"
+    },
+    "export": "Export",
+    "injectToVSCode": "Switch to Kiro"
   }
 }

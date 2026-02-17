@@ -646,8 +646,31 @@
   border-color: rgba(249, 115, 22, 0.4);
 }
 
+.accounts-page .tier-badge.individual {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.accounts-page .tier-badge.business {
+  background: rgba(59, 130, 246, 0.14);
+  color: #1d4ed8;
+  border-color: rgba(59, 130, 246, 0.28);
+}
+
+.accounts-page .tier-badge.enterprise {
+  background: rgba(245, 158, 11, 0.16);
+  color: #b45309;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
 .accounts-page .tier-badge.free {
   background: rgba(148, 163, 184, 0.2);
+  color: var(--text-secondary);
+}
+
+.accounts-page .tier-badge.unknown {
+  background: rgba(148, 163, 184, 0.16);
   color: var(--text-secondary);
 }
 

@@ -319,7 +319,15 @@
       "windsurfAppPathDesc": "留空则使用默认路径",
       "windsurfAppPathPlaceholder": "默认路径",
       "windsurfPathSelect": "选择",
-      "windsurfPathReset": "重置默认"
+      "windsurfPathReset": "重置默认",
+      "kiroSettingsTitle": "Kiro 设置",
+      "kiroAutoRefresh": "Kiro 自动刷新配额",
+      "kiroAutoRefreshDesc": "后台自动更新频率",
+      "kiroAppPath": "Kiro 启动路径",
+      "kiroAppPathDesc": "留空则使用默认路径",
+      "kiroAppPathPlaceholder": "默认路径",
+      "kiroPathSelect": "选择",
+      "kiroPathReset": "重置默认"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -1239,7 +1247,12 @@
       "title": "Windsurf 设置",
       "appPath": "Windsurf 路径"
     },
-    "windsurfRefreshInterval": "配额自动刷新"
+    "windsurfRefreshInterval": "配额自动刷新",
+    "kiro": {
+      "title": "Kiro 设置",
+      "appPath": "Kiro 路径"
+    },
+    "kiroRefreshInterval": "配额自动刷新"
   },
   "quotaAlert": {
     "bannerText": "账号 {{email}} 触发配额预警（阈值 {{threshold}}%，最低 {{lowest}}%，模型：{{models}}）",
@@ -1407,5 +1420,143 @@
     "injecting": "注入中...",
     "injectSuccess": "已完成切换，Windsurf 正在启动。",
     "injectRequireClose": "请先关闭 Windsurf 再进行切换。"
+  },
+  "kiro": {
+    "account": {
+      "signedInWith": "使用 {{provider}} 登录",
+      "providerUnknown": "未知方式",
+      "userId": "用户 ID"
+    },
+    "credits": {
+      "planEndsIn": "配额周期剩余 {{days}} 天",
+      "planEndsUnknown": "配额周期时间未知",
+      "periodRange": "周期：{{start}} - {{end}}",
+      "periodEndOnly": "周期结束：{{end}}",
+      "estimatedResetOn": "Estimated Usage 在 {{date}} 重置",
+      "bonusUsageLine": "{{used}} used / {{total}} total",
+      "planUsageCoveredLine": "{{used}} used / {{total}} covered in plan",
+      "usedLine": "{{used}} / {{total}} used",
+      "leftInline": "{{left}} left",
+      "expiryDays": "{{days}} 天",
+      "expiryUnknown": "—",
+      "resetNow": "即将重置",
+      "resetInHours": "{{hours}} 小时后重置",
+      "resetInMinutes": "{{minutes}} 分钟后重置"
+    },
+    "columns": {
+      "email": "邮箱",
+      "plan": "计划",
+      "credits": "Credits",
+      "promptCredits": "User Prompt credits",
+      "addOnPromptCredits": "Add-on prompt credits",
+      "bonusCredits": "Bonus Credits",
+      "estimatedUsage": "Estimated Usage",
+      "expiry": "Expiry",
+      "estUsage": "Est. Usage",
+      "actions": "操作"
+    },
+    "plan": {
+      "free": "Kiro Free",
+      "individual": "Kiro Individual",
+      "pro": "Kiro Pro",
+      "business": "Kiro Business",
+      "enterprise": "Kiro Enterprise",
+      "unknown": "Unknown"
+    },
+    "flowNotice": {
+      "title": "Kiro 账号管理说明（点击展开/收起）",
+      "desc": "切换账号需要读取 VS Code 本地认证存储，并调用系统凭据服务进行解密/重加密；数据仅在本机处理。",
+      "reason": "权限范围：读取 VS Code 认证数据库（state.vscdb），并调用系统凭据能力（Windows DPAPI / macOS Keychain / Linux Secret Service）进行解密与写回。",
+      "storage": "数据范围：仅读取/更新 Kiro 登录会话相关条目；不会修改系统其他密钥，也不会上传任何 key/token。"
+    },
+    "title": "Kiro 账号管理",
+    "subtitle": "实时监控所有账号的配额状态。",
+    "overview": {
+      "title": "账号总览"
+    },
+    "instances": {
+      "title": "多开实例",
+      "subtitle": "多实例独立配置，多账号并行运行。",
+      "unsupported": {
+        "title": "暂不支持当前系统",
+        "descPlatform": "Kiro 多开实例仅支持 macOS、Windows 和 Linux。"
+      },
+      "quota": {
+        "inline": "Inline Suggestions",
+        "chat": "Chat messages"
+      }
+    },
+    "addAccount": "添加账号",
+    "refreshAll": "刷新全部",
+    "refreshQuota": "刷新配额",
+    "empty": {
+      "title": "暂无账号",
+      "description": "点击\"添加账号\"开始管理您的 Kiro 账号"
+    },
+    "noMatch": {
+      "title": "没有匹配的账号",
+      "desc": "请尝试调整搜索或筛选条件"
+    },
+    "addModal": {
+      "title": "添加 Kiro 账号",
+      "oauth": "OAuth",
+      "token": "Token / JSON",
+      "import": "本地导入"
+    },
+    "oauth": {
+      "desc": "点击下方按钮，在浏览器中完成 Kiro 授权登录。",
+      "preparing": "正在准备授权信息...",
+      "openBrowser": "在浏览器中打开",
+      "hint": "授权完成后，当前窗口会自动更新",
+      "success": "授权成功",
+      "failed": "授权失败",
+      "retry": "重新生成授权信息",
+      "timeoutRetry": "刷新授权链接",
+      "waiting": "等待授权完成...",
+      "meta": "授权有效期：{{expires}}s；轮询间隔：{{interval}}s"
+    },
+    "token": {
+      "desc": "粘贴您的 Kiro Access Token 或导出的 JSON 数据。",
+      "placeholder": "粘贴 Token 或 JSON...",
+      "import": "导入",
+      "importing": "正在导入...",
+      "importSuccessMsg": "成功导入 {{count}} 个账号",
+      "importFailedMsg": "导入失败: {{error}}",
+      "empty": "请输入 Token 或 JSON"
+    },
+    "import": {
+      "label": "导入",
+      "localDesc": "支持从本机 Kiro 客户端或 JSON 文件导入账号数据。",
+      "localClient": "从本机 Kiro 导入",
+      "orJson": "或从 JSON 文件导入",
+      "importing": "正在导入...",
+      "failedMsg": "导入失败: {{error}}",
+      "pickFile": "选择 JSON 文件导入"
+    },
+    "search": "搜索账号...",
+    "view": {
+      "list": "列表视图",
+      "grid": "卡片视图"
+    },
+    "filter": {
+      "all": "All ({{count}})",
+      "free": "FREE ({{count}})",
+      "individual": "INDIVIDUAL ({{count}})",
+      "pro": "PRO ({{count}})",
+      "business": "BUSINESS ({{count}})",
+      "enterprise": "ENTERPRISE ({{count}})"
+    },
+    "filterLabel": "筛选",
+    "sortLabel": "排序",
+    "sort": {
+      "createdAt": "按创建时间",
+      "credits": "按剩余 Credits",
+      "planEnd": "按配额周期结束时间",
+      "descTooltip": "当前：降序，点击切换为升序",
+      "ascTooltip": "当前：升序，点击切换为降序",
+      "toggleDirection": "切换排序方向"
+    },
+    "export": "导出",
+    "injectToVSCode": "切换到 Kiro"
   }
 }

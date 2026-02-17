@@ -5,6 +5,7 @@ import { PlatformId } from '../types/platform';
 import { RobotIcon } from '../components/icons/RobotIcon';
 import { CodexIcon } from '../components/icons/CodexIcon';
 import { WindsurfIcon } from '../components/icons/WindsurfIcon';
+import { KiroIcon } from '../components/icons/KiroIcon';
 
 export function getPlatformLabel(platformId: PlatformId, t: TFunction): string {
   switch (platformId) {
@@ -16,6 +17,8 @@ export function getPlatformLabel(platformId: PlatformId, t: TFunction): string {
       return t('nav.githubCopilot', 'GitHub Copilot');
     case 'windsurf':
       return 'Windsurf';
+    case 'kiro':
+      return 'Kiro';
     default:
       return platformId;
   }
@@ -31,8 +34,9 @@ export function renderPlatformIcon(platformId: PlatformId, size = 20): ReactNode
       return <Github size={size} />;
     case 'windsurf':
       return <WindsurfIcon style={{ width: size, height: size }} />;
+    case 'kiro':
+      return <KiroIcon style={{ width: size, height: size }} />;
     default:
       return null;
   }
 }
-

@@ -62,6 +62,9 @@ pub struct UserConfig {
     /// Windsurf 自动刷新间隔（分钟），-1 表示禁用
     #[serde(default = "default_windsurf_auto_refresh")]
     pub windsurf_auto_refresh_minutes: i32,
+    /// Kiro 自动刷新间隔（分钟），-1 表示禁用
+    #[serde(default = "default_kiro_auto_refresh")]
+    pub kiro_auto_refresh_minutes: i32,
     /// 窗口关闭行为
     #[serde(default = "default_close_behavior")]
     pub close_behavior: CloseWindowBehavior,
@@ -80,6 +83,9 @@ pub struct UserConfig {
     /// Windsurf 启动路径（为空则使用默认路径）
     #[serde(default = "default_windsurf_app_path")]
     pub windsurf_app_path: String,
+    /// Kiro 启动路径（为空则使用默认路径）
+    #[serde(default = "default_kiro_app_path")]
+    pub kiro_app_path: String,
     /// 切换 Codex 时是否自动重启 OpenCode
     #[serde(default = "default_opencode_sync_on_switch")]
     pub opencode_sync_on_switch: bool,
@@ -113,6 +119,12 @@ pub struct UserConfig {
     /// Windsurf 配额预警阈值（百分比）
     #[serde(default = "default_windsurf_quota_alert_threshold")]
     pub windsurf_quota_alert_threshold: i32,
+    /// 是否启用 Kiro 配额预警通知
+    #[serde(default = "default_kiro_quota_alert_enabled")]
+    pub kiro_quota_alert_enabled: bool,
+    /// Kiro 配额预警阈值（百分比）
+    #[serde(default = "default_kiro_quota_alert_threshold")]
+    pub kiro_quota_alert_threshold: i32,
 }
 
 /// 窗口关闭行为
@@ -157,6 +169,9 @@ fn default_ghcp_auto_refresh() -> i32 {
 fn default_windsurf_auto_refresh() -> i32 {
     10
 } // 默认 10 分钟
+fn default_kiro_auto_refresh() -> i32 {
+    10
+} // 默认 10 分钟
 fn default_close_behavior() -> CloseWindowBehavior {
     CloseWindowBehavior::Ask
 }
@@ -173,6 +188,9 @@ fn default_vscode_app_path() -> String {
     String::new()
 }
 fn default_windsurf_app_path() -> String {
+    String::new()
+}
+fn default_kiro_app_path() -> String {
     String::new()
 }
 fn default_opencode_sync_on_switch() -> bool {
@@ -208,6 +226,12 @@ fn default_windsurf_quota_alert_enabled() -> bool {
 fn default_windsurf_quota_alert_threshold() -> i32 {
     20
 }
+fn default_kiro_quota_alert_enabled() -> bool {
+    false
+}
+fn default_kiro_quota_alert_threshold() -> i32 {
+    20
+}
 
 impl Default for UserConfig {
     fn default() -> Self {
@@ -220,12 +244,14 @@ impl Default for UserConfig {
             codex_auto_refresh_minutes: default_codex_auto_refresh(),
             ghcp_auto_refresh_minutes: default_ghcp_auto_refresh(),
             windsurf_auto_refresh_minutes: default_windsurf_auto_refresh(),
+            kiro_auto_refresh_minutes: default_kiro_auto_refresh(),
             close_behavior: default_close_behavior(),
             opencode_app_path: default_opencode_app_path(),
             antigravity_app_path: default_antigravity_app_path(),
             codex_app_path: default_codex_app_path(),
             vscode_app_path: default_vscode_app_path(),
             windsurf_app_path: default_windsurf_app_path(),
+            kiro_app_path: default_kiro_app_path(),
             opencode_sync_on_switch: default_opencode_sync_on_switch(),
             auto_switch_enabled: default_auto_switch_enabled(),
             auto_switch_threshold: default_auto_switch_threshold(),
@@ -237,6 +263,8 @@ impl Default for UserConfig {
             ghcp_quota_alert_threshold: default_ghcp_quota_alert_threshold(),
             windsurf_quota_alert_enabled: default_windsurf_quota_alert_enabled(),
             windsurf_quota_alert_threshold: default_windsurf_quota_alert_threshold(),
+            kiro_quota_alert_enabled: default_kiro_quota_alert_enabled(),
+            kiro_quota_alert_threshold: default_kiro_quota_alert_threshold(),
         }
     }
 }
@@ -303,6 +331,18 @@ pub fn load_user_config() -> Result<UserConfig, String> {
 
     // 兼容旧配置：平台独立预警字段不存在时，继承历史全局预警配置
     if let Some(obj) = value.as_object_mut() {
+        if !obj.contains_key("kiro_auto_refresh_minutes") {
+            let inherited_refresh = obj
+                .get("windsurf_auto_refresh_minutes")
+                .and_then(|v| v.as_i64())
+                .map(|v| v as i32)
+                .unwrap_or_else(default_kiro_auto_refresh);
+            obj.insert(
+                "kiro_auto_refresh_minutes".to_string(),
+                json!(inherited_refresh),
+            );
+        }
+
         let legacy_enabled = obj
             .get("quota_alert_enabled")
             .and_then(|v| v.as_bool())
@@ -339,6 +379,12 @@ pub fn load_user_config() -> Result<UserConfig, String> {
                 "windsurf_quota_alert_threshold".to_string(),
                 json!(legacy_threshold),
             );
+        }
+        if !obj.contains_key("kiro_quota_alert_enabled") {
+            obj.insert("kiro_quota_alert_enabled".to_string(), json!(legacy_enabled));
+        }
+        if !obj.contains_key("kiro_quota_alert_threshold") {
+            obj.insert("kiro_quota_alert_threshold".to_string(), json!(legacy_threshold));
         }
     }
 

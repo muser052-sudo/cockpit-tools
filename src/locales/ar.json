@@ -109,7 +109,15 @@
       "windsurfAppPathDesc": "اتركه فارغًا لاستخدام المسار الافتراضي",
       "windsurfAppPathPlaceholder": "المسار الافتراضي",
       "windsurfPathSelect": "اختيار",
-      "windsurfPathReset": "إعادة التعيين إلى الافتراضي"
+      "windsurfPathReset": "إعادة التعيين إلى الافتراضي",
+      "kiroSettingsTitle": "Kiro Settings",
+      "kiroAutoRefresh": "Kiro Auto Refresh Quota",
+      "kiroAutoRefreshDesc": "Background update frequency",
+      "kiroAppPath": "Kiro App Path",
+      "kiroAppPathDesc": "Leave empty to use default path",
+      "kiroAppPathPlaceholder": "Default path",
+      "kiroPathSelect": "Select",
+      "kiroPathReset": "Reset to default"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -1191,7 +1199,12 @@
       "title": "إعدادات Windsurf",
       "appPath": "مسار Windsurf"
     },
-    "windsurfRefreshInterval": "تحديث الحصة تلقائياً"
+    "windsurfRefreshInterval": "تحديث الحصة تلقائياً",
+    "kiro": {
+      "title": "إعدادات Kiro",
+      "appPath": "مسار Kiro"
+    },
+    "kiroRefreshInterval": "تحديث الحصة تلقائياً"
   },
   "quotaAlert": {
     "bannerText": "تنبيه حصة للحساب {{email}} (العتبة {{threshold}}%، الأدنى {{lowest}}%، النماذج: {{models}})",
@@ -1407,5 +1420,143 @@
     "rankingEmpty": "لا توجد سجلات بعد",
     "rankingClear": "مسح",
     "rankingRankShort": "#{{rank}}"
+  },
+  "kiro": {
+    "account": {
+      "signedInWith": "Signed in with {{provider}}",
+      "providerUnknown": "Unknown",
+      "userId": "User ID"
+    },
+    "credits": {
+      "planEndsIn": "تتم إعادة ضبط الدورة خلال {{days}} يومًا",
+      "planEndsUnknown": "توقيت الدورة غير متاح",
+      "periodRange": "الدورة: {{start}} - {{end}}",
+      "periodEndOnly": "نهاية الدورة: {{end}}",
+      "estimatedResetOn": "Estimated Usage resets on {{date}}",
+      "bonusUsageLine": "{{used}} used / {{total}} total",
+      "planUsageCoveredLine": "{{used}} used / {{total}} covered in plan",
+      "usedLine": "تم استخدام {{used}} / {{total}}",
+      "leftInline": "{{left}} متبقي",
+      "expiryDays": "{{days}} days",
+      "expiryUnknown": "—",
+      "resetNow": "سيُعاد التعيين قريبًا",
+      "resetInHours": "تتم إعادة الضبط خلال {{hours}} ساعة",
+      "resetInMinutes": "تتم إعادة الضبط خلال {{minutes}} دقيقة"
+    },
+    "columns": {
+      "email": "البريد الإلكتروني",
+      "plan": "الوسم",
+      "credits": "الأرصدة",
+      "promptCredits": "أرصدة الأوامر",
+      "addOnPromptCredits": "أرصدة الأوامر الإضافية",
+      "bonusCredits": "Bonus Credits",
+      "estimatedUsage": "Estimated Usage",
+      "expiry": "Expiry",
+      "estUsage": "Est. Usage",
+      "actions": "الإجراءات"
+    },
+    "plan": {
+      "free": "Kiro Free",
+      "individual": "Kiro Individual",
+      "pro": "Kiro Pro",
+      "business": "Kiro Business",
+      "enterprise": "Kiro Enterprise",
+      "unknown": "Unknown"
+    },
+    "flowNotice": {
+      "title": "دليل حسابات Kiro (انقر للتوسيع/الطي)",
+      "desc": "يتطلب تبديل الحساب قراءة مخزن المصادقة المحلي في Kiro واستخدام خدمة بيانات الاعتماد في النظام لفك التشفير وإعادة الكتابة؛ وتتم معالجة البيانات محليًا فقط.",
+      "reason": "نطاق الأذونات: قراءة قاعدة بيانات مصادقة Kiro ‏(state.vscdb) واستدعاء قدرات التشفير في النظام (Windows DPAPI / macOS Keychain / Linux Secret Service) لفك التشفير وإعادة الكتابة.",
+      "storage": "نطاق القراءة: تتم معالجة بيانات جلسات تسجيل الدخول المرتبطة بـ Kiro فقط، وجميع العمليات تُنفّذ محليًا."
+    },
+    "title": "إدارة حسابات Kiro",
+    "subtitle": "مراقبة حالة الحصة لجميع الحسابات في الوقت الفعلي.",
+    "overview": {
+      "title": "نظرة عامة على الحسابات"
+    },
+    "instances": {
+      "title": "مثيلات متعددة",
+      "subtitle": "إعدادات مستقلة لكل مثيل لتشغيل متوازٍ بعدة حسابات.",
+      "unsupported": {
+        "title": "غير مدعوم على هذا النظام",
+        "descPlatform": "ميزة المثيلات المتعددة لـ Kiro متاحة على macOS وWindows وLinux فقط."
+      },
+      "quota": {
+        "inline": "الاقتراحات المضمنة",
+        "chat": "رسائل الدردشة"
+      }
+    },
+    "addAccount": "إضافة حساب",
+    "refreshAll": "تحديث الكل",
+    "refreshQuota": "تحديث الحصة",
+    "empty": {
+      "title": "لا توجد حسابات",
+      "description": "انقر على \"إضافة حساب\" لبدء إدارة حسابات Kiro"
+    },
+    "noMatch": {
+      "title": "لا توجد حسابات مطابقة",
+      "desc": "حاول تعديل البحث أو المرشحات"
+    },
+    "addModal": {
+      "title": "إضافة حساب Kiro",
+      "oauth": "OAuth",
+      "token": "Token / JSON",
+      "import": "استيراد محلي"
+    },
+    "oauth": {
+      "desc": "انقر الزر أدناه وأكمل تفويض Kiro في المتصفح.",
+      "preparing": "جارٍ تجهيز معلومات التفويض...",
+      "openBrowser": "فتح في المتصفح",
+      "hint": "بعد إكمال التفويض سيتم تحديث هذه النافذة تلقائيًا",
+      "success": "تم التفويض بنجاح",
+      "failed": "فشل التفويض",
+      "retry": "إعادة إنشاء معلومات التفويض",
+      "timeoutRetry": "تحديث رابط التفويض",
+      "waiting": "بانتظار التفويض...",
+      "meta": "تنتهي الصلاحية خلال: {{expires}}s؛ فاصل الاستطلاع: {{interval}}s"
+    },
+    "token": {
+      "desc": "الصق رمز وصول Kiro أو بيانات JSON المصدّرة.",
+      "placeholder": "الصق Token أو JSON...",
+      "import": "استيراد",
+      "importing": "جارٍ الاستيراد...",
+      "importSuccessMsg": "تم استيراد {{count}} حساب(ات) بنجاح",
+      "importFailedMsg": "فشل الاستيراد: {{error}}",
+      "empty": "يرجى إدخال Token أو JSON"
+    },
+    "import": {
+      "label": "استيراد",
+      "localDesc": "يدعم استيراد بيانات حساب Kiro من عميل Kiro المحلي أو ملف JSON.",
+      "localClient": "استيراد من Kiro المحلي",
+      "orJson": "أو الاستيراد من ملف JSON",
+      "importing": "جارٍ الاستيراد...",
+      "failedMsg": "فشل الاستيراد: {{error}}",
+      "pickFile": "اختر ملف JSON للاستيراد"
+    },
+    "search": "البحث في الحسابات...",
+    "view": {
+      "list": "عرض قائمة",
+      "grid": "عرض بطاقات"
+    },
+    "filter": {
+      "all": "الكل ({{count}})",
+      "free": "FREE ({{count}})",
+      "individual": "INDIVIDUAL ({{count}})",
+      "pro": "PRO ({{count}})",
+      "business": "BUSINESS ({{count}})",
+      "enterprise": "ENTERPRISE ({{count}})"
+    },
+    "filterLabel": "تصفية",
+    "sortLabel": "ترتيب",
+    "sort": {
+      "createdAt": "وقت الإنشاء",
+      "credits": "حسب الأرصدة المتبقية",
+      "planEnd": "حسب نهاية الدورة",
+      "descTooltip": "الحالي: تنازلي. انقر للتبديل إلى تصاعدي",
+      "ascTooltip": "الحالي: تصاعدي. انقر للتبديل إلى تنازلي",
+      "toggleDirection": "تبديل اتجاه الترتيب"
+    },
+    "export": "تصدير",
+    "injectToVSCode": "التبديل إلى Kiro"
   }
 }

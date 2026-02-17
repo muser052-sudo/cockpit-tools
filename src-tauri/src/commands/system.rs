@@ -33,6 +33,8 @@ pub struct GeneralConfig {
     pub ghcp_auto_refresh_minutes: i32,
     /// Windsurf 自动刷新间隔（分钟），-1 表示禁用
     pub windsurf_auto_refresh_minutes: i32,
+    /// Kiro 自动刷新间隔（分钟），-1 表示禁用
+    pub kiro_auto_refresh_minutes: i32,
     /// 窗口关闭行为: "ask", "minimize", "quit"
     pub close_behavior: String,
     /// OpenCode 启动路径（为空则使用默认路径）
@@ -45,6 +47,8 @@ pub struct GeneralConfig {
     pub vscode_app_path: String,
     /// Windsurf 启动路径（为空则使用默认路径）
     pub windsurf_app_path: String,
+    /// Kiro 启动路径（为空则使用默认路径）
+    pub kiro_app_path: String,
     /// 切换 Codex 时是否自动重启 OpenCode
     pub opencode_sync_on_switch: bool,
     /// 是否启用自动切号
@@ -67,6 +71,10 @@ pub struct GeneralConfig {
     pub windsurf_quota_alert_enabled: bool,
     /// Windsurf 配额预警阈值（百分比）
     pub windsurf_quota_alert_threshold: i32,
+    /// 是否启用 Kiro 配额预警通知
+    pub kiro_quota_alert_enabled: bool,
+    /// Kiro 配额预警阈值（百分比）
+    pub kiro_quota_alert_threshold: i32,
 }
 
 #[tauri::command]
@@ -148,12 +156,14 @@ pub fn save_network_config(ws_enabled: bool, ws_port: u16) -> Result<bool, Strin
         codex_auto_refresh_minutes: current.codex_auto_refresh_minutes,
         ghcp_auto_refresh_minutes: current.ghcp_auto_refresh_minutes,
         windsurf_auto_refresh_minutes: current.windsurf_auto_refresh_minutes,
+        kiro_auto_refresh_minutes: current.kiro_auto_refresh_minutes,
         close_behavior: current.close_behavior,
         opencode_app_path: current.opencode_app_path,
         antigravity_app_path: current.antigravity_app_path,
         codex_app_path: current.codex_app_path,
         vscode_app_path: current.vscode_app_path,
         windsurf_app_path: current.windsurf_app_path,
+        kiro_app_path: current.kiro_app_path,
         opencode_sync_on_switch: current.opencode_sync_on_switch,
         auto_switch_enabled: current.auto_switch_enabled,
         auto_switch_threshold: current.auto_switch_threshold,
@@ -165,6 +175,8 @@ pub fn save_network_config(ws_enabled: bool, ws_port: u16) -> Result<bool, Strin
         ghcp_quota_alert_threshold: current.ghcp_quota_alert_threshold,
         windsurf_quota_alert_enabled: current.windsurf_quota_alert_enabled,
         windsurf_quota_alert_threshold: current.windsurf_quota_alert_threshold,
+        kiro_quota_alert_enabled: current.kiro_quota_alert_enabled,
+        kiro_quota_alert_threshold: current.kiro_quota_alert_threshold,
     };
 
     config::save_user_config(&new_config)?;
@@ -190,12 +202,14 @@ pub fn get_general_config() -> Result<GeneralConfig, String> {
         codex_auto_refresh_minutes: user_config.codex_auto_refresh_minutes,
         ghcp_auto_refresh_minutes: user_config.ghcp_auto_refresh_minutes,
         windsurf_auto_refresh_minutes: user_config.windsurf_auto_refresh_minutes,
+        kiro_auto_refresh_minutes: user_config.kiro_auto_refresh_minutes,
         close_behavior: close_behavior_str.to_string(),
         opencode_app_path: user_config.opencode_app_path,
         antigravity_app_path: user_config.antigravity_app_path,
         codex_app_path: user_config.codex_app_path,
         vscode_app_path: user_config.vscode_app_path,
         windsurf_app_path: user_config.windsurf_app_path,
+        kiro_app_path: user_config.kiro_app_path,
         opencode_sync_on_switch: user_config.opencode_sync_on_switch,
         auto_switch_enabled: user_config.auto_switch_enabled,
         auto_switch_threshold: user_config.auto_switch_threshold,
@@ -207,6 +221,8 @@ pub fn get_general_config() -> Result<GeneralConfig, String> {
         ghcp_quota_alert_threshold: user_config.ghcp_quota_alert_threshold,
         windsurf_quota_alert_enabled: user_config.windsurf_quota_alert_enabled,
         windsurf_quota_alert_threshold: user_config.windsurf_quota_alert_threshold,
+        kiro_quota_alert_enabled: user_config.kiro_quota_alert_enabled,
+        kiro_quota_alert_threshold: user_config.kiro_quota_alert_threshold,
     })
 }
 
@@ -220,12 +236,14 @@ pub fn save_general_config(
     codex_auto_refresh_minutes: i32,
     ghcp_auto_refresh_minutes: Option<i32>,
     windsurf_auto_refresh_minutes: Option<i32>,
+    kiro_auto_refresh_minutes: Option<i32>,
     close_behavior: String,
     opencode_app_path: String,
     antigravity_app_path: String,
     codex_app_path: String,
     vscode_app_path: String,
     windsurf_app_path: Option<String>,
+    kiro_app_path: Option<String>,
     opencode_sync_on_switch: bool,
     auto_switch_enabled: Option<bool>,
     auto_switch_threshold: Option<i32>,
@@ -237,6 +255,8 @@ pub fn save_general_config(
     ghcp_quota_alert_threshold: Option<i32>,
     windsurf_quota_alert_enabled: Option<bool>,
     windsurf_quota_alert_threshold: Option<i32>,
+    kiro_quota_alert_enabled: Option<bool>,
+    kiro_quota_alert_threshold: Option<i32>,
 ) -> Result<(), String> {
     let current = config::get_user_config();
     let normalized_opencode_path = opencode_app_path.trim().to_string();
@@ -246,6 +266,9 @@ pub fn save_general_config(
     let normalized_windsurf_path = windsurf_app_path
         .map(|value| value.trim().to_string())
         .unwrap_or_else(|| current.windsurf_app_path.clone());
+    let normalized_kiro_path = kiro_app_path
+        .map(|value| value.trim().to_string())
+        .unwrap_or_else(|| current.kiro_app_path.clone());
     // 标准化语言代码为小写，确保与插件端格式一致
     let normalized_language = language.to_lowercase();
     let language_changed = current.language != normalized_language;
@@ -271,12 +294,15 @@ pub fn save_general_config(
             .unwrap_or(current.ghcp_auto_refresh_minutes),
         windsurf_auto_refresh_minutes: windsurf_auto_refresh_minutes
             .unwrap_or(current.windsurf_auto_refresh_minutes),
+        kiro_auto_refresh_minutes: kiro_auto_refresh_minutes
+            .unwrap_or(current.kiro_auto_refresh_minutes),
         close_behavior: close_behavior_enum,
         opencode_app_path: normalized_opencode_path,
         antigravity_app_path: normalized_antigravity_path,
         codex_app_path: normalized_codex_path,
         vscode_app_path: normalized_vscode_path,
         windsurf_app_path: normalized_windsurf_path,
+        kiro_app_path: normalized_kiro_path,
         opencode_sync_on_switch,
         auto_switch_enabled: auto_switch_enabled.unwrap_or(current.auto_switch_enabled),
         auto_switch_threshold: auto_switch_threshold.unwrap_or(current.auto_switch_threshold),
@@ -293,6 +319,10 @@ pub fn save_general_config(
             .unwrap_or(current.windsurf_quota_alert_enabled),
         windsurf_quota_alert_threshold: windsurf_quota_alert_threshold
             .unwrap_or(current.windsurf_quota_alert_threshold),
+        kiro_quota_alert_enabled: kiro_quota_alert_enabled
+            .unwrap_or(current.kiro_quota_alert_enabled),
+        kiro_quota_alert_threshold: kiro_quota_alert_threshold
+            .unwrap_or(current.kiro_quota_alert_threshold),
     };
 
     config::save_user_config(&new_config)?;
@@ -337,6 +367,7 @@ pub fn set_app_path(app: String, path: String) -> Result<(), String> {
         "codex" => current.codex_app_path = normalized_path,
         "vscode" => current.vscode_app_path = normalized_path,
         "windsurf" => current.windsurf_app_path = normalized_path,
+        "kiro" => current.kiro_app_path = normalized_path,
         "opencode" => current.opencode_app_path = normalized_path,
         _ => return Err("未知应用类型".to_string()),
     }
@@ -349,6 +380,7 @@ pub fn detect_app_path(app: String, force: Option<bool>) -> Result<Option<String
     let force = force.unwrap_or(false);
     match app.as_str() {
         "windsurf" => Ok(modules::windsurf_instance::detect_and_save_windsurf_launch_path(force)),
+        "kiro" => Ok(modules::kiro_instance::detect_and_save_kiro_launch_path(force)),
         "antigravity" | "codex" | "vscode" | "opencode" => Ok(
             modules::process::detect_and_save_app_path(app.as_str(), force),
         ),

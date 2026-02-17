@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
@@ -10,6 +10,7 @@ import { AccountsPage } from './pages/AccountsPage';
 import { CodexAccountsPage } from './pages/CodexAccountsPage';
 import { GitHubCopilotAccountsPage } from './pages/GitHubCopilotAccountsPage';
 import { WindsurfAccountsPage } from './pages/WindsurfAccountsPage';
+import { KiroAccountsPage } from './pages/KiroAccountsPage';
 
 import { FingerprintsPage } from './pages/FingerprintsPage';
 import { WakeupTasksPage } from './pages/WakeupTasksPage';
@@ -30,6 +31,7 @@ import { useAccountStore } from './stores/useAccountStore';
 import { useCodexAccountStore } from './stores/useCodexAccountStore';
 import { useGitHubCopilotAccountStore } from './stores/useGitHubCopilotAccountStore';
 import { useWindsurfAccountStore } from './stores/useWindsurfAccountStore';
+import { useKiroAccountStore } from './stores/useKiroAccountStore';
 
 import { DashboardPage } from './pages/DashboardPage';
 
@@ -43,10 +45,11 @@ interface GeneralConfig extends GeneralConfigTheme {
   codex_app_path: string;
   vscode_app_path: string;
   windsurf_app_path: string;
+  kiro_app_path: string;
 }
 
 type AppPathMissingDetail = {
-  app: 'antigravity' | 'codex' | 'vscode' | 'windsurf';
+  app: 'antigravity' | 'codex' | 'vscode' | 'windsurf' | 'kiro';
   retry?: { kind: 'default' | 'instance'; instanceId?: string };
 };
 
@@ -85,7 +88,7 @@ type QuotaAlertPayload = {
   triggered_at: number;
 };
 
-type QuotaAlertPlatform = 'antigravity' | 'codex' | 'github_copilot' | 'windsurf';
+type QuotaAlertPlatform = 'antigravity' | 'codex' | 'github_copilot' | 'windsurf' | 'kiro';
 
 function normalizeQuotaAlertPlatform(platform: string | undefined): QuotaAlertPlatform {
   switch (platform) {
@@ -95,6 +98,8 @@ function normalizeQuotaAlertPlatform(platform: string | undefined): QuotaAlertPl
       return 'github_copilot';
     case 'windsurf':
       return 'windsurf';
+    case 'kiro':
+      return 'kiro';
     default:
       return 'antigravity';
   }
@@ -111,6 +116,8 @@ function getQuotaAlertPlatformLabel(
       return t('nav.githubCopilot', 'GitHub Copilot');
     case 'windsurf':
       return 'Windsurf';
+    case 'kiro':
+      return 'Kiro';
     default:
       return t('nav.overview', 'Antigravity');
   }
@@ -129,6 +136,7 @@ function App() {
   const [appPathDetecting, setAppPathDetecting] = useState(false);
   const [appPathDraft, setAppPathDraft] = useState('');
   const { showModal, closeModal } = useGlobalModal();
+  const trayRefreshInFlightRef = useRef(false);
   const openBreakout = useCallback(() => setShowBreakout(true), []);
   const {
     count: easterEggClickCount,
@@ -200,6 +208,7 @@ function App() {
         await invoke('detect_app_path', { app: 'antigravity' });
         await invoke('detect_app_path', { app: 'vscode' });
         await invoke('detect_app_path', { app: 'windsurf' });
+        await invoke('detect_app_path', { app: 'kiro' });
         const userAgent = navigator.userAgent.toLowerCase();
         if (userAgent.includes('mac')) {
           await invoke('detect_app_path', { app: 'codex' });
@@ -349,6 +358,9 @@ function App() {
                     } else if (platform === 'windsurf') {
                       await useWindsurfAccountStore.getState().switchAccount(targetAccountId);
                       setPage('windsurf');
+                    } else if (platform === 'kiro') {
+                      await useKiroAccountStore.getState().switchAccount(targetAccountId);
+                      setPage('kiro');
                     } else {
                       await useAccountStore.getState().switchAccount(targetAccountId);
                       setPage('overview');
@@ -444,25 +456,39 @@ function App() {
     let unlisten: UnlistenFn | undefined;
 
     listen('tray:refresh_quota', async () => {
-      try {
-        await invoke('refresh_current_quota');
-      } catch (error) {
-        console.error('Failed to refresh Antigravity quotas:', error);
+      if (trayRefreshInFlightRef.current) {
+        return;
       }
+      trayRefreshInFlightRef.current = true;
+
       try {
-        await invoke('refresh_current_codex_quota');
-      } catch (error) {
-        console.error('Failed to refresh Codex quotas:', error);
-      }
-      try {
-        await invoke('refresh_all_github_copilot_tokens');
-      } catch (error) {
-        console.error('Failed to refresh GitHub Copilot quotas:', error);
-      }
-      try {
-        await invoke('refresh_all_windsurf_tokens');
-      } catch (error) {
-        console.error('Failed to refresh Windsurf quotas:', error);
+        try {
+          await invoke('refresh_current_quota');
+        } catch (error) {
+          console.error('Failed to refresh Antigravity quotas:', error);
+        }
+        try {
+          await invoke('refresh_current_codex_quota');
+        } catch (error) {
+          console.error('Failed to refresh Codex quotas:', error);
+        }
+        try {
+          await invoke('refresh_all_github_copilot_tokens');
+        } catch (error) {
+          console.error('Failed to refresh GitHub Copilot quotas:', error);
+        }
+        try {
+          await invoke('refresh_all_windsurf_tokens');
+        } catch (error) {
+          console.error('Failed to refresh Windsurf quotas:', error);
+        }
+        try {
+          await invoke('refresh_all_kiro_tokens');
+        } catch (error) {
+          console.error('Failed to refresh Kiro quotas:', error);
+        }
+      } finally {
+        trayRefreshInFlightRef.current = false;
       }
     }).then((fn) => { unlisten = fn; });
 
@@ -478,7 +504,15 @@ function App() {
     const handlePayload = (payload: unknown) => {
       if (!payload || typeof payload !== 'object') return;
       const detail = payload as AppPathMissingDetail;
-      if (detail.app !== 'antigravity' && detail.app !== 'codex' && detail.app !== 'vscode' && detail.app !== 'windsurf') return;
+      if (
+        detail.app !== 'antigravity' &&
+        detail.app !== 'codex' &&
+        detail.app !== 'vscode' &&
+        detail.app !== 'windsurf' &&
+        detail.app !== 'kiro'
+      ) {
+        return;
+      }
       setAppPathMissing(detail);
     };
 
@@ -519,6 +553,8 @@ function App() {
               ? config.vscode_app_path
               : appPathMissing.app === 'windsurf'
                 ? config.windsurf_app_path
+              : appPathMissing.app === 'kiro'
+                ? config.kiro_app_path
               : config.antigravity_app_path;
         if (active) {
           setAppPathDraft(currentPath || '');
@@ -566,6 +602,8 @@ function App() {
           await invoke('github_copilot_start_instance', { instanceId: retry.instanceId });
         } else if (app === 'windsurf') {
           await invoke('windsurf_start_instance', { instanceId: retry.instanceId });
+        } else if (app === 'kiro') {
+          await invoke('kiro_start_instance', { instanceId: retry.instanceId });
         } else {
           await invoke('start_instance', { instanceId: retry.instanceId });
         }
@@ -576,6 +614,8 @@ function App() {
           await invoke('github_copilot_start_instance', { instanceId: '__default__' });
         } else if (app === 'windsurf') {
           await invoke('windsurf_start_instance', { instanceId: '__default__' });
+        } else if (app === 'kiro') {
+          await invoke('kiro_start_instance', { instanceId: '__default__' });
         } else {
           await invoke('start_instance', { instanceId: '__default__' });
         }
@@ -627,6 +667,7 @@ function App() {
             case 'codex':
             case 'github-copilot':
             case 'windsurf':
+            case 'kiro':
             case 'settings':
               setPage(target as Page);
               break;
@@ -687,6 +728,8 @@ function App() {
                         ? 'VS Code'
                         : appPathMissing.app === 'windsurf'
                           ? 'Windsurf'
+                        : appPathMissing.app === 'kiro'
+                          ? 'Kiro'
                         : 'Antigravity',
                 })}
               </p>
@@ -719,6 +762,8 @@ function App() {
                             ? t('settings.general.vscodePathReset', '重置默认')
                             : appPathMissing.app === 'windsurf'
                               ? t('settings.general.windsurfPathReset', '重置默认')
+                              : appPathMissing.app === 'kiro'
+                                ? t('settings.general.kiroPathReset', '重置默认')
                               : t('settings.general.codexPathReset', '重置默认')
                         )
                     }
@@ -731,6 +776,8 @@ function App() {
                           ? t('settings.general.vscodePathReset', '重置默认')
                           : appPathMissing.app === 'windsurf'
                             ? t('settings.general.windsurfPathReset', '重置默认')
+                            : appPathMissing.app === 'kiro'
+                              ? t('settings.general.kiroPathReset', '重置默认')
                             : t('settings.general.codexPathReset', '重置默认')
                       )}
                   </button>
@@ -789,6 +836,7 @@ function App() {
         {page === 'codex' && <CodexAccountsPage />}
         {page === 'github-copilot' && <GitHubCopilotAccountsPage />}
         {page === 'windsurf' && <WindsurfAccountsPage />}
+        {page === 'kiro' && <KiroAccountsPage />}
         {page === 'instances' && <InstancesPage onNavigate={setPage} />}
         {page === 'fingerprints' && <FingerprintsPage onNavigate={setPage} />}
         {page === 'wakeup' && <WakeupTasksPage onNavigate={setPage} />}

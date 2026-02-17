@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
-import { InstancesManager } from '../components/InstancesManager';
+import { PlatformInstancesContent } from '../components/platform/PlatformInstancesContent';
 import { useGitHubCopilotInstanceStore } from '../stores/useGitHubCopilotInstanceStore';
 import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
 import type { GitHubCopilotAccount } from '../types/githubCopilot';
 import { getGitHubCopilotAccountDisplayEmail, getGitHubCopilotQuotaClass, getGitHubCopilotUsage } from '../types/githubCopilot';
+import { usePlatformRuntimeSupport } from '../hooks/usePlatformRuntimeSupport';
 
 /**
  * GitHub Copilot 多开实例内容组件（不包含 header）
@@ -24,15 +24,7 @@ export function GitHubCopilotInstancesContent() {
       })) as AccountForSelect[],
     [accounts],
   );
-  const isSupportedPlatform = useMemo(() => {
-    if (typeof navigator === 'undefined') return false;
-    const platform = navigator.platform || '';
-    const ua = navigator.userAgent || '';
-    const isMac = /mac/i.test(platform) || /mac/i.test(ua);
-    const isWindows = /win/i.test(platform) || /windows/i.test(ua);
-    const isLinux = /linux/i.test(platform) || /linux/i.test(ua);
-    return isMac || isWindows || isLinux;
-  }, []);
+  const isSupportedPlatform = usePlatformRuntimeSupport('desktop');
 
   const resolveQuotaClass = (percentage: number) => getGitHubCopilotQuotaClass(percentage);
 
@@ -61,31 +53,19 @@ export function GitHubCopilotInstancesContent() {
     );
   };
 
-  if (!isSupportedPlatform) {
-    return (
-      <div className="instances-page">
-        <div className="empty-state">
-          <h3>{t('githubCopilot.instances.unsupported.title', '暂不支持当前系统')}</h3>
-          <p>{t('githubCopilot.instances.unsupported.descPlatform', 'GitHub Copilot 多开实例仅支持 macOS、Windows 和 Linux。')}</p>
-          <button className="btn btn-primary" disabled>
-            <Plus size={16} />
-            {t('instances.actions.create', '新建实例')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="instances-page">
-      <InstancesManager<AccountForSelect>
-        instanceStore={instanceStore}
-        accounts={accountsForSelect}
-        fetchAccounts={fetchAccounts}
-        renderAccountQuotaPreview={renderGitHubCopilotQuotaPreview}
-        getAccountSearchText={(account) => account.email}
-        appType="vscode"
-      />
-    </div>
+    <PlatformInstancesContent<AccountForSelect>
+      instanceStore={instanceStore}
+      accounts={accountsForSelect}
+      fetchAccounts={fetchAccounts}
+      renderAccountQuotaPreview={renderGitHubCopilotQuotaPreview}
+      getAccountSearchText={(account) => account.email}
+      appType="vscode"
+      isSupported={isSupportedPlatform}
+      unsupportedTitleKey="githubCopilot.instances.unsupported.title"
+      unsupportedTitleDefault="暂不支持当前系统"
+      unsupportedDescKey="githubCopilot.instances.unsupported.descPlatform"
+      unsupportedDescDefault="GitHub Copilot 多开实例仅支持 macOS、Windows 和 Linux。"
+    />
   );
 }

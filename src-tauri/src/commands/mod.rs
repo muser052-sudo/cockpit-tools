@@ -7,6 +7,8 @@ pub mod github_copilot_instance;
 pub mod group;
 pub mod import;
 pub mod instance;
+pub mod kiro;
+pub mod kiro_instance;
 pub mod oauth;
 pub mod system;
 pub mod update;

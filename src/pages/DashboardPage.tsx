@@ -4,6 +4,7 @@ import { useAccountStore } from '../stores/useAccountStore';
 import { useCodexAccountStore } from '../stores/useCodexAccountStore';
 import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
 import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
+import { useKiroAccountStore } from '../stores/useKiroAccountStore';
 import { usePlatformLayoutStore } from '../stores/usePlatformLayoutStore';
 import { Page } from '../types/navigation';
 import { Users, CheckCircle2, Sparkles, RotateCw, Play, Github } from 'lucide-react';
@@ -24,10 +25,20 @@ import {
   getWindsurfQuotaClass,
   formatWindsurfResetTime,
 } from '../types/windsurf';
+import {
+  KiroAccount,
+  getKiroAccountDisplayEmail,
+  getKiroCreditsSummary,
+  getKiroPlanBadgeClass,
+  getKiroPlanDisplayName,
+  getKiroQuotaClass,
+  formatKiroResetTime,
+} from '../types/kiro';
 import './DashboardPage.css';
 import { RobotIcon } from '../components/icons/RobotIcon';
 import { CodexIcon } from '../components/icons/CodexIcon';
 import { WindsurfIcon } from '../components/icons/WindsurfIcon';
+import { KiroIcon } from '../components/icons/KiroIcon';
 import { PlatformId, PLATFORM_PAGE_MAP } from '../types/platform';
 import { getPlatformLabel, renderPlatformIcon } from '../utils/platformMeta';
 
@@ -39,6 +50,7 @@ interface DashboardPageProps {
 
 const GHCP_CURRENT_ACCOUNT_ID_KEY = 'agtools.github_copilot.current_account_id';
 const WINDSURF_CURRENT_ACCOUNT_ID_KEY = 'agtools.windsurf.current_account_id';
+const KIRO_CURRENT_ACCOUNT_ID_KEY = 'agtools.kiro.current_account_id';
 
 function toFiniteNumber(value: number | null | undefined): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -123,6 +135,13 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     switchAccount: switchWindsurfAccount,
   } = useWindsurfAccountStore();
 
+  // Kiro Data
+  const {
+    accounts: kiroAccounts,
+    fetchAccounts: fetchKiroAccounts,
+    switchAccount: switchKiroAccount,
+  } = useKiroAccountStore();
+
   const agCurrentId = agCurrent?.id;
   const codexCurrentId = codexCurrent?.id;
 
@@ -143,18 +162,25 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     fetchCodexCurrent();
     fetchGitHubCopilotAccounts();
     fetchWindsurfAccounts();
+    fetchKiroAccounts();
   }, []);
 
   // Statistics
   const stats = useMemo(() => {
     return {
-      total: agAccounts.length + codexAccounts.length + githubCopilotAccounts.length + windsurfAccounts.length,
+      total:
+        agAccounts.length +
+        codexAccounts.length +
+        githubCopilotAccounts.length +
+        windsurfAccounts.length +
+        kiroAccounts.length,
       antigravity: agAccounts.length,
       codex: codexAccounts.length,
       githubCopilot: githubCopilotAccounts.length,
       windsurf: windsurfAccounts.length,
+      kiro: kiroAccounts.length,
     };
-  }, [agAccounts, codexAccounts, githubCopilotAccounts, windsurfAccounts]);
+  }, [agAccounts, codexAccounts, githubCopilotAccounts, windsurfAccounts, kiroAccounts]);
 
   // Refresh States
   const [refreshing, setRefreshing] = React.useState<Set<string>>(new Set());
@@ -173,16 +199,25 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
       return null;
     }
   });
+  const [kiroCurrentId, setKiroCurrentId] = React.useState<string | null>(() => {
+    try {
+      return localStorage.getItem(KIRO_CURRENT_ACCOUNT_ID_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [cardRefreshing, setCardRefreshing] = React.useState<{
     ag: boolean;
     codex: boolean;
     githubCopilot: boolean;
     windsurf: boolean;
+    kiro: boolean;
   }>({
     ag: false,
     codex: false,
     githubCopilot: false,
     windsurf: false,
+    kiro: false,
   });
 
   // Refresh Handlers
@@ -239,6 +274,22 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     setRefreshing((prev) => new Set(prev).add(accountId));
     try {
       await useWindsurfAccountStore.getState().refreshToken(accountId);
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setRefreshing((prev) => {
+        const next = new Set(prev);
+        next.delete(accountId);
+        return next;
+      });
+    }
+  };
+
+  const handleRefreshKiro = async (accountId: string) => {
+    if (refreshing.has(accountId)) return;
+    setRefreshing((prev) => new Set(prev).add(accountId));
+    try {
+      await useKiroAccountStore.getState().refreshToken(accountId);
     } catch (error) {
       console.error('Refresh failed:', error);
     } finally {
@@ -310,6 +361,21 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     }
   };
 
+  const handleRefreshKiroCard = async () => {
+    if (cardRefreshing.kiro) return;
+    setCardRefreshing((prev) => ({ ...prev, kiro: true }));
+    const idsToRefresh = [kiroCurrent?.id, kiroRecommended?.id].filter(Boolean) as string[];
+    try {
+      for (const id of idsToRefresh) {
+        await useKiroAccountStore.getState().refreshToken(id);
+      }
+    } catch (error) {
+      console.error('Card refresh failed:', error);
+    } finally {
+      setCardRefreshing((prev) => ({ ...prev, kiro: false }));
+    }
+  };
+
   const handleSwitchGitHubCopilot = async (accountId: string) => {
     if (switching.has(accountId)) return;
     setSwitching((prev) => new Set(prev).add(accountId));
@@ -335,6 +401,24 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
       await switchWindsurfAccount(accountId);
       setWindsurfCurrentId(accountId);
       localStorage.setItem(WINDSURF_CURRENT_ACCOUNT_ID_KEY, accountId);
+    } catch (error) {
+      console.error('Switch failed:', error);
+    } finally {
+      setSwitching((prev) => {
+        const next = new Set(prev);
+        next.delete(accountId);
+        return next;
+      });
+    }
+  };
+
+  const handleSwitchKiro = async (accountId: string) => {
+    if (switching.has(accountId)) return;
+    setSwitching((prev) => new Set(prev).add(accountId));
+    try {
+      await switchKiroAccount(accountId);
+      setKiroCurrentId(accountId);
+      localStorage.setItem(KIRO_CURRENT_ACCOUNT_ID_KEY, accountId);
     } catch (error) {
       console.error('Switch failed:', error);
     } finally {
@@ -419,6 +503,19 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     });
   }, [windsurfAccounts, windsurfCurrentId]);
 
+  const kiroCurrent = useMemo(() => {
+    if (kiroAccounts.length === 0) return null;
+    if (kiroCurrentId) {
+      const current = kiroAccounts.find((account) => account.id === kiroCurrentId);
+      if (current) return current;
+    }
+    return kiroAccounts.reduce((prev, curr) => {
+      const prevScore = prev.last_used || prev.created_at || 0;
+      const currScore = curr.last_used || curr.created_at || 0;
+      return currScore > prevScore ? curr : prev;
+    });
+  }, [kiroAccounts, kiroCurrentId]);
+
   React.useEffect(() => {
     if (!githubCopilotCurrentId) return;
     const exists = githubCopilotAccounts.some((account) => account.id === githubCopilotCurrentId);
@@ -434,6 +531,14 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     setWindsurfCurrentId(null);
     localStorage.removeItem(WINDSURF_CURRENT_ACCOUNT_ID_KEY);
   }, [windsurfAccounts, windsurfCurrentId]);
+
+  React.useEffect(() => {
+    if (!kiroCurrentId) return;
+    const exists = kiroAccounts.some((account) => account.id === kiroCurrentId);
+    if (exists) return;
+    setKiroCurrentId(null);
+    localStorage.removeItem(KIRO_CURRENT_ACCOUNT_ID_KEY);
+  }, [kiroAccounts, kiroCurrentId]);
 
   const githubCopilotRecommended = useMemo(() => {
     if (githubCopilotAccounts.length <= 1) return null;
@@ -480,6 +585,35 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
 
     return others.reduce((prev, curr) => (getScore(curr) > getScore(prev) ? curr : prev));
   }, [windsurfAccounts, windsurfCurrent?.id]);
+
+  const kiroRecommended = useMemo(() => {
+    if (kiroAccounts.length <= 1) return null;
+    const currentId = kiroCurrent?.id;
+    const others = kiroAccounts.filter((account) => account.id !== currentId);
+    if (others.length === 0) return null;
+
+    const getScore = (account: KiroAccount) => {
+      const credits = getKiroCreditsSummary(account);
+      const promptLeft = toFiniteNumber(credits.promptCreditsLeft);
+      const addOnLeft = toFiniteNumber(credits.addOnCredits);
+
+      if (promptLeft != null) {
+        return promptLeft * 1000 + (addOnLeft ?? 0);
+      }
+
+      const quotaValues = [account.quota?.hourly_percentage, account.quota?.weekly_percentage].filter(
+        (value): value is number => typeof value === 'number',
+      );
+      if (quotaValues.length > 0) {
+        const avgUsed = quotaValues.reduce((sum, value) => sum + value, 0) / quotaValues.length;
+        return 100 - avgUsed;
+      }
+
+      return (account.last_used || account.created_at || 0) / 1e9;
+    };
+
+    return others.reduce((prev, curr) => (getScore(curr) > getScore(prev) ? curr : prev));
+  }, [kiroAccounts, kiroCurrent?.id]);
 
   // Render Helpers
   const renderAgAccountContent = (account: Account | null) => {
@@ -822,6 +956,140 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     );
   };
 
+  const renderKiroAccountContent = (account: KiroAccount | null) => {
+    if (!account) return <div className="empty-slot">{t('dashboard.noAccount', '无账号')}</div>;
+
+    const rawAccountPlan = account.plan_type?.trim();
+    const accountPlan =
+      rawAccountPlan && rawAccountPlan.toUpperCase() !== 'UNKNOWN' ? rawAccountPlan : null;
+    const planName = getKiroPlanDisplayName(accountPlan ?? account.plan_name ?? account.plan_tier ?? null);
+    const planLabel = t(`kiro.plan.${planName.toLowerCase()}`, planName);
+    const planBadgeClass = getKiroPlanBadgeClass(planName);
+    const credits = getKiroCreditsSummary(account);
+    const promptMetrics = buildCreditMetrics(
+      credits.promptCreditsUsed,
+      credits.promptCreditsTotal,
+      credits.promptCreditsLeft,
+    );
+    const addOnMetrics = buildCreditMetrics(credits.addOnCreditsUsed, credits.addOnCreditsTotal, credits.addOnCredits);
+    const addOnExpiryValue =
+      typeof credits.bonusExpireDays === 'number' && Number.isFinite(credits.bonusExpireDays)
+        ? t('kiro.credits.expiryDays', {
+            days: Math.max(0, Math.round(credits.bonusExpireDays)),
+            defaultValue: '{{days}} days',
+          })
+        : t('kiro.credits.expiryUnknown', '—');
+    const hasAddOnCredits =
+      addOnMetrics.left > 0 ||
+      addOnMetrics.used > 0 ||
+      addOnMetrics.total > 0 ||
+      (typeof credits.bonusExpireDays === 'number' &&
+        Number.isFinite(credits.bonusExpireDays) &&
+        credits.bonusExpireDays > 0);
+    const isRefreshing = refreshing.has(account.id);
+    const isSwitching = switching.has(account.id);
+    const cycleText = credits.planEndsAt
+      ? formatKiroResetTime(credits.planEndsAt, t)
+      : t('kiro.credits.planEndsUnknown', '配额周期时间未知');
+
+    return (
+      <div className="account-mini-card">
+        <div className="account-mini-header">
+          <div className="account-info-row">
+            <span className="account-email" title={getKiroAccountDisplayEmail(account)}>
+              {getKiroAccountDisplayEmail(account)}
+            </span>
+            <span className={`tier-tag ${planBadgeClass}`}>{planLabel}</span>
+          </div>
+        </div>
+
+        <div className="account-mini-quotas">
+          <div className="mini-quota-row-stacked">
+            <div className="mini-quota-header">
+              <span className="model-name">{t('kiro.columns.promptCredits', 'User Prompt credits')}</span>
+              <span className={`model-pct ${getKiroQuotaClass(promptMetrics.usedPercent)}`}>
+                {promptMetrics.usedPercent}%
+              </span>
+            </div>
+            <div className="mini-progress-track">
+              <div
+                className={`mini-progress-bar ${getKiroQuotaClass(promptMetrics.usedPercent)}`}
+                style={{ width: `${promptMetrics.usedPercent}%` }}
+              />
+            </div>
+            <div className="mini-reset-time">
+              {t('kiro.credits.usedLine', {
+                used: formatDecimal(promptMetrics.used),
+                total: formatDecimal(promptMetrics.total),
+                defaultValue: '{{used}} / {{total}} used',
+              })}
+            </div>
+            <div className="mini-reset-time">
+              {t('kiro.credits.leftInline', {
+                left: formatDecimal(promptMetrics.left),
+                defaultValue: '{{left}} left',
+              })}
+            </div>
+          </div>
+
+          {hasAddOnCredits && (
+            <div className="mini-quota-row-stacked">
+              <div className="mini-quota-header">
+                <span className="model-name">{t('kiro.columns.addOnPromptCredits', 'Add-on prompt credits')}</span>
+                <span className={`model-pct ${getKiroQuotaClass(addOnMetrics.usedPercent)}`}>
+                  {addOnMetrics.usedPercent}%
+                </span>
+              </div>
+              <div className="mini-progress-track">
+                <div
+                  className={`mini-progress-bar ${getKiroQuotaClass(addOnMetrics.usedPercent)}`}
+                  style={{ width: `${addOnMetrics.usedPercent}%` }}
+                />
+              </div>
+              <div className="mini-reset-time">
+                {t('kiro.credits.usedLine', {
+                  used: formatDecimal(addOnMetrics.used),
+                  total: formatDecimal(addOnMetrics.total),
+                  defaultValue: '{{used}} / {{total}} used',
+                })}
+              </div>
+              <div className="mini-reset-time">
+                {t('kiro.credits.leftInline', {
+                  left: formatDecimal(addOnMetrics.left),
+                  defaultValue: '{{left}} left',
+                })}
+              </div>
+              <div className="mini-reset-time">
+                {t('kiro.columns.expiry', 'Expiry')}: {addOnExpiryValue}
+              </div>
+            </div>
+          )}
+
+          <div className="mini-cycle-time">{cycleText}</div>
+        </div>
+
+        <div className="account-mini-actions icon-only-row">
+          <button
+            className="mini-icon-btn"
+            onClick={() => handleRefreshKiro(account.id)}
+            title={t('common.refresh', '刷新')}
+            disabled={isRefreshing || isSwitching}
+          >
+            <RotateCw size={14} className={isRefreshing ? 'loading-spinner' : ''} />
+          </button>
+          <button
+            className="mini-icon-btn"
+            onClick={() => handleSwitchKiro(account.id)}
+            title={t('dashboard.switch', '切换')}
+            disabled={isSwitching}
+          >
+            {isSwitching ? <RotateCw size={14} className="loading-spinner" /> : <Play size={14} />}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // Helper for Quota Class (duplicated from Account utils roughly)
   function getQuotaClass(percentage: number): string {
     if (percentage > 80) return 'high';
@@ -834,6 +1102,7 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     codex: stats.codex,
     'github-copilot': stats.githubCopilot,
     windsurf: stats.windsurf,
+    kiro: stats.kiro,
   };
 
   const visibleCardPlatformIds = visiblePlatformOrder;
@@ -978,47 +1247,95 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
       );
     }
 
-    return (
-      <div className="main-card windsurf-card" key={platformId}>
-        <div className="main-card-header">
-          <div className="header-title">
-            <WindsurfIcon className="" style={{ width: 18, height: 18 }} />
-            <h3>Windsurf</h3>
+    if (platformId === 'windsurf') {
+      return (
+        <div className="main-card windsurf-card" key={platformId}>
+          <div className="main-card-header">
+            <div className="header-title">
+              <WindsurfIcon className="" style={{ width: 18, height: 18 }} />
+              <h3>Windsurf</h3>
+            </div>
+            <button
+              className="header-action-btn"
+              onClick={handleRefreshWindsurfCard}
+              disabled={cardRefreshing.windsurf}
+              title={t('common.refresh', '刷新')}
+            >
+              <RotateCw size={14} className={cardRefreshing.windsurf ? 'loading-spinner' : ''} />
+              <span>{t('common.refresh', '刷新')}</span>
+            </button>
           </div>
-          <button
-            className="header-action-btn"
-            onClick={handleRefreshWindsurfCard}
-            disabled={cardRefreshing.windsurf}
-            title={t('common.refresh', '刷新')}
-          >
-            <RotateCw size={14} className={cardRefreshing.windsurf ? 'loading-spinner' : ''} />
-            <span>{t('common.refresh', '刷新')}</span>
+
+          <div className="split-content">
+            <div className="split-half current-half">
+              <span className="half-label"><CheckCircle2 size={12} /> {t('dashboard.current', '当前账户')}</span>
+              {renderWindsurfAccountContent(windsurfCurrent)}
+            </div>
+
+            <div className="split-divider"></div>
+
+            <div className="split-half recommend-half">
+              <span className="half-label"><Sparkles size={12} /> {t('dashboard.recommended', '推荐账号')}</span>
+              {windsurfRecommended ? (
+                renderWindsurfAccountContent(windsurfRecommended)
+              ) : (
+                <div className="empty-slot-text">{t('dashboard.noRecommendation', '暂无更好推荐')}</div>
+              )}
+            </div>
+          </div>
+
+          <button className="card-footer-action" onClick={() => onNavigate('windsurf')}>
+            {t('dashboard.viewAllAccounts', '查看所有账号')}
           </button>
         </div>
+      );
+    }
 
-        <div className="split-content">
-          <div className="split-half current-half">
-            <span className="half-label"><CheckCircle2 size={12} /> {t('dashboard.current', '当前账户')}</span>
-            {renderWindsurfAccountContent(windsurfCurrent)}
+    if (platformId === 'kiro') {
+      return (
+        <div className="main-card windsurf-card" key={platformId}>
+          <div className="main-card-header">
+            <div className="header-title">
+              <KiroIcon style={{ width: 18, height: 18 }} />
+              <h3>Kiro</h3>
+            </div>
+            <button
+              className="header-action-btn"
+              onClick={handleRefreshKiroCard}
+              disabled={cardRefreshing.kiro}
+              title={t('common.refresh', '刷新')}
+            >
+              <RotateCw size={14} className={cardRefreshing.kiro ? 'loading-spinner' : ''} />
+              <span>{t('common.refresh', '刷新')}</span>
+            </button>
           </div>
 
-          <div className="split-divider"></div>
+          <div className="split-content">
+            <div className="split-half current-half">
+              <span className="half-label"><CheckCircle2 size={12} /> {t('dashboard.current', '当前账户')}</span>
+              {renderKiroAccountContent(kiroCurrent)}
+            </div>
 
-          <div className="split-half recommend-half">
-            <span className="half-label"><Sparkles size={12} /> {t('dashboard.recommended', '推荐账号')}</span>
-            {windsurfRecommended ? (
-              renderWindsurfAccountContent(windsurfRecommended)
-            ) : (
-              <div className="empty-slot-text">{t('dashboard.noRecommendation', '暂无更好推荐')}</div>
-            )}
+            <div className="split-divider"></div>
+
+            <div className="split-half recommend-half">
+              <span className="half-label"><Sparkles size={12} /> {t('dashboard.recommended', '推荐账号')}</span>
+              {kiroRecommended ? (
+                renderKiroAccountContent(kiroRecommended)
+              ) : (
+                <div className="empty-slot-text">{t('dashboard.noRecommendation', '暂无更好推荐')}</div>
+              )}
+            </div>
           </div>
+
+          <button className="card-footer-action" onClick={() => onNavigate('kiro')}>
+            {t('dashboard.viewAllAccounts', '查看所有账号')}
+          </button>
         </div>
+      );
+    }
 
-        <button className="card-footer-action" onClick={() => onNavigate('windsurf')}>
-          {t('dashboard.viewAllAccounts', '查看所有账号')}
-        </button>
-      </div>
-    );
+    return null;
   };
 
   return (
@@ -1051,6 +1368,8 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
               ? 'info'
               : platformId === 'github-copilot'
               ? 'github'
+              : platformId === 'kiro'
+                ? 'github'
               : 'windsurf';
           return (
             <button

@@ -109,7 +109,15 @@
       "windsurfAppPathDesc": "Laissez vide pour utiliser le chemin par défaut",
       "windsurfAppPathPlaceholder": "Chemin par défaut",
       "windsurfPathSelect": "Sélectionner",
-      "windsurfPathReset": "Réinitialiser par défaut"
+      "windsurfPathReset": "Réinitialiser par défaut",
+      "kiroSettingsTitle": "Kiro Settings",
+      "kiroAutoRefresh": "Kiro Auto Refresh Quota",
+      "kiroAutoRefreshDesc": "Background update frequency",
+      "kiroAppPath": "Kiro App Path",
+      "kiroAppPathDesc": "Leave empty to use default path",
+      "kiroAppPathPlaceholder": "Default path",
+      "kiroPathSelect": "Select",
+      "kiroPathReset": "Reset to default"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -1191,7 +1199,12 @@
       "title": "Paramètres Windsurf",
       "appPath": "Chemin Windsurf"
     },
-    "windsurfRefreshInterval": "Actualisation automatique du quota"
+    "windsurfRefreshInterval": "Actualisation automatique du quota",
+    "kiro": {
+      "title": "Kiro Settings",
+      "appPath": "Kiro Path"
+    },
+    "kiroRefreshInterval": "Auto refresh quota"
   },
   "quotaAlert": {
     "bannerText": "Alerte de quota pour {{email}} (seuil {{threshold}} %, minimum {{lowest}} %, modèles : {{models}})",
@@ -1407,5 +1420,143 @@
     "rankingEmpty": "Aucun enregistrement",
     "rankingClear": "Effacer",
     "rankingRankShort": "#{{rank}}"
+  },
+  "kiro": {
+    "account": {
+      "signedInWith": "Signed in with {{provider}}",
+      "providerUnknown": "Unknown",
+      "userId": "User ID"
+    },
+    "credits": {
+      "planEndsIn": "Le cycle se réinitialise dans {{days}} jours",
+      "planEndsUnknown": "Période du cycle indisponible",
+      "periodRange": "Cycle : {{start}} - {{end}}",
+      "periodEndOnly": "Fin du cycle : {{end}}",
+      "estimatedResetOn": "Estimated Usage resets on {{date}}",
+      "bonusUsageLine": "{{used}} used / {{total}} total",
+      "planUsageCoveredLine": "{{used}} used / {{total}} covered in plan",
+      "usedLine": "{{used}} / {{total}} utilisés",
+      "leftInline": "{{left}} restants",
+      "expiryDays": "{{days}} days",
+      "expiryUnknown": "—",
+      "resetNow": "Reset soon",
+      "resetInHours": "Resets in {{hours}}h",
+      "resetInMinutes": "Resets in {{minutes}}m"
+    },
+    "columns": {
+      "email": "E-mail",
+      "plan": "Étiquette",
+      "credits": "Crédits",
+      "promptCredits": "Crédits de prompts",
+      "addOnPromptCredits": "Crédits de prompts additionnels",
+      "bonusCredits": "Bonus Credits",
+      "estimatedUsage": "Estimated Usage",
+      "expiry": "Expiry",
+      "estUsage": "Est. Usage",
+      "actions": "Opérations"
+    },
+    "plan": {
+      "free": "Kiro Free",
+      "individual": "Kiro Individual",
+      "pro": "Kiro Pro",
+      "business": "Kiro Business",
+      "enterprise": "Kiro Enterprise",
+      "unknown": "Unknown"
+    },
+    "flowNotice": {
+      "title": "Guide des comptes Kiro (cliquer pour déplier/replier)",
+      "desc": "Le changement de compte nécessite la lecture du stockage d’authentification local de Kiro et l’utilisation du service d’identifiants du système pour déchiffrer et réécrire ; les données restent traitées uniquement en local.",
+      "reason": "Portée des autorisations : lire la base d’authentification Kiro (state.vscdb) et appeler le chiffrement système (Windows DPAPI / macOS Keychain / Linux Secret Service) pour déchiffrer et réécrire.",
+      "storage": "Portée de lecture : seules les données liées aux sessions de connexion Kiro sont traitées ; tous les processus sont exécutés localement."
+    },
+    "title": "Kiro Account Management",
+    "subtitle": "Monitor quota status for all accounts in real time.",
+    "overview": {
+      "title": "Account Overview"
+    },
+    "instances": {
+      "title": "Multi-Instance",
+      "subtitle": "Independent configs per instance for parallel multi-account runs.",
+      "unsupported": {
+        "title": "Unsupported on this system",
+        "descPlatform": "Kiro multi-instance is available only on macOS, Windows and Linux."
+      },
+      "quota": {
+        "inline": "Inline Suggestions",
+        "chat": "Chat messages"
+      }
+    },
+    "addAccount": "Add Account",
+    "refreshAll": "Refresh All",
+    "refreshQuota": "Refresh Quota",
+    "empty": {
+      "title": "No Accounts",
+      "description": "Click \"Add Account\" to start managing your Kiro accounts"
+    },
+    "noMatch": {
+      "title": "No matching accounts",
+      "desc": "Try adjusting your search or filters"
+    },
+    "addModal": {
+      "title": "Add Kiro Account",
+      "oauth": "OAuth",
+      "token": "Token / JSON",
+      "import": "Local Import"
+    },
+    "oauth": {
+      "desc": "Click the button below and complete Kiro authorization in your browser.",
+      "preparing": "Preparing authorization info...",
+      "openBrowser": "Open in Browser",
+      "hint": "Once authorized, this window will update automatically",
+      "success": "Authorization successful",
+      "failed": "Authorization failed",
+      "retry": "Regenerate authorization info",
+      "timeoutRetry": "Refresh authorization link",
+      "waiting": "Waiting for authorization...",
+      "meta": "Expires in: {{expires}}s; Poll interval: {{interval}}s"
+    },
+    "token": {
+      "desc": "Paste your Kiro access token or exported JSON data.",
+      "placeholder": "Paste token or JSON...",
+      "import": "Import",
+      "importing": "Importing...",
+      "importSuccessMsg": "Imported {{count}} account(s) successfully",
+      "importFailedMsg": "Import failed: {{error}}",
+      "empty": "Please enter a token or JSON"
+    },
+    "import": {
+      "label": "Import",
+      "localDesc": "Import Kiro account data from local Kiro client or a JSON file.",
+      "localClient": "Import from local Kiro",
+      "orJson": "Or import from JSON file",
+      "importing": "Importing...",
+      "failedMsg": "Import failed: {{error}}",
+      "pickFile": "Select JSON file to import"
+    },
+    "search": "Search accounts...",
+    "view": {
+      "list": "List view",
+      "grid": "Card view"
+    },
+    "filter": {
+      "all": "All ({{count}})",
+      "free": "FREE ({{count}})",
+      "individual": "INDIVIDUAL ({{count}})",
+      "pro": "PRO ({{count}})",
+      "business": "BUSINESS ({{count}})",
+      "enterprise": "ENTERPRISE ({{count}})"
+    },
+    "filterLabel": "Filter",
+    "sortLabel": "Sort",
+    "sort": {
+      "createdAt": "Created time",
+      "credits": "By remaining credits",
+      "planEnd": "By cycle end time",
+      "descTooltip": "Current: Descending. Click to switch to ascending",
+      "ascTooltip": "Current: Ascending. Click to switch to descending",
+      "toggleDirection": "Toggle sort direction"
+    },
+    "export": "Export",
+    "injectToVSCode": "Switch to Kiro"
   }
 }

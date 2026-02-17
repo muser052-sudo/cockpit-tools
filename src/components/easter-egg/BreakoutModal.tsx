@@ -1,5 +1,5 @@
 import { Pause, Play, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ALL_PLATFORM_IDS, PlatformId } from '../../types/platform';
 import { renderPlatformIcon } from '../../utils/platformMeta';
@@ -12,6 +12,7 @@ interface BreakoutModalProps {
 type DropType = 'split' | 'triple' | 'expand' | 'shield';
 const DROP_TYPES: DropType[] = ['split', 'triple', 'expand', 'shield'];
 type DropCounts = Record<DropType, number>;
+type DropIconMap = Record<DropType, PlatformId>;
 
 interface Ball {
   id: number;
@@ -63,13 +64,14 @@ interface BrickZone {
 interface LevelLayout {
   walls: WallRect[];
   bricks: Brick[];
-  brickLookup: Map<string, number>;
+  brickLookup: Map<number, number>;
 }
 
 interface GameState {
   runSeed: number;
   level: number;
   levelScore: number;
+  remainingBricks: number;
   paddleX: number;
   paddleWidth: number;
   isBallLaunched: boolean;
@@ -77,7 +79,7 @@ interface GameState {
   walls: WallRect[];
   balls: Ball[];
   bricks: Brick[];
-  brickLookup: Map<string, number>;
+  brickLookup: Map<number, number>;
   drops: DropItem[];
   dropCounts: DropCounts;
   levelDropCounts: DropCounts;
@@ -123,6 +125,7 @@ const MODAL_EXTRA_HEIGHT = 32;
 const BRICK_WIDTH = 6;
 const BRICK_HEIGHT = 6;
 const BRICK_GAP = 1;
+const BRICK_RADIUS = Math.min(BRICK_WIDTH, BRICK_HEIGHT) / 2;
 const BRICK_CELL_SIZE = BRICK_WIDTH + BRICK_GAP;
 const BALL_STEP_DISTANCE = 3.5;
 const BALL_COLLISION_CELL_SIZE = 18;
@@ -135,15 +138,17 @@ const MIN_SEPARATOR_Y = 668;
 const MAX_SEPARATOR_Y = 728;
 const BREAKOUT_HISTORY_STORAGE_KEY = 'agtools.breakout.history';
 const BREAKOUT_HISTORY_LIMIT = 200;
+const BREAKOUT_DROP_ICON_ASSIGN_STORAGE_KEY = 'agtools.breakout.drop_icon_assign.v1';
 const PLATFORM_LAYOUT_STORAGE_KEY = 'agtools.platform_layout.v1';
 const FALLBACK_PLATFORM_ICON_ORDER: PlatformId[] = ['antigravity', 'codex', 'github-copilot', 'windsurf'];
 
-const DROP_ICON_MAP: Record<DropType, PlatformId> = {
+const BASE_DROP_ICON_MAP: DropIconMap = {
   split: 'windsurf',
   triple: 'codex',
   expand: 'antigravity',
   shield: 'github-copilot',
 };
+const BASE_DROP_ICON_PLATFORM_IDS = Object.values(BASE_DROP_ICON_MAP) as PlatformId[];
 
 const DROP_SPEED = 2.45;
 const DROP_CHANCE = 0.18;
@@ -151,6 +156,11 @@ const SPLIT_SHOT_SIDE_DELTA_VX = 2.6;
 const SPLIT_SHOT_UP_SPEED = 6.3;
 const TRIPLE_SHOT_SIDE_DELTA_VX = 2.2;
 const TRIPLE_SHOT_MIN_UP_SPEED = 5.8;
+const UI_SYNC_INTERVAL_MS = 34;
+const BRICK_CELL_KEY_OFFSET = 512;
+const BRICK_CELL_KEY_STRIDE = 2048;
+const BALL_GRID_KEY_OFFSET = 256;
+const BALL_GRID_KEY_STRIDE = 1024;
 
 type LayoutStyle = (typeof LEVEL_LAYOUT_STYLES)[number];
 
@@ -168,8 +178,12 @@ function alignToBrickGrid(value: number): number {
   return Math.round(value / BRICK_CELL_SIZE) * BRICK_CELL_SIZE;
 }
 
-function buildCellKey(cellX: number, cellY: number): string {
-  return `${cellX}:${cellY}`;
+function buildCellKey(cellX: number, cellY: number): number {
+  return (cellY + BRICK_CELL_KEY_OFFSET) * BRICK_CELL_KEY_STRIDE + (cellX + BRICK_CELL_KEY_OFFSET);
+}
+
+function buildBallGridKey(cellX: number, cellY: number): number {
+  return (cellY + BALL_GRID_KEY_OFFSET) * BALL_GRID_KEY_STRIDE + (cellX + BALL_GRID_KEY_OFFSET);
 }
 
 function createEmptyDropCounts(): DropCounts {
@@ -193,21 +207,114 @@ function normalizeDropCounts(value: unknown): DropCounts {
   return result;
 }
 
-function getDropTypeByPlatformId(platformId: PlatformId): DropType | null {
-  for (const dropType of DROP_TYPES) {
-    if (DROP_ICON_MAP[dropType] === platformId) return dropType;
-  }
-  return null;
-}
-
 function isPlatformId(value: unknown): value is PlatformId {
   return typeof value === 'string' && ALL_PLATFORM_IDS.includes(value as PlatformId);
 }
 
-function buildDropTypeOrder(platformOrder: PlatformId[]): DropType[] {
+function getDropTypeByPlatformId(platformId: PlatformId, dropIconMap: DropIconMap): DropType | null {
+  for (const dropType of DROP_TYPES) {
+    if (dropIconMap[dropType] === platformId) return dropType;
+  }
+  return null;
+}
+
+function normalizeDropIconMap(value: unknown): DropIconMap {
+  const result: DropIconMap = { ...BASE_DROP_ICON_MAP };
+  if (!value || typeof value !== 'object') return result;
+  const candidate = value as Partial<Record<DropType, unknown>>;
+  for (const dropType of DROP_TYPES) {
+    const platformId = candidate[dropType];
+    if (!isPlatformId(platformId)) continue;
+    result[dropType] = platformId;
+  }
+  return result;
+}
+
+function normalizePlatformIdList(value: unknown): PlatformId[] {
+  if (!Array.isArray(value)) return [];
+  const deduped: PlatformId[] = [];
+  for (const item of value) {
+    if (!isPlatformId(item) || deduped.includes(item)) continue;
+    deduped.push(item);
+  }
+  return deduped;
+}
+
+function mergePlatformIdList(target: PlatformId[], source: PlatformId[]): PlatformId[] {
+  const next = [...target];
+  for (const platformId of source) {
+    if (next.includes(platformId)) continue;
+    next.push(platformId);
+  }
+  return next;
+}
+
+function saveDropIconAssignmentState(
+  dropIconMap: DropIconMap,
+  seenPlatformIds: PlatformId[],
+  nextDropTypeIndex: number,
+) {
+  try {
+    localStorage.setItem(
+      BREAKOUT_DROP_ICON_ASSIGN_STORAGE_KEY,
+      JSON.stringify({
+        dropIconMap,
+        seenPlatformIds,
+        nextDropTypeIndex,
+      }),
+    );
+  } catch {
+    // ignore localStorage write failure
+  }
+}
+
+function loadBreakoutDropIconMap(): DropIconMap {
+  let dropIconMap: DropIconMap = { ...BASE_DROP_ICON_MAP };
+  let seenPlatformIds: PlatformId[] = [...BASE_DROP_ICON_PLATFORM_IDS];
+  let nextDropTypeIndex = 0;
+
+  try {
+    const raw = localStorage.getItem(BREAKOUT_DROP_ICON_ASSIGN_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as {
+        dropIconMap?: unknown;
+        seenPlatformIds?: unknown;
+        nextDropTypeIndex?: unknown;
+      };
+
+      dropIconMap = normalizeDropIconMap(parsed.dropIconMap);
+      seenPlatformIds = normalizePlatformIdList(parsed.seenPlatformIds);
+
+      if (typeof parsed.nextDropTypeIndex === 'number' && Number.isFinite(parsed.nextDropTypeIndex)) {
+        const normalized = Math.floor(parsed.nextDropTypeIndex) % DROP_TYPES.length;
+        nextDropTypeIndex = normalized < 0 ? normalized + DROP_TYPES.length : normalized;
+      }
+    }
+  } catch {
+    dropIconMap = { ...BASE_DROP_ICON_MAP };
+    seenPlatformIds = [...BASE_DROP_ICON_PLATFORM_IDS];
+    nextDropTypeIndex = 0;
+  }
+
+  seenPlatformIds = mergePlatformIdList(seenPlatformIds, BASE_DROP_ICON_PLATFORM_IDS);
+  seenPlatformIds = mergePlatformIdList(seenPlatformIds, Object.values(dropIconMap) as PlatformId[]);
+
+  for (const platformId of ALL_PLATFORM_IDS) {
+    if (seenPlatformIds.includes(platformId)) continue;
+    const dropType = DROP_TYPES[nextDropTypeIndex];
+    dropIconMap[dropType] = platformId;
+    seenPlatformIds.push(platformId);
+    nextDropTypeIndex = (nextDropTypeIndex + 1) % DROP_TYPES.length;
+  }
+
+  saveDropIconAssignmentState(dropIconMap, seenPlatformIds, nextDropTypeIndex);
+  return dropIconMap;
+}
+
+function buildDropTypeOrder(platformOrder: PlatformId[], dropIconMap: DropIconMap): DropType[] {
   const nextOrder: DropType[] = [];
   for (const platformId of platformOrder) {
-    const dropType = getDropTypeByPlatformId(platformId);
+    const dropType = getDropTypeByPlatformId(platformId, dropIconMap);
     if (!dropType || nextOrder.includes(dropType)) continue;
     nextOrder.push(dropType);
   }
@@ -219,24 +326,24 @@ function buildDropTypeOrder(platformOrder: PlatformId[]): DropType[] {
   return nextOrder;
 }
 
-function loadDropTypeOrderSnapshot(): DropType[] {
+function loadDropTypeOrderSnapshot(dropIconMap: DropIconMap): DropType[] {
   if (typeof window === 'undefined') {
-    return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+    return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER, dropIconMap);
   }
   try {
     const raw = window.localStorage.getItem(PLATFORM_LAYOUT_STORAGE_KEY);
-    if (!raw) return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+    if (!raw) return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER, dropIconMap);
     const parsed = JSON.parse(raw) as { orderedPlatformIds?: unknown };
     if (!Array.isArray(parsed.orderedPlatformIds)) {
-      return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+      return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER, dropIconMap);
     }
     const orderedPlatformIds = parsed.orderedPlatformIds.filter(isPlatformId);
     if (orderedPlatformIds.length === 0) {
-      return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+      return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER, dropIconMap);
     }
-    return buildDropTypeOrder(orderedPlatformIds);
+    return buildDropTypeOrder(orderedPlatformIds, dropIconMap);
   } catch {
-    return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER);
+    return buildDropTypeOrder(FALLBACK_PLATFORM_ICON_ORDER, dropIconMap);
   }
 }
 
@@ -1088,10 +1195,10 @@ function buildBricksFromZones(
   zones: BrickZone[],
   walls: WallRect[],
   area: BrickArea,
-): { bricks: Brick[]; brickLookup: Map<string, number> } {
-  const usedCells = new Set<string>();
+): { bricks: Brick[]; brickLookup: Map<number, number> } {
+  const usedCells = new Set<number>();
   const bricks: Brick[] = [];
-  const brickLookup = new Map<string, number>();
+  const brickLookup = new Map<number, number>();
   let id = 1;
 
   for (const zone of zones) {
@@ -1215,6 +1322,7 @@ function createInitialState(runSeed: number = generateRunSeed()): GameState {
     runSeed,
     level: 1,
     levelScore: 0,
+    remainingBricks: layout.bricks.length,
     paddleX,
     paddleWidth: PADDLE_BASE_WIDTH,
     isBallLaunched: false,
@@ -1269,7 +1377,7 @@ function bounceBallFromRect(ball: Ball, rect: WallRect | Brick) {
 function findFirstCollidingBrick(
   ball: Ball,
   bricks: Brick[],
-  brickLookup: Map<string, number>,
+  brickLookup: Map<number, number>,
 ): Brick | null {
   const minCellX = Math.floor((ball.x - ball.r) / BRICK_CELL_SIZE) - 1;
   const maxCellX = Math.floor((ball.x + ball.r) / BRICK_CELL_SIZE) + 1;
@@ -1334,7 +1442,7 @@ function resolveBallPairCollision(ballA: Ball, ballB: Ball) {
 
 function resolveBallCollisions(balls: Ball[]) {
   if (balls.length < 2) return;
-  const spatialGrid = new Map<string, number[]>();
+  const spatialGrid = new Map<number, number[]>();
 
   for (let index = 0; index < balls.length; index += 1) {
     const ball = balls[index];
@@ -1343,7 +1451,7 @@ function resolveBallCollisions(balls: Ball[]) {
 
     for (let offsetY = -1; offsetY <= 1; offsetY += 1) {
       for (let offsetX = -1; offsetX <= 1; offsetX += 1) {
-        const key = `${cellX + offsetX}:${cellY + offsetY}`;
+        const key = buildBallGridKey(cellX + offsetX, cellY + offsetY);
         const bucket = spatialGrid.get(key);
         if (!bucket) continue;
         for (const otherIndex of bucket) {
@@ -1352,7 +1460,7 @@ function resolveBallCollisions(balls: Ball[]) {
       }
     }
 
-    const ownKey = `${cellX}:${cellY}`;
+    const ownKey = buildBallGridKey(cellX, cellY);
     const ownBucket = spatialGrid.get(ownKey);
     if (ownBucket) {
       ownBucket.push(index);
@@ -1515,7 +1623,8 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
   const [historyRecords, setHistoryRecords] = useState<GameHistoryRecord[]>(() =>
     loadBreakoutHistoryRecords(),
   );
-  const [dropTypeOrder] = useState<DropType[]>(() => loadDropTypeOrderSnapshot());
+  const [dropIconMap] = useState<DropIconMap>(() => loadBreakoutDropIconMap());
+  const [dropTypeOrder] = useState<DropType[]>(() => loadDropTypeOrderSnapshot(dropIconMap));
   const historyRecordsRef = useRef<GameHistoryRecord[]>(historyRecords);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [gameOverRank, setGameOverRank] = useState<number | null>(null);
@@ -1528,8 +1637,8 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
   const dropScale = Math.min(stageScaleX, stageScaleY);
   const dropSize = Math.round(clamp(28 * dropScale, 16, 28));
   const dropIconSize = Math.round(clamp(14 * dropScale, 10, 14));
-  const sortedRankRecords = [...historyRecords].sort(compareHistoryRecord);
-  const topThreeRankRecords = sortedRankRecords.slice(0, 3);
+  const sortedRankRecords = useMemo(() => [...historyRecords].sort(compareHistoryRecord), [historyRecords]);
+  const topThreeRankRecords = useMemo(() => sortedRankRecords.slice(0, 3), [sortedRankRecords]);
   const latestRecord = historyRecords[0] ?? null;
   const rankingLabel = t('breakout.ranking', {
     defaultValue: t('breakout.history', '历史记录'),
@@ -1543,12 +1652,11 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
   const rankingClearLabel = t('breakout.rankingClear', {
     defaultValue: t('breakout.historyClear', '清空'),
   });
-  const latestRecordRank = latestRecord
-    ? (() => {
-      const index = sortedRankRecords.findIndex((record) => record.id === latestRecord.id);
-      return index >= 0 ? index + 1 : null;
-    })()
-    : null;
+  const latestRecordRank = useMemo(() => {
+    if (!latestRecord) return null;
+    const index = sortedRankRecords.findIndex((record) => record.id === latestRecord.id);
+    return index >= 0 ? index + 1 : null;
+  }, [latestRecord, sortedRankRecords]);
 
   useEffect(() => {
     const updateStageSize = () => {
@@ -1618,9 +1726,8 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
       if (!brick.alive) continue;
       const cx = brick.x + brick.w / 2;
       const cy = brick.y + brick.h / 2;
-      const r = Math.min(brick.w, brick.h) / 2;
-      ctx.moveTo(cx + r, cy);
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.moveTo(cx + BRICK_RADIUS, cy);
+      ctx.arc(cx, cy, BRICK_RADIUS, 0, Math.PI * 2);
     }
     ctx.fill();
 
@@ -1645,6 +1752,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
     const paddleX = (BOARD_WIDTH - PADDLE_BASE_WIDTH) / 2;
     state.level = levelNumber;
     state.levelScore = 0;
+    state.remainingBricks = layout.bricks.length;
     state.paddleX = paddleX;
     state.paddleWidth = PADDLE_BASE_WIDTH;
     state.isBallLaunched = false;
@@ -1825,6 +1933,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
         const hitBrick = findFirstCollidingBrick(ball, state.bricks, state.brickLookup);
         if (hitBrick) {
           hitBrick.alive = false;
+          state.remainingBricks = Math.max(0, state.remainingBricks - 1);
           state.score += 1;
           state.levelScore += 1;
           bounceBallFromRect(ball, hitBrick);
@@ -1965,8 +2074,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
       }
     }
 
-    const aliveBricks = state.bricks.some((brick) => brick.alive);
-    if (!aliveBricks) {
+    if (state.remainingBricks <= 0) {
       state.drops = [];
       return 'levelCleared';
     }
@@ -2129,12 +2237,42 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
       }
       drawFrame(ctx, state);
 
-      if (timestamp - lastUiSyncRef.current > 16) {
-        setDrops(state.drops.map((drop) => ({ id: drop.id, type: drop.type, x: drop.x, y: drop.y })));
-        setLevel(state.level);
-        setScore(state.score);
-        setShields(state.shields);
-        setIsBallLaunched(state.isBallLaunched);
+      if (timestamp - lastUiSyncRef.current > UI_SYNC_INTERVAL_MS) {
+        setDrops((prev) => {
+          const nextLen = state.drops.length;
+          if (nextLen === 0) {
+            return prev.length === 0 ? prev : [];
+          }
+
+          let changed = prev.length !== nextLen;
+          if (!changed) {
+            for (let index = 0; index < nextLen; index += 1) {
+              const prevDrop = prev[index];
+              const nextDrop = state.drops[index];
+              if (
+                prevDrop.id !== nextDrop.id ||
+                prevDrop.type !== nextDrop.type ||
+                Math.abs(prevDrop.x - nextDrop.x) > 0.75 ||
+                Math.abs(prevDrop.y - nextDrop.y) > 0.75
+              ) {
+                changed = true;
+                break;
+              }
+            }
+          }
+          if (!changed) return prev;
+
+          const nextDrops: DropViewModel[] = new Array(nextLen);
+          for (let index = 0; index < nextLen; index += 1) {
+            const drop = state.drops[index];
+            nextDrops[index] = { id: drop.id, type: drop.type, x: drop.x, y: drop.y };
+          }
+          return nextDrops;
+        });
+        setLevel((prev) => (prev === state.level ? prev : state.level));
+        setScore((prev) => (prev === state.score ? prev : state.score));
+        setShields((prev) => (prev === state.shields ? prev : state.shields));
+        setIsBallLaunched((prev) => (prev === state.isBallLaunched ? prev : state.isBallLaunched));
         lastUiSyncRef.current = timestamp;
       }
 
@@ -2185,7 +2323,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
                 }}
               >
                 <div className="breakout-drop-icon" style={{ width: `${dropIconSize}px`, height: `${dropIconSize}px` }}>
-                  {renderPlatformIcon(DROP_ICON_MAP[drop.type], dropIconSize)}
+                  {renderPlatformIcon(dropIconMap[drop.type], dropIconSize)}
                 </div>
               </div>
             ))}
@@ -2283,7 +2421,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
                           {getSortedDropTypes(record.dropCounts, dropTypeOrder).map((dropType) => (
                             <span key={`${record.id}-${dropType}`} className="breakout-drop-count-chip">
                               <span className="breakout-drop-count-icon">
-                                {renderPlatformIcon(DROP_ICON_MAP[dropType], 12)}
+                                {renderPlatformIcon(dropIconMap[dropType], 12)}
                               </span>
                               <span className="breakout-drop-count-value">x{record.dropCounts[dropType]}</span>
                             </span>
@@ -2378,7 +2516,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
                   {getSortedDropTypes(stateRef.current.levelDropCounts, dropTypeOrder).map((dropType) => (
                     <span key={`levelclear-${dropType}`} className="breakout-drop-count-chip">
                       <span className="breakout-drop-count-icon">
-                        {renderPlatformIcon(DROP_ICON_MAP[dropType], 13)}
+                        {renderPlatformIcon(dropIconMap[dropType], 13)}
                       </span>
                       <span className="breakout-drop-count-value">x{stateRef.current.levelDropCounts[dropType]}</span>
                     </span>
@@ -2399,7 +2537,7 @@ export function BreakoutModal({ onClose }: BreakoutModalProps) {
                   {getSortedDropTypes(stateRef.current.dropCounts, dropTypeOrder).map((dropType) => (
                     <span key={`gameover-${dropType}`} className="breakout-drop-count-chip">
                       <span className="breakout-drop-count-icon">
-                        {renderPlatformIcon(DROP_ICON_MAP[dropType], 13)}
+                        {renderPlatformIcon(dropIconMap[dropType], 13)}
                       </span>
                       <span className="breakout-drop-count-value">x{stateRef.current.dropCounts[dropType]}</span>
                     </span>

@@ -143,6 +143,116 @@
   white-space: nowrap;
 }
 
+.ghcp-account-card .kiro-card-top {
+  align-items: flex-start;
+}
+
+.ghcp-account-card .kiro-identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ghcp-account-card .kiro-identity-sub {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ghcp-account-card .kiro-signed-in,
+.ghcp-account-card .kiro-user-id {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ghcp-account-card .kiro-sub-divider {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.ghcp-account-card .kiro-bonus-card {
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ghcp-account-card .kiro-bonus-header-row,
+.ghcp-account-card .kiro-bonus-value-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.9fr) minmax(0, 1.4fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.ghcp-account-card .kiro-bonus-header-row {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ghcp-account-card .kiro-bonus-title {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ghcp-account-card .kiro-bonus-value-row {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.ghcp-account-card .kiro-estimated-card {
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ghcp-account-card .kiro-estimated-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ghcp-account-card .kiro-estimated-reset {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ghcp-account-card .kiro-estimated-value-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ghcp-account-card .kiro-estimated-label {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.ghcp-account-card .kiro-estimated-usage {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
 .ghcp-account-card .current-tag {
   flex-shrink: 0;
   padding: 3px 10px;
@@ -204,6 +314,13 @@
 .ghcp-accounts-page .account-table .tier-badge.pro {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
+}
+
+.ghcp-account-card .tier-badge.unknown,
+.ghcp-accounts-page .account-table .tier-badge.unknown {
+  background: rgba(148, 163, 184, 0.18);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
 }
 
 /* 配额部分 */
@@ -315,6 +432,10 @@
   margin-bottom: 2px;
 }
 
+.ghcp-accounts-page .windsurf-credit-meta-row.expiry {
+  justify-content: flex-start;
+}
+
 .ghcp-accounts-page .windsurf-credit-used,
 .ghcp-accounts-page .windsurf-credit-left {
   font-size: 11px;
@@ -326,6 +447,13 @@
 .ghcp-accounts-page .windsurf-credit-left {
   color: var(--text-primary);
   font-weight: 700;
+}
+
+.ghcp-accounts-page .windsurf-credit-expiry {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: -0.2px;
 }
 
 .ghcp-accounts-page .windsurf-plan-cycle {
@@ -367,6 +495,30 @@
 
 .ghcp-accounts-page .windsurf-table-credit-item {
   min-width: 220px;
+}
+
+.ghcp-accounts-page .kiro-table-subline {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.ghcp-accounts-page .kiro-table-bonus,
+.ghcp-accounts-page .kiro-table-estimated {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.ghcp-accounts-page .kiro-table-main {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.ghcp-accounts-page .kiro-table-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
 }
 
 /* 卡片底部 */

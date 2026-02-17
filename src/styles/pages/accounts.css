@@ -218,6 +218,28 @@
   border: 1px solid rgba(255,255,255,0.1);
 }
 
+.tier-badge.individual {
+  background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.tier-badge.business {
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.tier-badge.enterprise {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #2b2111;
+}
+
+.tier-badge.free,
+.tier-badge.unknown {
+  background: rgba(148, 163, 184, 0.18);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
 /* Dark Mode Overrides */
 [data-theme="dark"] .accounts-grid .account-card {
   background: #1e293b;

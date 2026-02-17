@@ -109,7 +109,15 @@
       "windsurfAppPathDesc": "留空則使用預設路徑",
       "windsurfAppPathPlaceholder": "預設路徑",
       "windsurfPathSelect": "選擇",
-      "windsurfPathReset": "重設預設值"
+      "windsurfPathReset": "重設預設值",
+      "kiroSettingsTitle": "Kiro Settings",
+      "kiroAutoRefresh": "Kiro Auto Refresh Quota",
+      "kiroAutoRefreshDesc": "Background update frequency",
+      "kiroAppPath": "Kiro App Path",
+      "kiroAppPathDesc": "Leave empty to use default path",
+      "kiroAppPathPlaceholder": "Default path",
+      "kiroPathSelect": "Select",
+      "kiroPathReset": "Reset to default"
     },
     "network": {
       "apiTitle": "Antigravity Cockpit API",
@@ -1191,7 +1199,12 @@
       "title": "Windsurf 設定",
       "appPath": "Windsurf 路徑"
     },
-    "windsurfRefreshInterval": "配額自動重新整理"
+    "windsurfRefreshInterval": "配額自動重新整理",
+    "kiro": {
+      "title": "Kiro Settings",
+      "appPath": "Kiro Path"
+    },
+    "kiroRefreshInterval": "Auto refresh quota"
   },
   "quotaAlert": {
     "bannerText": "帳號 {{email}} 觸發配額預警（閾值 {{threshold}}%，最低 {{lowest}}%，模型：{{models}}）",
@@ -1407,5 +1420,143 @@
     "rankingEmpty": "暫無歷史記錄",
     "rankingClear": "清空",
     "rankingRankShort": "#{{rank}}"
+  },
+  "kiro": {
+    "account": {
+      "signedInWith": "Signed in with {{provider}}",
+      "providerUnknown": "Unknown",
+      "userId": "User ID"
+    },
+    "credits": {
+      "planEndsIn": "配額週期剩餘 {{days}} 天",
+      "planEndsUnknown": "配額週期時間未知",
+      "periodRange": "週期：{{start}} - {{end}}",
+      "periodEndOnly": "週期結束：{{end}}",
+      "estimatedResetOn": "Estimated Usage resets on {{date}}",
+      "bonusUsageLine": "{{used}} used / {{total}} total",
+      "planUsageCoveredLine": "{{used}} used / {{total}} covered in plan",
+      "usedLine": "已使用 {{used}} / {{total}}",
+      "leftInline": "剩餘 {{left}}",
+      "expiryDays": "{{days}} days",
+      "expiryUnknown": "—",
+      "resetNow": "Reset soon",
+      "resetInHours": "Resets in {{hours}}h",
+      "resetInMinutes": "Resets in {{minutes}}m"
+    },
+    "columns": {
+      "email": "電子郵件",
+      "plan": "標籤",
+      "credits": "點數",
+      "promptCredits": "User Prompt 點數",
+      "addOnPromptCredits": "Add-on Prompt 點數",
+      "bonusCredits": "Bonus Credits",
+      "estimatedUsage": "Estimated Usage",
+      "expiry": "Expiry",
+      "estUsage": "Est. Usage",
+      "actions": "操作"
+    },
+    "plan": {
+      "free": "Kiro Free",
+      "individual": "Kiro Individual",
+      "pro": "Kiro Pro",
+      "business": "Kiro Business",
+      "enterprise": "Kiro Enterprise",
+      "unknown": "Unknown"
+    },
+    "flowNotice": {
+      "title": "Kiro 帳號指南（點擊展開/收合）",
+      "desc": "切換帳號時需要讀取 Kiro 本機認證儲存，並呼叫系統憑證服務完成解密與回寫；資料僅在本機處理。",
+      "reason": "權限需求：讀取 Kiro 認證資料庫（state.vscdb），並呼叫系統加密能力（Windows DPAPI / macOS Keychain / Linux Secret Service）進行解密與寫回。",
+      "storage": "讀取範圍：僅處理 Kiro 登入工作階段相關資料，所有流程均在本機執行。"
+    },
+    "title": "Kiro Account Management",
+    "subtitle": "Monitor quota status for all accounts in real time.",
+    "overview": {
+      "title": "Account Overview"
+    },
+    "instances": {
+      "title": "Multi-Instance",
+      "subtitle": "Independent configs per instance for parallel multi-account runs.",
+      "unsupported": {
+        "title": "Unsupported on this system",
+        "descPlatform": "Kiro multi-instance is available only on macOS, Windows and Linux."
+      },
+      "quota": {
+        "inline": "Inline Suggestions",
+        "chat": "Chat messages"
+      }
+    },
+    "addAccount": "Add Account",
+    "refreshAll": "Refresh All",
+    "refreshQuota": "Refresh Quota",
+    "empty": {
+      "title": "No Accounts",
+      "description": "Click \"Add Account\" to start managing your Kiro accounts"
+    },
+    "noMatch": {
+      "title": "No matching accounts",
+      "desc": "Try adjusting your search or filters"
+    },
+    "addModal": {
+      "title": "Add Kiro Account",
+      "oauth": "OAuth",
+      "token": "Token / JSON",
+      "import": "Local Import"
+    },
+    "oauth": {
+      "desc": "Click the button below and complete Kiro authorization in your browser.",
+      "preparing": "Preparing authorization info...",
+      "openBrowser": "Open in Browser",
+      "hint": "Once authorized, this window will update automatically",
+      "success": "Authorization successful",
+      "failed": "Authorization failed",
+      "retry": "Regenerate authorization info",
+      "timeoutRetry": "Refresh authorization link",
+      "waiting": "Waiting for authorization...",
+      "meta": "Expires in: {{expires}}s; Poll interval: {{interval}}s"
+    },
+    "token": {
+      "desc": "Paste your Kiro access token or exported JSON data.",
+      "placeholder": "Paste token or JSON...",
+      "import": "Import",
+      "importing": "Importing...",
+      "importSuccessMsg": "Imported {{count}} account(s) successfully",
+      "importFailedMsg": "Import failed: {{error}}",
+      "empty": "Please enter a token or JSON"
+    },
+    "import": {
+      "label": "Import",
+      "localDesc": "Import Kiro account data from local Kiro client or a JSON file.",
+      "localClient": "Import from local Kiro",
+      "orJson": "Or import from JSON file",
+      "importing": "Importing...",
+      "failedMsg": "Import failed: {{error}}",
+      "pickFile": "Select JSON file to import"
+    },
+    "search": "Search accounts...",
+    "view": {
+      "list": "List view",
+      "grid": "Card view"
+    },
+    "filter": {
+      "all": "All ({{count}})",
+      "free": "FREE ({{count}})",
+      "individual": "INDIVIDUAL ({{count}})",
+      "pro": "PRO ({{count}})",
+      "business": "BUSINESS ({{count}})",
+      "enterprise": "ENTERPRISE ({{count}})"
+    },
+    "filterLabel": "Filter",
+    "sortLabel": "Sort",
+    "sort": {
+      "createdAt": "Created time",
+      "credits": "By remaining credits",
+      "planEnd": "By cycle end time",
+      "descTooltip": "Current: Descending. Click to switch to ascending",
+      "ascTooltip": "Current: Ascending. Click to switch to descending",
+      "toggleDirection": "Toggle sort direction"
+    },
+    "export": "Export",
+    "injectToVSCode": "Switch to Kiro"
   }
 }

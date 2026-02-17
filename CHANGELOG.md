@@ -7,6 +7,15 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [0.8.0] - 2026-02-17
+
+### Added
+- **Fifth platform is live**: Kiro officially joins the supported platform lineup with unified management alongside Antigravity, Codex, GitHub Copilot, and Windsurf.
+- **Core Kiro flows are now available**: OAuth/Token/JSON/local import, account switching, quota refresh, multi-instance lifecycle, and app path configuration are all included.
+- **Platform-layer refactor**: Instance services, account stores, and overview tabs were unified into reusable platform abstractions to reduce future integration cost.
+- **Key fixes in this release**: Hardened Kiro import ID validation against path traversal and filled missing locale keys to reduce mixed-language fallback in non-default locales.
+
+---
 ## [0.7.3] - 2026-02-15
 
 ### Added

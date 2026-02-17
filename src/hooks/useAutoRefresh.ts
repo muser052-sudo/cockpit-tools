@@ -4,6 +4,7 @@ import { useAccountStore } from '../stores/useAccountStore';
 import { useCodexAccountStore } from '../stores/useCodexAccountStore';
 import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
 import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
+import { useKiroAccountStore } from '../stores/useKiroAccountStore';
 
 interface GeneralConfig {
   language: string;
@@ -12,6 +13,7 @@ interface GeneralConfig {
   codex_auto_refresh_minutes: number;
   ghcp_auto_refresh_minutes: number;
   windsurf_auto_refresh_minutes: number;
+  kiro_auto_refresh_minutes: number;
   auto_switch_enabled: boolean;
   close_behavior: string;
   opencode_app_path?: string;
@@ -23,15 +25,21 @@ interface GeneralConfig {
 }
 
 export function useAutoRefresh() {
-  const { refreshAllQuotas, syncCurrentFromClient, fetchAccounts, fetchCurrentAccount } = useAccountStore();
-  const { refreshAllQuotas: refreshAllCodexQuotas } = useCodexAccountStore();
-  const { refreshAllTokens: refreshAllGhcpTokens } = useGitHubCopilotAccountStore();
-  const { refreshAllTokens: refreshAllWindsurfTokens } = useWindsurfAccountStore();
+  const refreshAllQuotas = useAccountStore((state) => state.refreshAllQuotas);
+  const syncCurrentFromClient = useAccountStore((state) => state.syncCurrentFromClient);
+  const fetchAccounts = useAccountStore((state) => state.fetchAccounts);
+  const fetchCurrentAccount = useAccountStore((state) => state.fetchCurrentAccount);
+
+  const refreshAllCodexQuotas = useCodexAccountStore((state) => state.refreshAllQuotas);
+  const refreshAllGhcpTokens = useGitHubCopilotAccountStore((state) => state.refreshAllTokens);
+  const refreshAllWindsurfTokens = useWindsurfAccountStore((state) => state.refreshAllTokens);
+  const refreshAllKiroTokens = useKiroAccountStore((state) => state.refreshAllTokens);
   const agIntervalRef = useRef<number | null>(null);
   const autoSwitchIntervalRef = useRef<number | null>(null);
   const codexIntervalRef = useRef<number | null>(null);
   const ghcpIntervalRef = useRef<number | null>(null);
   const windsurfIntervalRef = useRef<number | null>(null);
+  const kiroIntervalRef = useRef<number | null>(null);
   const autoSwitchRefreshingRef = useRef(false);
 
   const setupAutoRefresh = async () => {
@@ -59,6 +67,7 @@ export function useAutoRefresh() {
                 codexAutoRefreshMinutes: config.codex_auto_refresh_minutes,
                 ghcpAutoRefreshMinutes: config.ghcp_auto_refresh_minutes,
                 windsurfAutoRefreshMinutes: config.windsurf_auto_refresh_minutes,
+                kiroAutoRefreshMinutes: config.kiro_auto_refresh_minutes,
                 closeBehavior: config.close_behavior || 'ask',
                 opencodeAppPath: config.opencode_app_path ?? '',
                 antigravityAppPath: config.antigravity_app_path ?? '',
@@ -94,6 +103,10 @@ export function useAutoRefresh() {
       if (windsurfIntervalRef.current) {
         window.clearInterval(windsurfIntervalRef.current);
         windsurfIntervalRef.current = null;
+      }
+      if (kiroIntervalRef.current) {
+        window.clearInterval(kiroIntervalRef.current);
+        kiroIntervalRef.current = null;
       }
 
       if (config.auto_refresh_minutes > 0) {
@@ -158,8 +171,24 @@ export function useAutoRefresh() {
             console.error('[AutoRefresh] Windsurf 刷新失败:', e);
           }
         }, windsurfMs);
+
       } else {
         console.log('[AutoRefresh] Windsurf 已禁用');
+      }
+
+      if (config.kiro_auto_refresh_minutes > 0) {
+        console.log(`[AutoRefresh] Kiro 已启用: 每 ${config.kiro_auto_refresh_minutes} 分钟`);
+        const kiroMs = config.kiro_auto_refresh_minutes * 60 * 1000;
+        kiroIntervalRef.current = window.setInterval(async () => {
+          console.log('[AutoRefresh] 触发 Kiro 配额刷新...');
+          try {
+            await refreshAllKiroTokens();
+          } catch (e) {
+            console.error('[AutoRefresh] Kiro 刷新失败:', e);
+          }
+        }, kiroMs);
+      } else {
+        console.log('[AutoRefresh] Kiro 已禁用');
       }
 
       // 自动切号开启时，额外每 60 秒刷新当前账号（不影响原有配额自动刷新规则）
@@ -217,6 +246,9 @@ export function useAutoRefresh() {
       if (windsurfIntervalRef.current) {
         window.clearInterval(windsurfIntervalRef.current);
       }
+      if (kiroIntervalRef.current) {
+        window.clearInterval(kiroIntervalRef.current);
+      }
       window.removeEventListener('config-updated', handleConfigUpdate);
     };
   }, [
@@ -225,6 +257,7 @@ export function useAutoRefresh() {
     refreshAllCodexQuotas,
     refreshAllQuotas,
     refreshAllGhcpTokens,
+    refreshAllKiroTokens,
     refreshAllWindsurfTokens,
     syncCurrentFromClient,
   ]);

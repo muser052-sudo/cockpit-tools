@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus } from 'lucide-react';
-import { InstancesManager } from '../components/InstancesManager';
+import { PlatformInstancesContent } from '../components/platform/PlatformInstancesContent';
 import { useWindsurfInstanceStore } from '../stores/useWindsurfInstanceStore';
 import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
 import type { WindsurfAccount } from '../types/windsurf';
 import { getWindsurfAccountDisplayEmail, getWindsurfQuotaClass, getWindsurfUsage } from '../types/windsurf';
+import { usePlatformRuntimeSupport } from '../hooks/usePlatformRuntimeSupport';
 
 /**
  * Windsurf 多开实例内容组件（不包含 header）
@@ -24,15 +24,7 @@ export function WindsurfInstancesContent() {
       })) as AccountForSelect[],
     [accounts],
   );
-  const isSupportedPlatform = useMemo(() => {
-    if (typeof navigator === 'undefined') return false;
-    const platform = navigator.platform || '';
-    const ua = navigator.userAgent || '';
-    const isMac = /mac/i.test(platform) || /mac/i.test(ua);
-    const isWindows = /win/i.test(platform) || /windows/i.test(ua);
-    const isLinux = /linux/i.test(platform) || /linux/i.test(ua);
-    return isMac || isWindows || isLinux;
-  }, []);
+  const isSupportedPlatform = usePlatformRuntimeSupport('desktop');
 
   const resolveQuotaClass = (percentage: number) => getWindsurfQuotaClass(percentage);
 
@@ -61,31 +53,19 @@ export function WindsurfInstancesContent() {
     );
   };
 
-  if (!isSupportedPlatform) {
-    return (
-      <div className="instances-page">
-        <div className="empty-state">
-          <h3>{t('windsurf.instances.unsupported.title', '暂不支持当前系统')}</h3>
-          <p>{t('windsurf.instances.unsupported.descPlatform', 'Windsurf 多开实例仅支持 macOS、Windows 和 Linux。')}</p>
-          <button className="btn btn-primary" disabled>
-            <Plus size={16} />
-            {t('instances.actions.create', '新建实例')}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="instances-page">
-      <InstancesManager<AccountForSelect>
-        instanceStore={instanceStore}
-        accounts={accountsForSelect}
-        fetchAccounts={fetchAccounts}
-        renderAccountQuotaPreview={renderWindsurfQuotaPreview}
-        getAccountSearchText={(account) => account.email}
-        appType="windsurf"
-      />
-    </div>
+    <PlatformInstancesContent<AccountForSelect>
+      instanceStore={instanceStore}
+      accounts={accountsForSelect}
+      fetchAccounts={fetchAccounts}
+      renderAccountQuotaPreview={renderWindsurfQuotaPreview}
+      getAccountSearchText={(account) => account.email}
+      appType="windsurf"
+      isSupported={isSupportedPlatform}
+      unsupportedTitleKey="windsurf.instances.unsupported.title"
+      unsupportedTitleDefault="暂不支持当前系统"
+      unsupportedDescKey="windsurf.instances.unsupported.descPlatform"
+      unsupportedDescDefault="Windsurf 多开实例仅支持 macOS、Windows 和 Linux。"
+    />
   );
 }
