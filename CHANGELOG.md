@@ -7,6 +7,20 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [0.8.10] - 2026-02-22
+
+### Added
+- **Windsurf email/password account import**: Added an `Email & Password` tab in Windsurf Add Account modal and wired Firebase sign-in flow to create local Windsurf accounts.
+
+### Changed
+- **Windsurf credits semantics aligned with monthly quota**: `availablePromptCredits` / `availableFlexCredits` are now treated as monthly total quota, and remaining credits are computed as `total - used`.
+- **Password handling in sign-in flow**: Email is still normalized with trim, while password now keeps the original input (no trim) to avoid altering valid credentials.
+
+### Fixed
+- **Windsurf password-login i18n coverage**: Added missing `windsurf.addModal.password` and `windsurf.password.*` translation keys across locale files to prevent fallback language leakage.
+- **Password-login log privacy**: Removed plain email output from Windsurf password-login logs to reduce PII exposure.
+
+---
 ## [0.8.9] - 2026-02-21
 
 ### Added

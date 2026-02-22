@@ -1237,7 +1237,8 @@
       "description": "Klicke auf \"Konto hinzufügen\", um zu starten"
     },
     "addModal": {
-      "title": "Windsurf-Konto hinzufügen"
+      "title": "Windsurf-Konto hinzufügen",
+      "password": "E-Mail & Passwort"
     },
     "oauth": {
       "desc": "Klicke unten und schließe die Windsurf-Windsurf-Autorisierung im Browser ab."
@@ -1271,6 +1272,16 @@
       "inject": "Ein-Klick-Wechsel: Dieses Tool liest das lokale Verschlüsselungsmaterial von Windsurf (DPAPI/Keychain/Secret Service), entschlüsselt die Auth-Sitzung in state.vscdb, ersetzt das Windsurf-Windsurf-Token und verschlüsselt sie erneut – alles lokal auf deinem Gerät.",
       "reason": "Berechtigungsumfang: Lesen der VS-Code-Auth-Datenbank (state.vscdb) und Aufruf der System-Verschlüsselung (Windows DPAPI / macOS Keychain / Linux Secret Service) zum Entschlüsseln und Zurückschreiben.",
       "storage": "Lesebereich: Es werden nur Windsurf-Login-Sitzungsdaten verarbeitet; alle Prozesse werden lokal ausgeführt."
+    },
+    "password": {
+      "desc": "Melden Sie sich mit E-Mail und Passwort Ihres Windsurf-Kontos an, um API-Schlüssel und Kontoinformationen automatisch zu laden.",
+      "emailPlaceholder": "E-Mail-Adresse",
+      "passwordPlaceholder": "Passwort",
+      "login": "Anmelden",
+      "logging": "Anmeldung läuft...",
+      "empty": "Bitte E-Mail und Passwort eingeben",
+      "success": "Anmeldung erfolgreich: {{login}}",
+      "failed": "Anmeldung fehlgeschlagen: {{error}}"
     }
   },
   "platformLayout": {

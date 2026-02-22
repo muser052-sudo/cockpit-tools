@@ -1237,7 +1237,8 @@
       "description": "「アカウントを追加」から Windsurf アカウントを管理できます"
     },
     "addModal": {
-      "title": "Windsurf アカウントを追加"
+      "title": "Windsurf アカウントを追加",
+      "password": "メールとパスワード"
     },
     "oauth": {
       "desc": "下のボタンをクリックし、ブラウザで Windsurf の認可を完了してください。"
@@ -1271,6 +1272,16 @@
       "inject": "ワンクリック切り替え: このツールはローカルの Windsurf 暗号化情報（DPAPI/Keychain/Secret Service）を読み取り、state.vscdb 内の認証セッションを復号して Windsurf トークンを置き換え、再暗号化します。処理はすべて端末内で完結します。",
       "reason": "必要な権限: Windsurf 認証データベース（state.vscdb）を読み取り、システム暗号化機能（Windows DPAPI / macOS Keychain / Linux Secret Service）を呼び出して復号・再書き込みを行います。",
       "storage": "読み取り範囲: Windsurf ログインセッション関連データのみを処理し、すべての処理はローカルで実行されます。"
+    },
+    "password": {
+      "desc": "Windsurf アカウントのメールアドレスとパスワードでログインし、API キーとアカウント情報を自動取得します。",
+      "emailPlaceholder": "メールアドレス",
+      "passwordPlaceholder": "パスワード",
+      "login": "ログイン",
+      "logging": "ログイン中...",
+      "empty": "メールアドレスとパスワードを入力してください",
+      "success": "ログイン成功: {{login}}",
+      "failed": "ログイン失敗: {{error}}"
     }
   },
   "platformLayout": {

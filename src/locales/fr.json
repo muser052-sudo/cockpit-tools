@@ -1237,7 +1237,8 @@
       "description": "Cliquez sur « Ajouter un compte » pour commencer"
     },
     "addModal": {
-      "title": "Ajouter un compte Windsurf"
+      "title": "Ajouter un compte Windsurf",
+      "password": "E-mail et mot de passe"
     },
     "oauth": {
       "desc": "Cliquez ci-dessous et terminez l'autorisation Windsurf dans le navigateur."
@@ -1271,6 +1272,16 @@
       "inject": "Changement en un clic : cet outil lit le matériel de chiffrement local de Windsurf (DPAPI/Keychain/Secret Service), déchiffre la session d’authentification dans state.vscdb, remplace le jeton Windsurf puis rechiffre le tout — entièrement en local sur votre machine.",
       "reason": "Portée des autorisations : lire la base d’authentification Windsurf (state.vscdb) et appeler le chiffrement système (Windows DPAPI / macOS Keychain / Linux Secret Service) pour déchiffrer et réécrire.",
       "storage": "Portée de lecture : seules les données liées aux sessions de connexion Windsurf sont traitées ; tous les processus sont exécutés localement."
+    },
+    "password": {
+      "desc": "Connectez-vous avec l’e-mail et le mot de passe de votre compte Windsurf pour récupérer automatiquement la clé API et les infos du compte.",
+      "emailPlaceholder": "Adresse e-mail",
+      "passwordPlaceholder": "Mot de passe",
+      "login": "Se connecter",
+      "logging": "Connexion en cours...",
+      "empty": "Veuillez saisir l’e-mail et le mot de passe",
+      "success": "Connexion réussie : {{login}}",
+      "failed": "Échec de la connexion : {{error}}"
     }
   },
   "platformLayout": {

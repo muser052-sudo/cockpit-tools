@@ -1013,15 +1013,11 @@ pub async fn build_payload_from_password(
     password: &str,
 ) -> Result<WindsurfOAuthCompletePayload, String> {
     let email = email.trim();
-    let password = password.trim();
     if email.is_empty() || password.is_empty() {
         return Err("邮箱和密码不能为空".to_string());
     }
 
-    logger::log_info(&format!(
-        "[Windsurf PasswordLogin] 开始 Firebase 邮箱密码登录: email={}",
-        email
-    ));
+    logger::log_info("[Windsurf PasswordLogin] 开始 Firebase 邮箱密码登录");
 
     // Step 1: Firebase signInWithPassword
     let url = format!("{}?key={}", FIREBASE_SIGN_IN_URL, FIREBASE_API_KEY);
@@ -1075,10 +1071,7 @@ pub async fn build_payload_from_password(
         .and_then(Value::as_str)
         .ok_or_else(|| "Firebase 响应缺少 idToken".to_string())?;
 
-    logger::log_info(&format!(
-        "[Windsurf PasswordLogin] Firebase 登录成功, email={}, 开始获取账号信息",
-        email
-    ));
+    logger::log_info("[Windsurf PasswordLogin] Firebase 登录成功，开始获取账号信息");
 
     // Step 2: reuse existing flow – RegisterUser + GetPlanStatus etc.
     build_payload_from_firebase_token(id_token, None).await

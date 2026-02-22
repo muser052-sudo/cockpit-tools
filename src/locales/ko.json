@@ -1237,7 +1237,8 @@
       "description": "\"계정 추가\"를 눌러 Windsurf 계정을 관리하세요"
     },
     "addModal": {
-      "title": "Windsurf 계정 추가"
+      "title": "Windsurf 계정 추가",
+      "password": "이메일/비밀번호"
     },
     "oauth": {
       "desc": "아래 버튼을 클릭해 브라우저에서 Windsurf 인증을 완료하세요."
@@ -1271,6 +1272,16 @@
       "inject": "원클릭 전환: 이 도구는 로컬 Windsurf 암호화 자료(DPAPI/Keychain/Secret Service)를 읽어 state.vscdb의 인증 세션을 복호화한 뒤 Windsurf 토큰을 교체하고 다시 암호화합니다. 모든 처리는 로컬 장치에서만 수행됩니다.",
       "reason": "권한 범위: Windsurf 인증 데이터베이스(state.vscdb)를 읽고 시스템 암호화 기능(Windows DPAPI / macOS Keychain / Linux Secret Service)을 호출해 복호화 및 재기록을 수행합니다.",
       "storage": "읽기 범위: Windsurf 로그인 세션 관련 데이터만 처리하며, 모든 과정은 로컬에서 실행됩니다."
+    },
+    "password": {
+      "desc": "Windsurf 계정의 이메일과 비밀번호로 로그인하여 API 키와 계정 정보를 자동으로 가져옵니다.",
+      "emailPlaceholder": "이메일 주소",
+      "passwordPlaceholder": "비밀번호",
+      "login": "로그인",
+      "logging": "로그인 중...",
+      "empty": "이메일과 비밀번호를 입력하세요",
+      "success": "로그인 성공: {{login}}",
+      "failed": "로그인 실패: {{error}}"
     }
   },
   "platformLayout": {

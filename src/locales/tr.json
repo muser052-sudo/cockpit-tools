@@ -1237,7 +1237,8 @@
       "description": "\"Hesap ekle\"ye tıklayın"
     },
     "addModal": {
-      "title": "Windsurf hesabı ekle"
+      "title": "Windsurf hesabı ekle",
+      "password": "E-posta ve şifre"
     },
     "oauth": {
       "desc": "Aşağıdaki düğmeye tıklayın ve tarayıcıda Windsurf yetkilendirmesini tamamlayın."
@@ -1271,6 +1272,16 @@
       "inject": "Tek tıkla geçiş: Bu araç Windsurf'un yerel şifreleme materyalini (DPAPI/Keychain/Secret Service) okur, state.vscdb içindeki kimlik doğrulama oturumunu çözer, Windsurf belirtecini değiştirir ve yeniden şifreler — tüm işlem cihazınızda yerel olarak yapılır.",
       "reason": "İzin kapsamı: Windsurf kimlik doğrulama veritabanını (state.vscdb) okumak ve şifre çözme/geri yazma için sistem şifreleme yeteneklerini (Windows DPAPI / macOS Keychain / Linux Secret Service) çağırmak.",
       "storage": "Okuma kapsamı: yalnızca Windsurf oturum açma oturumu ile ilgili veriler işlenir; tüm işlemler yerel olarak yürütülür."
+    },
+    "password": {
+      "desc": "Windsurf hesabınızın e-posta ve şifresiyle giriş yapın; API anahtarı ve hesap bilgileri otomatik alınır.",
+      "emailPlaceholder": "E-posta adresi",
+      "passwordPlaceholder": "Şifre",
+      "login": "Giriş yap",
+      "logging": "Giriş yapılıyor...",
+      "empty": "Lütfen e-posta ve şifre girin",
+      "success": "Giriş başarılı: {{login}}",
+      "failed": "Giriş başarısız: {{error}}"
     }
   },
   "platformLayout": {

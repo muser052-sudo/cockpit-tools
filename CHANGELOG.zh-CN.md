@@ -7,6 +7,20 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
 ---
+## [0.8.10] - 2026-02-22
+
+### 新增
+- **Windsurf 新增邮箱密码导入方式**：在 Windsurf 添加账号弹窗中新增“邮箱密码”页签，并接入 Firebase 登录流程以自动写入本地 Windsurf 账号。
+
+### 变更
+- **Windsurf Credits 口径改为月配额语义**：`availablePromptCredits` / `availableFlexCredits` 统一按“月总额度”解释，剩余额度按 `total - used` 计算。
+- **密码登录输入处理调整**：邮箱仍会做 `trim` 归一化，密码改为保留原始输入（不再 `trim`），避免改写合法凭据。
+
+### 修复
+- **Windsurf 密码登录文案补齐多语言键**：补充 `windsurf.addModal.password` 与 `windsurf.password.*` 语言键，避免界面出现回退文案。
+- **密码登录日志隐私修复**：移除 Windsurf 邮箱密码登录日志中的明文邮箱输出，降低 PII 泄露风险。
+
+---
 ## [0.8.9] - 2026-02-21
 
 ### 新增

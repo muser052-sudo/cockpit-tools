@@ -1237,7 +1237,8 @@
       "description": "Klikněte na „Přidat účet“"
     },
     "addModal": {
-      "title": "Přidat účet Windsurf"
+      "title": "Přidat účet Windsurf",
+      "password": "E-mail a heslo"
     },
     "oauth": {
       "desc": "Klikněte níže a dokončete autorizaci Windsurf v prohlížeči."
@@ -1271,6 +1272,16 @@
       "inject": "Přepnutí jedním kliknutím: Tento nástroj načte lokální šifrovací materiál Windsurf (DPAPI/Keychain/Secret Service), dešifruje autentizační relaci ve state.vscdb, nahradí token Windsurf a znovu ji zašifruje — vše lokálně na vašem zařízení.",
       "reason": "Rozsah oprávnění: čtení databáze ověření Windsurf (state.vscdb) a volání systémového šifrování (Windows DPAPI / macOS Keychain / Linux Secret Service) pro dešifrování a zpětný zápis.",
       "storage": "Rozsah čtení: zpracovávají se pouze položky související s relací přihlášení Windsurf a veškeré procesy probíhají lokálně."
+    },
+    "password": {
+      "desc": "Přihlaste se e-mailem a heslem účtu Windsurf, automaticky se získá API klíč a informace o účtu.",
+      "emailPlaceholder": "E-mailová adresa",
+      "passwordPlaceholder": "Heslo",
+      "login": "Přihlásit se",
+      "logging": "Přihlašování...",
+      "empty": "Zadejte e-mail a heslo",
+      "success": "Přihlášení úspěšné: {{login}}",
+      "failed": "Přihlášení se nezdařilo: {{error}}"
     }
   },
   "platformLayout": {

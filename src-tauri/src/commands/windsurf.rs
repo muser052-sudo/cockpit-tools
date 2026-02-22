@@ -168,10 +168,7 @@ pub async fn add_windsurf_account_with_password(
     email: String,
     password: String,
 ) -> Result<WindsurfAccount, String> {
-    logger::log_info(&format!(
-        "[Windsurf Command] 邮箱密码登录开始: email={}",
-        email
-    ));
+    logger::log_info("[Windsurf Command] 邮箱密码登录开始");
     let payload = windsurf_oauth::build_payload_from_password(&email, &password).await?;
     let account = windsurf_account::upsert_account(payload)?;
     logger::log_info(&format!(

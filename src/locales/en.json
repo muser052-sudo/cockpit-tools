@@ -1281,7 +1281,8 @@
       "description": "Click \"Add Account\" to start managing your Windsurf accounts"
     },
     "addModal": {
-      "title": "Add Windsurf Account"
+      "title": "Add Windsurf Account",
+      "password": "Email & Password"
     },
     "oauth": {
       "desc": "Click the button below and complete Windsurf authorization in your browser."
@@ -1315,6 +1316,16 @@
       "inject": "One-click switching: This tool reads local Windsurf encryption material (DPAPI/Keychain/Secret Service), processes the auth session in state.vscdb, writes back the Windsurf token, and keeps everything local on your machine.",
       "reason": "Permission scope: read Windsurf auth database (state.vscdb) and use system encryption capabilities (Windows DPAPI / macOS Keychain / Linux Secret Service) to decrypt and write back auth-session data.",
       "storage": "Data scope: only Windsurf auth-session related entries are read/updated; all processes run locally."
+    },
+    "password": {
+      "desc": "Sign in with your Windsurf account email and password to automatically fetch API key and account info.",
+      "emailPlaceholder": "Email address",
+      "passwordPlaceholder": "Password",
+      "login": "Sign In",
+      "logging": "Signing in...",
+      "empty": "Please enter email and password",
+      "success": "Signed in: {{login}}",
+      "failed": "Sign-in failed: {{error}}"
     }
   },
   "kiro": {

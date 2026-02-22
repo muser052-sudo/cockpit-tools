@@ -523,7 +523,7 @@ export function WindsurfAccountsPage() {
 
   const handlePasswordLogin = async () => {
     const email = passwordEmail.trim();
-    const pwd = passwordPassword.trim();
+    const pwd = passwordPassword;
     if (!email || !pwd) {
       setAddStatus('error');
       setAddMessage(t('windsurf.password.empty', '请输入邮箱和密码'));
@@ -1816,7 +1816,7 @@ export function WindsurfAccountsPage() {
                     className="btn btn-primary btn-full"
                     style={{ marginTop: 12 }}
                     onClick={handlePasswordLogin}
-                    disabled={passwordLoading || !passwordEmail.trim() || !passwordPassword.trim()}
+                    disabled={passwordLoading || !passwordEmail.trim() || passwordPassword.length === 0}
                   >
                     {passwordLoading ? <RefreshCw size={16} className="loading-spinner" /> : <Mail size={16} />}
                     {passwordLoading

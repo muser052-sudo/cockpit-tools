@@ -1281,7 +1281,8 @@
       "description": "点击\"添加账号\"开始管理您的 Windsurf 账号"
     },
     "addModal": {
-      "title": "添加 Windsurf 账号"
+      "title": "添加 Windsurf 账号",
+      "password": "邮箱密码"
     },
     "oauth": {
       "desc": "点击下方按钮，在浏览器中完成 Windsurf 授权登录。"
@@ -1315,7 +1316,17 @@
     },
     "injectToVSCode": "切换到 Windsurf",
     "injectSuccess": "已完成切换，Windsurf 正在启动。",
-    "injectRequireClose": "请先关闭 Windsurf 再进行切换。"
+    "injectRequireClose": "请先关闭 Windsurf 再进行切换。",
+    "password": {
+      "desc": "使用 Windsurf 账号的邮箱和密码登录，自动获取 API Key 和账号信息。",
+      "emailPlaceholder": "邮箱地址",
+      "passwordPlaceholder": "密码",
+      "login": "登录",
+      "logging": "正在登录...",
+      "empty": "请输入邮箱和密码",
+      "success": "登录成功: {{login}}",
+      "failed": "登录失败: {{error}}"
+    }
   },
   "kiro": {
     "account": {

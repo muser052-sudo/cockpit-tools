@@ -1237,7 +1237,8 @@
       "description": "Nhấn \"Thêm tài khoản\" để bắt đầu"
     },
     "addModal": {
-      "title": "Thêm tài khoản Windsurf"
+      "title": "Thêm tài khoản Windsurf",
+      "password": "Email và mật khẩu"
     },
     "oauth": {
       "desc": "Nhấn nút bên dưới và hoàn tất ủy quyền Windsurf trong trình duyệt."
@@ -1271,6 +1272,16 @@
       "inject": "Chuyển đổi một lần nhấp: công cụ này đọc dữ liệu mã hóa cục bộ của Windsurf (DPAPI/Keychain/Secret Service), giải mã phiên xác thực trong state.vscdb, thay thế token Windsurf rồi mã hóa lại — mọi thao tác đều diễn ra cục bộ trên máy của bạn.",
       "reason": "Phạm vi quyền: đọc cơ sở dữ liệu xác thực Windsurf (state.vscdb) và gọi khả năng mã hóa hệ thống (Windows DPAPI / macOS Keychain / Linux Secret Service) để giải mã/ghi lại.",
       "storage": "Phạm vi đọc: chỉ xử lý dữ liệu liên quan đến phiên đăng nhập Windsurf; mọi quy trình đều được thực thi cục bộ."
+    },
+    "password": {
+      "desc": "Đăng nhập bằng email và mật khẩu tài khoản Windsurf để tự động lấy API Key và thông tin tài khoản.",
+      "emailPlaceholder": "Địa chỉ email",
+      "passwordPlaceholder": "Mật khẩu",
+      "login": "Đăng nhập",
+      "logging": "Đang đăng nhập...",
+      "empty": "Vui lòng nhập email và mật khẩu",
+      "success": "Đăng nhập thành công: {{login}}",
+      "failed": "Đăng nhập thất bại: {{error}}"
     }
   },
   "platformLayout": {

@@ -1237,7 +1237,8 @@
       "description": "Fai clic su \"Aggiungi account\" per iniziare"
     },
     "addModal": {
-      "title": "Aggiungi account Windsurf"
+      "title": "Aggiungi account Windsurf",
+      "password": "Email e password"
     },
     "oauth": {
       "desc": "Fai clic qui sotto e completa l'autorizzazione di Windsurf nel browser."
@@ -1271,6 +1272,16 @@
       "inject": "Cambio con un clic: questo strumento legge il materiale di crittografia locale di Windsurf (DPAPI/Keychain/Secret Service), decifra la sessione di autenticazione in state.vscdb, sostituisce il token Windsurf e cifra di nuovo il tutto — interamente in locale sul tuo dispositivo.",
       "reason": "Ambito permessi: leggere il database di autenticazione di Windsurf (state.vscdb) e usare la cifratura di sistema (Windows DPAPI / macOS Keychain / Linux Secret Service) per decifrare e riscrivere.",
       "storage": "Ambito di lettura: vengono trattati solo i dati relativi alle sessioni di accesso Windsurf; tutti i processi vengono eseguiti in locale."
+    },
+    "password": {
+      "desc": "Accedi con email e password del tuo account Windsurf per ottenere automaticamente chiave API e informazioni account.",
+      "emailPlaceholder": "Indirizzo email",
+      "passwordPlaceholder": "Password",
+      "login": "Accedi",
+      "logging": "Accesso in corso...",
+      "empty": "Inserisci email e password",
+      "success": "Accesso riuscito: {{login}}",
+      "failed": "Accesso non riuscito: {{error}}"
     }
   },
   "platformLayout": {
