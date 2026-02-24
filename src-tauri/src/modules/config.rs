@@ -68,6 +68,12 @@ pub struct UserConfig {
     /// 窗口关闭行为
     #[serde(default = "default_close_behavior")]
     pub close_behavior: CloseWindowBehavior,
+    /// 窗口最小化行为（macOS）
+    #[serde(default = "default_minimize_behavior")]
+    pub minimize_behavior: MinimizeWindowBehavior,
+    /// 是否隐藏 Dock 图标（macOS）
+    #[serde(default = "default_hide_dock_icon")]
+    pub hide_dock_icon: bool,
     /// OpenCode 启动路径（为空则使用默认路径）
     #[serde(default = "default_opencode_app_path")]
     pub opencode_app_path: String,
@@ -148,6 +154,22 @@ impl Default for CloseWindowBehavior {
     }
 }
 
+/// 窗口最小化行为（macOS）
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum MinimizeWindowBehavior {
+    /// 程序坞 + 菜单栏（系统默认最小化）
+    DockAndTray,
+    /// 仅菜单栏（最小化时隐藏窗口）
+    TrayOnly,
+}
+
+impl Default for MinimizeWindowBehavior {
+    fn default() -> Self {
+        MinimizeWindowBehavior::DockAndTray
+    }
+}
+
 fn default_ws_enabled() -> bool {
     true
 }
@@ -177,6 +199,12 @@ fn default_kiro_auto_refresh() -> i32 {
 } // 默认 10 分钟
 fn default_close_behavior() -> CloseWindowBehavior {
     CloseWindowBehavior::Ask
+}
+fn default_minimize_behavior() -> MinimizeWindowBehavior {
+    MinimizeWindowBehavior::DockAndTray
+}
+fn default_hide_dock_icon() -> bool {
+    false
 }
 fn default_opencode_app_path() -> String {
     String::new()
@@ -252,6 +280,8 @@ impl Default for UserConfig {
             windsurf_auto_refresh_minutes: default_windsurf_auto_refresh(),
             kiro_auto_refresh_minutes: default_kiro_auto_refresh(),
             close_behavior: default_close_behavior(),
+            minimize_behavior: default_minimize_behavior(),
+            hide_dock_icon: default_hide_dock_icon(),
             opencode_app_path: default_opencode_app_path(),
             antigravity_app_path: default_antigravity_app_path(),
             codex_app_path: default_codex_app_path(),
@@ -347,6 +377,18 @@ pub fn load_user_config() -> Result<UserConfig, String> {
             obj.insert(
                 "kiro_auto_refresh_minutes".to_string(),
                 json!(inherited_refresh),
+            );
+        }
+
+        if !obj.contains_key("hide_dock_icon") {
+            let inherited_hide_dock_icon = obj
+                .get("minimize_behavior")
+                .and_then(|v| v.as_str())
+                .map(|v| v == "tray_only")
+                .unwrap_or_else(default_hide_dock_icon);
+            obj.insert(
+                "hide_dock_icon".to_string(),
+                json!(inherited_hide_dock_icon),
             );
         }
 

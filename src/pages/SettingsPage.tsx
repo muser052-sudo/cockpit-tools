@@ -6,6 +6,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { getVersion } from '@tauri-apps/api/app';
 import { changeLanguage, getCurrentLanguage, normalizeLanguage } from '../i18n';
 import * as accountService from '../services/accountService';
+import { usePlatformRuntimeSupport } from '../hooks/usePlatformRuntimeSupport';
 import { usePlatformLayoutStore } from '../stores/usePlatformLayoutStore';
 import { ALL_PLATFORM_IDS, PlatformId } from '../types/platform';
 import './settings/Settings.css';
@@ -34,6 +35,8 @@ interface GeneralConfig {
   windsurf_auto_refresh_minutes: number;
   kiro_auto_refresh_minutes: number;
   close_behavior: 'ask' | 'minimize' | 'quit';
+  minimize_behavior?: 'dock_and_tray' | 'tray_only';
+  hide_dock_icon?: boolean;
   opencode_app_path: string;
   antigravity_app_path: string;
   codex_app_path: string;
@@ -77,6 +80,7 @@ type UpdateCheckFinishedDetail = {
 
 export function SettingsPage() {
   const { t } = useTranslation();
+  const isMacOS = usePlatformRuntimeSupport('macos-only');
   const [activeTab, setActiveTab] = useState<'general' | 'network' | 'about'>('general');
   const orderedPlatformIds = usePlatformLayoutStore((state) => state.orderedPlatformIds);
   const platformSettingsOrder = useMemo<Record<PlatformId, number>>(() => {
@@ -118,6 +122,7 @@ export function SettingsPage() {
   const [windsurfAutoRefresh, setWindsurfAutoRefresh] = useState('10');
   const [kiroAutoRefresh, setKiroAutoRefresh] = useState('10');
   const [closeBehavior, setCloseBehavior] = useState<'ask' | 'minimize' | 'quit'>('ask');
+  const [hideDockIcon, setHideDockIcon] = useState(false);
   const [opencodeAppPath, setOpencodeAppPath] = useState('');
   const [antigravityAppPath, setAntigravityAppPath] = useState('');
   const [codexAppPath, setCodexAppPath] = useState('');
@@ -284,6 +289,7 @@ export function SettingsPage() {
           windsurfAutoRefreshMinutes: windsurfAutoRefreshNum,
           kiroAutoRefreshMinutes: kiroAutoRefreshNum,
           closeBehavior,
+          hideDockIcon,
           opencodeAppPath,
           antigravityAppPath,
           codexAppPath,
@@ -332,6 +338,7 @@ export function SettingsPage() {
     windsurfAutoRefresh,
     kiroAutoRefresh,
     closeBehavior,
+    hideDockIcon,
     generalLoaded,
     language,
     theme,
@@ -483,6 +490,7 @@ export function SettingsPage() {
       setWindsurfAutoRefresh(String(config.windsurf_auto_refresh_minutes ?? 10));
       setKiroAutoRefresh(String(config.kiro_auto_refresh_minutes ?? 10));
       setCloseBehavior(config.close_behavior || 'ask');
+      setHideDockIcon(Boolean(config.hide_dock_icon));
       setOpencodeAppPath(config.opencode_app_path || '');
       setAntigravityAppPath(config.antigravity_app_path || '');
       setCodexAppPath(config.codex_app_path || '');
@@ -757,6 +765,36 @@ export function SettingsPage() {
                   </select>
                 </div>
               </div>
+
+              {isMacOS && (
+                <div className="settings-row">
+                  <div className="row-label">
+                    <div className="row-title">
+                      {t('settings.general.hideDockIcon', '是否隐藏Dock图标（仅 macOS）')}
+                    </div>
+                    <div className="row-desc">
+                      {t(
+                        'settings.general.hideDockIconDesc',
+                        '独立控制程序坞图标显示状态，不受窗口最小化行为影响'
+                      )}
+                    </div>
+                  </div>
+                  <div className="row-control">
+                    <select
+                      className="settings-select"
+                      value={hideDockIcon ? 'true' : 'false'}
+                      onChange={(e) => setHideDockIcon(e.target.value === 'true')}
+                    >
+                      <option value="false">
+                        {t('settings.general.hideDockIconOff', '否（显示Dock图标）')}
+                      </option>
+                      <option value="true">
+                        {t('settings.general.hideDockIconOn', '是（隐藏Dock图标）')}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div className="settings-row">
                 <div className="row-label">

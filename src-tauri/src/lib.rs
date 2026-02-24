@@ -8,6 +8,8 @@ use modules::config::CloseWindowBehavior;
 use modules::logger;
 use std::sync::OnceLock;
 #[cfg(target_os = "macos")]
+use tauri::ActivationPolicy;
+#[cfg(target_os = "macos")]
 use tauri::RunEvent;
 use tauri::WindowEvent;
 use tauri::{Emitter, Manager};
@@ -19,6 +21,34 @@ static APP_HANDLE: OnceLock<tauri::AppHandle> = OnceLock::new();
 /// 获取全局 AppHandle
 pub fn get_app_handle() -> Option<&'static tauri::AppHandle> {
     APP_HANDLE.get()
+}
+
+#[cfg(target_os = "macos")]
+fn apply_macos_activation_policy(app: &tauri::AppHandle) {
+    let config = modules::config::get_user_config();
+    let (policy, dock_visible, policy_label) = if config.hide_dock_icon {
+        (ActivationPolicy::Accessory, false, "hidden")
+    } else {
+        (ActivationPolicy::Regular, true, "visible")
+    };
+
+    if let Err(err) = app.set_activation_policy(policy) {
+        logger::log_warn(&format!("[Window] 设置 macOS 激活策略失败: {}", err));
+        return;
+    }
+
+    if let Err(err) = app.set_dock_visibility(dock_visible) {
+        logger::log_warn(&format!("[Window] 设置 macOS Dock 可见性失败: {}", err));
+    }
+
+    if dock_visible {
+        let _ = app.show();
+        if let Some(window) = app.get_webview_window("main") {
+            let _ = window.show();
+        }
+    }
+
+    info!("[Window] 已应用 macOS Dock 图标策略: {}", policy_label);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -70,6 +100,9 @@ pub fn run() {
                 modules::websocket::start_server().await;
             });
 
+            #[cfg(target_os = "macos")]
+            apply_macos_activation_policy(&app.handle());
+
             // 初始化系统托盘
             if let Err(e) = modules::tray::create_tray(app.handle()) {
                 logger::log_error(&format!("[Tray] 创建系统托盘失败: {}", e));
@@ -77,8 +110,8 @@ pub fn run() {
 
             Ok(())
         })
-        .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
+        .on_window_event(|window, event| match event {
+            WindowEvent::CloseRequested { api, .. } => {
                 let config = modules::config::get_user_config();
 
                 match config.close_behavior {
@@ -100,6 +133,7 @@ pub fn run() {
                     }
                 }
             }
+            _ => {}
         })
         .invoke_handler(tauri::generate_handler![
             // Account Commands

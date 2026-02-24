@@ -7,6 +7,22 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [0.8.13] - 2026-02-24
+
+### Added
+- **Independent Dock icon visibility setting (macOS only)**: Added a `Hide Dock icon` option in Settings > General so Dock icon visibility can be controlled separately from close/minimize behavior.
+- **Localization coverage for macOS window-behavior options**: Added translation keys for `minimizeBehavior` and `hideDockIcon` settings across supported locales.
+
+### Changed
+- **macOS window-behavior config model split**: Added persistent `minimize_behavior` and `hide_dock_icon` fields in local config and wired them through Tauri system commands and WebSocket config updates; startup now applies the Dock activation policy from saved config.
+- **Tag edit modal visual polish (especially dark theme)**: Improved dark-theme background, borders, chip/remove-button styling, and input/placeholder/disabled states.
+- **OAuth auth URL parameter cleanup**: Removed `include_granted_scopes=true` from generated OAuth authorization URLs.
+
+### Fixed
+- **macOS Dock visibility now updates immediately after saving settings**: Changing the Dock icon visibility option now reapplies the macOS activation policy without requiring an app restart.
+- **Language-switch config saves preserve new macOS window fields**: WebSocket language updates now keep `minimize_behavior` and `hide_dock_icon` when writing config, avoiding accidental resets.
+
+---
 ## [0.8.12] - 2026-02-22
 
 ### Added

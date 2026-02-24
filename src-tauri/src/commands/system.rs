@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use tauri::Manager;
 
 use crate::modules;
-use crate::modules::config::{self, CloseWindowBehavior, UserConfig, DEFAULT_WS_PORT};
+use crate::modules::config::{
+    self, CloseWindowBehavior, MinimizeWindowBehavior, UserConfig, DEFAULT_WS_PORT,
+};
 use crate::modules::websocket;
 
 /// 网络服务配置（前端使用）
@@ -37,6 +39,10 @@ pub struct GeneralConfig {
     pub kiro_auto_refresh_minutes: i32,
     /// 窗口关闭行为: "ask", "minimize", "quit"
     pub close_behavior: String,
+    /// 窗口最小化行为（macOS）: "dock_and_tray", "tray_only"
+    pub minimize_behavior: String,
+    /// 是否隐藏 Dock 图标（macOS）
+    pub hide_dock_icon: bool,
     /// OpenCode 启动路径（为空则使用默认路径）
     pub opencode_app_path: String,
     /// Antigravity 启动路径（为空则使用默认路径）
@@ -160,6 +166,8 @@ pub fn save_network_config(ws_enabled: bool, ws_port: u16) -> Result<bool, Strin
         windsurf_auto_refresh_minutes: current.windsurf_auto_refresh_minutes,
         kiro_auto_refresh_minutes: current.kiro_auto_refresh_minutes,
         close_behavior: current.close_behavior,
+        minimize_behavior: current.minimize_behavior,
+        hide_dock_icon: current.hide_dock_icon,
         opencode_app_path: current.opencode_app_path,
         antigravity_app_path: current.antigravity_app_path,
         codex_app_path: current.codex_app_path,
@@ -197,6 +205,10 @@ pub fn get_general_config() -> Result<GeneralConfig, String> {
         CloseWindowBehavior::Minimize => "minimize",
         CloseWindowBehavior::Quit => "quit",
     };
+    let minimize_behavior_str = match user_config.minimize_behavior {
+        MinimizeWindowBehavior::DockAndTray => "dock_and_tray",
+        MinimizeWindowBehavior::TrayOnly => "tray_only",
+    };
 
     Ok(GeneralConfig {
         language: user_config.language,
@@ -207,6 +219,8 @@ pub fn get_general_config() -> Result<GeneralConfig, String> {
         windsurf_auto_refresh_minutes: user_config.windsurf_auto_refresh_minutes,
         kiro_auto_refresh_minutes: user_config.kiro_auto_refresh_minutes,
         close_behavior: close_behavior_str.to_string(),
+        minimize_behavior: minimize_behavior_str.to_string(),
+        hide_dock_icon: user_config.hide_dock_icon,
         opencode_app_path: user_config.opencode_app_path,
         antigravity_app_path: user_config.antigravity_app_path,
         codex_app_path: user_config.codex_app_path,
@@ -242,6 +256,8 @@ pub fn save_general_config(
     windsurf_auto_refresh_minutes: Option<i32>,
     kiro_auto_refresh_minutes: Option<i32>,
     close_behavior: String,
+    minimize_behavior: Option<String>,
+    hide_dock_icon: Option<bool>,
     opencode_app_path: String,
     antigravity_app_path: String,
     codex_app_path: String,
@@ -285,6 +301,13 @@ pub fn save_general_config(
         "quit" => CloseWindowBehavior::Quit,
         _ => CloseWindowBehavior::Ask,
     };
+    let minimize_behavior_enum = match minimize_behavior.as_deref() {
+        Some("dock_and_tray") => MinimizeWindowBehavior::DockAndTray,
+        Some("tray_only") => MinimizeWindowBehavior::TrayOnly,
+        Some(_) | None => current.minimize_behavior.clone(),
+    };
+    let hide_dock_icon_value = hide_dock_icon.unwrap_or(current.hide_dock_icon);
+    let hide_dock_icon_changed = current.hide_dock_icon != hide_dock_icon_value;
 
     let new_config = UserConfig {
         // 保留网络设置不变
@@ -302,6 +325,8 @@ pub fn save_general_config(
         kiro_auto_refresh_minutes: kiro_auto_refresh_minutes
             .unwrap_or(current.kiro_auto_refresh_minutes),
         close_behavior: close_behavior_enum,
+        minimize_behavior: minimize_behavior_enum,
+        hide_dock_icon: hide_dock_icon_value,
         opencode_app_path: normalized_opencode_path,
         antigravity_app_path: normalized_antigravity_path,
         codex_app_path: normalized_codex_path,
@@ -333,6 +358,11 @@ pub fn save_general_config(
     };
 
     config::save_user_config(&new_config)?;
+
+    #[cfg(target_os = "macos")]
+    if hide_dock_icon_changed {
+        crate::apply_macos_activation_policy(&app);
+    }
 
     if language_changed {
         // 广播语言变更（如果有客户端连接，会通过 WebSocket 发送）

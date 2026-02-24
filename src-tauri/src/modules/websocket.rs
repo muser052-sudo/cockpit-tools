@@ -767,6 +767,8 @@ fn handle_set_language(language: &str, source: Option<&str>) -> Result<String, S
         windsurf_auto_refresh_minutes: current.windsurf_auto_refresh_minutes,
         kiro_auto_refresh_minutes: current.kiro_auto_refresh_minutes,
         close_behavior: current.close_behavior,
+        minimize_behavior: current.minimize_behavior,
+        hide_dock_icon: current.hide_dock_icon,
         opencode_app_path: current.opencode_app_path,
         antigravity_app_path: current.antigravity_app_path,
         codex_app_path: current.codex_app_path,

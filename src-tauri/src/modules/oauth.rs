@@ -62,7 +62,6 @@ pub fn get_auth_url(redirect_uri: &str, state: Option<&str>) -> String {
         ("scope", &scopes),
         ("access_type", "offline"),
         ("prompt", "consent"),
-        ("include_granted_scopes", "true"),
     ];
 
     if let Some(state) = state.filter(|value| !value.trim().is_empty()) {

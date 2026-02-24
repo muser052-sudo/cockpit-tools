@@ -7,6 +7,22 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
 ---
+## [0.8.13] - 2026-02-24
+
+### 新增
+- **macOS 独立 Dock 图标显示开关**：在“设置 > 通用”中新增“是否隐藏 Dock 图标（仅 macOS）”选项，可与关闭/最小化行为独立控制。
+- **macOS 窗口行为设置多语言文案补齐**：为 `minimizeBehavior`、`hideDockIcon` 相关选项补充多语言键。
+
+### 变更
+- **macOS 窗口行为配置模型拆分**：本地配置新增持久化字段 `minimize_behavior`、`hide_dock_icon`，并接入 Tauri 系统命令与 WebSocket 配置写入；应用启动时会按已保存配置应用 Dock 激活策略。
+- **标签编辑弹窗样式优化（重点增强暗色主题）**：优化暗色背景、边框、标签样式、删除按钮，以及输入框/占位符/禁用态表现。
+- **OAuth 授权 URL 参数精简**：生成授权链接时移除 `include_granted_scopes=true` 参数。
+
+### 修复
+- **macOS Dock 图标显示设置保存后立即生效**：修改 Dock 图标显示选项后会立即重新应用 macOS 激活策略，无需重启应用。
+- **语言切换写配置不再丢失 macOS 新字段**：WebSocket 语言切换写回配置时会保留 `minimize_behavior`、`hide_dock_icon`，避免被意外重置。
+
+---
 ## [0.8.12] - 2026-02-22
 
 ### 新增
