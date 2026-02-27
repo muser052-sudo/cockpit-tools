@@ -502,6 +502,94 @@ fn official_ls_sessions(
     SESSIONS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+#[cfg(target_os = "windows")]
+const APP_PATH_NOT_FOUND_PREFIX: &str = "APP_PATH_NOT_FOUND:";
+
+#[cfg(target_os = "windows")]
+fn app_path_missing_error(app: &str) -> String {
+    format!("{}{}", APP_PATH_NOT_FOUND_PREFIX, app)
+}
+
+#[cfg(target_os = "windows")]
+fn resolve_windows_antigravity_root(path_str: &str) -> Option<std::path::PathBuf> {
+    let raw = path_str.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    let path = std::path::PathBuf::from(raw);
+    if !path.exists() {
+        return None;
+    }
+    if path.is_file() {
+        return path.parent().map(std::path::Path::to_path_buf);
+    }
+    if path.is_dir() {
+        return Some(path);
+    }
+    None
+}
+
+#[cfg(target_os = "windows")]
+fn find_windows_official_ls_binary_under(root: &std::path::Path) -> Option<String> {
+    let preferred = [
+        root.join("resources")
+            .join("app")
+            .join("extensions")
+            .join("antigravity")
+            .join("bin")
+            .join("language_server_windows_x64.exe"),
+        root.join("resources")
+            .join("app")
+            .join("extensions")
+            .join("antigravity")
+            .join("bin")
+            .join("language_server_windows_arm64.exe"),
+        root.join("resources")
+            .join("app")
+            .join("extensions")
+            .join("antigravity")
+            .join("bin")
+            .join("language_server_windows.exe"),
+    ];
+    for candidate in preferred {
+        if candidate.is_file() {
+            return Some(candidate.to_string_lossy().to_string());
+        }
+    }
+
+    let bin_dir = root
+        .join("resources")
+        .join("app")
+        .join("extensions")
+        .join("antigravity")
+        .join("bin");
+    let entries = std::fs::read_dir(bin_dir).ok()?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(name) = path.file_name().and_then(|v| v.to_str()) else {
+            continue;
+        };
+        let lower = name.to_ascii_lowercase();
+        if lower.starts_with("language_server") && lower.ends_with(".exe") {
+            return Some(path.to_string_lossy().to_string());
+        }
+    }
+
+    None
+}
+
+#[cfg(target_os = "windows")]
+fn resolve_windows_official_ls_binary_from_config() -> Result<String, String> {
+    let user_config = crate::modules::config::get_user_config();
+    let antigravity_path = user_config.antigravity_app_path.trim();
+    let root = resolve_windows_antigravity_root(antigravity_path)
+        .ok_or_else(|| app_path_missing_error("antigravity"))?;
+    find_windows_official_ls_binary_under(&root).ok_or_else(|| app_path_missing_error("antigravity"))
+}
+
 fn official_ls_binary_path() -> Result<String, String> {
     if let Ok(v) = std::env::var("AG_WAKEUP_OFFICIAL_LS_BINARY_PATH") {
         let trimmed = v.trim();
@@ -518,7 +606,16 @@ fn official_ls_binary_path() -> Result<String, String> {
         }
     }
 
+    #[cfg(target_os = "windows")]
+    {
+        return resolve_windows_official_ls_binary_from_config();
+    }
+
     Err("未找到官方 Language Server 二进制（可通过 AG_WAKEUP_OFFICIAL_LS_BINARY_PATH 指定）".to_string())
+}
+
+pub fn ensure_official_ls_binary_ready() -> Result<String, String> {
+    official_ls_binary_path()
 }
 
 fn official_ls_cloud_code_endpoint(token: &crate::models::token::TokenData) -> &'static str {

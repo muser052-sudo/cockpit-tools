@@ -467,6 +467,20 @@ fn resolve_wakeup_transport_mode() -> WakeupTransportMode {
     }
 }
 
+pub fn wakeup_requires_official_ls() -> bool {
+    matches!(
+        resolve_wakeup_transport_mode(),
+        WakeupTransportMode::ClientGateway
+    )
+}
+
+pub fn ensure_wakeup_runtime_ready() -> Result<Option<String>, String> {
+    if !wakeup_requires_official_ls() {
+        return Ok(None);
+    }
+    crate::modules::wakeup_gateway::ensure_official_ls_binary_ready().map(Some)
+}
+
 fn gateway_start_bind_lock() -> &'static tokio::sync::Mutex<()> {
     static LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
@@ -1291,6 +1305,9 @@ pub async fn trigger_wakeup(
     prompt: &str,
     max_output_tokens: u32,
 ) -> Result<WakeupResponse, String> {
+    // 执行前检查：唤醒链路依赖官方 LS 二进制，未就绪时不再发起网络请求。
+    let _ = ensure_wakeup_runtime_ready()?;
+
     match resolve_wakeup_transport_mode() {
         WakeupTransportMode::LegacyCloudCode => {
             crate::modules::logger::log_info("[Wakeup] 通道=legacy_cloudcode");

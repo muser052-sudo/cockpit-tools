@@ -22,6 +22,7 @@ const WAKEUP_FORCE_DISABLE_MIGRATION_KEY = 'agtools.wakeup.migration.force_disab
 const LEGACY_SCHEDULE_KEY = 'agtools.wakeup.schedule';
 const MAX_HISTORY_ITEMS = 100;
 const WAKEUP_ERROR_JSON_PREFIX = 'AG_WAKEUP_ERROR_JSON:';
+const APP_PATH_NOT_FOUND_PREFIX = 'APP_PATH_NOT_FOUND:';
 
 const BASE_TIME_OPTIONS = [
   '06:00',
@@ -247,6 +248,9 @@ const formatErrorMessage = (error: unknown) => {
     return String(error);
   }
 };
+
+const isAntigravityPathMissingError = (message: string) =>
+  message.startsWith(`${APP_PATH_NOT_FOUND_PREFIX}antigravity`);
 
 const formatWakeupMessage = (
   modelId: string,
@@ -737,6 +741,26 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     }
   };
 
+  const ensureWakeupRuntimeReady = async (): Promise<boolean> => {
+    try {
+      await invoke('wakeup_ensure_runtime_ready');
+      return true;
+    } catch (error) {
+      const message = formatErrorMessage(error);
+      if (isAntigravityPathMissingError(message)) {
+        window.dispatchEvent(
+          new CustomEvent('app-path-missing', {
+            detail: { app: 'antigravity', retry: { kind: 'default' } },
+          }),
+        );
+        setNotice({ text: t('appPath.modal.desc', { app: 'Antigravity' }), tone: 'warning' });
+        return false;
+      }
+      setNotice({ text: message, tone: 'error' });
+      return false;
+    }
+  };
+
   const buildWakeupDebugText = (payload: WakeupStructuredErrorPayload, record: WakeupHistoryRecord) => {
     const lines: string[] = [];
     if (payload.trajectoryId) lines.push(`Trajectory ID: ${payload.trajectoryId}`);
@@ -838,6 +862,11 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     const selectedAccounts = resolveAccounts(testSelectedAccounts);
     if (selectedAccounts.length === 0) {
       setNotice({ text: t('wakeup.notice.testMissingAccount'), tone: 'warning' });
+      return;
+    }
+
+    const runtimeReady = await ensureWakeupRuntimeReady();
+    if (!runtimeReady) {
       return;
     }
 

@@ -80,12 +80,26 @@ interface WakeupVerificationBatchResult {
 }
 
 const DEFAULT_PROMPT = 'hi';
+const APP_PATH_NOT_FOUND_PREFIX = 'APP_PATH_NOT_FOUND:';
 const STATUS_IDLE = 'idle';
 const STATUS_RUNNING = 'running';
 const STATUS_SUCCESS = 'success';
 const STATUS_VERIFICATION_REQUIRED = 'verification_required';
 const STATUS_AUTH_EXPIRED = 'auth_expired';
 const STATUS_FAILED = 'failed';
+
+const formatErrorMessage = (error: unknown) => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+};
+
+const isAntigravityPathMissingError = (message: string) =>
+  message.startsWith(`${APP_PATH_NOT_FOUND_PREFIX}antigravity`);
 
 function normalizeStatus(value?: string | null): string {
   const status = (value || '').trim().toLowerCase();
@@ -582,6 +596,26 @@ export function WakeupVerificationPage({ onNavigate }: WakeupVerificationPagePro
     }
   };
 
+  const ensureWakeupRuntimeReady = useCallback(async (): Promise<boolean> => {
+    try {
+      await invoke('wakeup_ensure_runtime_ready');
+      return true;
+    } catch (error) {
+      const message = formatErrorMessage(error);
+      if (isAntigravityPathMissingError(message)) {
+        window.dispatchEvent(
+          new CustomEvent('app-path-missing', {
+            detail: { app: 'antigravity', retry: { kind: 'default' } },
+          }),
+        );
+        setNotice({ text: t('appPath.modal.desc', { app: 'Antigravity' }), tone: 'warning' });
+        return false;
+      }
+      setNotice({ text: message, tone: 'error' });
+      return false;
+    }
+  }, [t]);
+
   const startBatchVerification = async () => {
     if (running) return;
     if (!selectedModel) {
@@ -590,6 +624,10 @@ export function WakeupVerificationPage({ onNavigate }: WakeupVerificationPagePro
     }
     if (selectedAccounts.length === 0) {
       setNotice({ text: t('wakeup.notice.testMissingAccount'), tone: 'warning' });
+      return;
+    }
+    const runtimeReady = await ensureWakeupRuntimeReady();
+    if (!runtimeReady) {
       return;
     }
 

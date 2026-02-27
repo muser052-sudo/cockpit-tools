@@ -202,6 +202,7 @@ pub fn run() {
             commands::system::open_folder,
             commands::system::delete_corrupted_file,
             // Wakeup Commands
+            commands::wakeup::wakeup_ensure_runtime_ready,
             commands::wakeup::trigger_wakeup,
             commands::wakeup::fetch_available_models,
             commands::wakeup::wakeup_sync_state,

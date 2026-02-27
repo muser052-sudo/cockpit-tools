@@ -2,6 +2,11 @@ use crate::modules;
 use tauri::AppHandle;
 
 #[tauri::command]
+pub fn wakeup_ensure_runtime_ready() -> Result<Option<String>, String> {
+    modules::wakeup::ensure_wakeup_runtime_ready()
+}
+
+#[tauri::command]
 pub async fn trigger_wakeup(
     account_id: String,
     model: String,
