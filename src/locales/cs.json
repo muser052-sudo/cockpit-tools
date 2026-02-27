@@ -615,6 +615,21 @@
     "historyEmpty": "Zatím žádná historie",
     "historyClear": "Vymazat historii",
     "historyPromptLabel": "Výzva: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Vyžadováno ověření",
+      "quotaTitle": "Limit kvóty",
+      "temporaryTitle": "Dočasná chyba",
+      "genericTitle": "Chyba provedení",
+      "validationUrlLabel": "Ověřovací URL (lze kopírovat)",
+      "completeVerification": "Dokončit ověření",
+      "copyValidationUrl": "Kopírovat ověřovací URL",
+      "copyDebugInfo": "Kopírovat ladicí informace",
+      "errorCode": "Kód chyby: {{code}}",
+      "trajectoryId": "ID trajektorie: {{id}}",
+      "copySuccess": "Zkopírováno",
+      "copyFailed": "Kopírování se nezdařilo",
+      "openFailed": "Nepodařilo se otevřít odkaz. Zkusili jsme ho otevřít v prohlížeči."
+    },
     "format": {
       "noReply": "(Bez odpovědi)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "Další {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Zapnout probuzení",
-      "enableDesc": "Zapnutím probuzení se vypne probouzení v pluginu. Pokračovat?",
       "deleteConfirm": "Smazat úlohu \"{{name}}\"?",
       "testTitle": "Okamžitý test",
       "historyTitle": "Historie spuštění",
       "taskTitleEdit": "Upravit úlohu probuzení",
-      "taskTitleNew": "Nová úloha probuzení"
+      "taskTitleNew": "Nová úloha probuzení",
+      "riskWarning": "⚠️ Upozornění na riziko\nKvůli nedávnému zpřísnění kontrol rizik ze strany Google může používání funkce probuzení zvýšit pravděpodobnost spuštění rizikových kontrol účtu (včetně, ale nejen, dodatečného ověření nebo dočasných omezení).\nPoužívejte ji prosím opatrně podle stavu účtu a riziko posuďte sami.\n\nPokračovat?"
     },
     "form": {
       "taskName": "Název úlohy",
@@ -748,6 +762,27 @@
       "accountsHint": "Vyberte více účtů pro test.",
       "start": "Spustit test",
       "testing": "Testování..."
+    },
+    "verification": {
+      "title": "Vyžadováno ověření",
+      "columns": {
+        "verifiedAt": "Čas ověření"
+      },
+      "filters": {
+        "all": "Vše"
+      },
+      "actions": {
+        "selectAllAccounts": "Vybrat vše",
+        "clearSelectedAccounts": "Zrušit výběr"
+      },
+      "deleteConfirm": "Opravdu chcete smazat?",
+      "runHint": {
+        "title": "Poznámky k ověření",
+        "line1": "„Ověřit nyní“ odešle minimální chat požadavek simulací klienta Antigravity přes lokální bránu a oficiální protokol Language Server.",
+        "line2": "Tento proces spotřebuje malé množství tokenů (obvykle jeden krátký dialog). Skutečná spotřeba závisí na modelu a zásadách účtu.",
+        "line3": "Tato akce nemění nastavení úloh probuzení. Pouze ověří dostupnost účtu a zapíše záznam ověření.",
+        "line4": "Pokud se vrátí 403, je nutné nejdříve dokončit ověření účtu. Výsledek nabídne ověřovací URL a rychlé akce."
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "Týdenní kvóta",
       "hourly": "5hodinová kvóta",
       "weeklyReset": "Čas týdenního resetu",
-      "hourlyReset": "Čas resetu 5 hodin"
+      "hourlyReset": "Čas resetu 5 hodin",
+      "premium": "Podle využití prémiových požadavků"
     },
     "columns": {
       "hourly": "Kvóta 5h",
-      "weekly": "Kvóta týdn."
+      "weekly": "Kvóta týdn.",
+      "premium": "Prémiové požadavky"
     },
     "flowNotice": {
       "title": "Průvodce účty GitHub Copilot (kliknutím rozbalit/sbalit)",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "Přepnout do VS Code",
     "injectSuccess": "Token byl úspěšně vložen do VS Code. VS Code se spouští.",
-    "injectRequireClose": "Před injektováním prosím zavřete VS Code."
+    "injectRequireClose": "Před injektováním prosím zavřete VS Code.",
+    "usage": {
+      "included": "Zahrnuto"
+    }
   },
   "quickSettings": {
     "antigravity": {

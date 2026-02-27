@@ -79,7 +79,7 @@ export async function updateGroupOrder(order: string[]): Promise<void> {
 }
 
 /**
- * 获取显示用分组列表（最多4个）
+ * 获取显示用分组列表（最多3个）
  */
 export async function getDisplayGroups(): Promise<DisplayGroup[]> {
   return invoke<DisplayGroup[]>('get_display_groups');

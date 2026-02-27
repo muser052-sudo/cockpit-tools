@@ -615,6 +615,21 @@
     "historyEmpty": "Brak historii",
     "historyClear": "Wyczyść historię",
     "historyPromptLabel": "Prompt: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Wymagana weryfikacja",
+      "quotaTitle": "Limit przydziału",
+      "temporaryTitle": "Błąd tymczasowy",
+      "genericTitle": "Błąd wykonania",
+      "validationUrlLabel": "Adres URL weryfikacji (do skopiowania)",
+      "completeVerification": "Zakończ weryfikację",
+      "copyValidationUrl": "Kopiuj adres URL weryfikacji",
+      "copyDebugInfo": "Kopiuj informacje debugowania",
+      "errorCode": "Kod błędu: {{code}}",
+      "trajectoryId": "ID trajektorii: {{id}}",
+      "copySuccess": "Skopiowano",
+      "copyFailed": "Kopiowanie nie powiodło się",
+      "openFailed": "Nie udało się otworzyć linku. Podjęto próbę otwarcia w przeglądarce."
+    },
     "format": {
       "noReply": "(Brak odpowiedzi)",
       "durationMs": "__MASKA_0__ms",
@@ -685,13 +700,12 @@
       "nextRun": "Następnie {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Włącz wybudzanie",
-      "enableDesc": "Włączenie wybudzania wyłączy funkcję wybudzania w wtyczce. Kontynuować?",
       "deleteConfirm": "Usunąć zadanie \"{{name}}\"?",
       "testTitle": "Test natychmiastowy",
       "historyTitle": "Historia wywołań",
       "taskTitleEdit": "Edytuj zadanie wybudzania",
-      "taskTitleNew": "Nowe zadanie wybudzania"
+      "taskTitleNew": "Nowe zadanie wybudzania",
+      "riskWarning": "⚠️ Ostrzeżenie o ryzyku\nZe względu na ostatnie zaostrzenie mechanizmów kontroli ryzyka Google korzystanie z funkcji wybudzania może zwiększyć prawdopodobieństwo uruchomienia kontroli ryzyka konta (w tym m.in. dodatkowej weryfikacji lub tymczasowych ograniczeń).\nKorzystaj ostrożnie, biorąc pod uwagę stan konta, i samodzielnie oceń ryzyko.\n\nKontynuować?"
     },
     "form": {
       "taskName": "Nazwa zadania",
@@ -748,6 +762,27 @@
       "accountsHint": "Wybierz kilka kont do testu.",
       "start": "Rozpocznij test",
       "testing": "Testowanie..."
+    },
+    "verification": {
+      "title": "Wymagana weryfikacja",
+      "columns": {
+        "verifiedAt": "Czas weryfikacji"
+      },
+      "filters": {
+        "all": "Wszystkie"
+      },
+      "actions": {
+        "selectAllAccounts": "Zaznacz wszystko",
+        "clearSelectedAccounts": "Wyczyść zaznaczenie"
+      },
+      "deleteConfirm": "Czy potwierdzasz usunięcie?",
+      "runHint": {
+        "title": "Uwagi dotyczące weryfikacji",
+        "line1": "„Zweryfikuj teraz” wysyła minimalne żądanie czatu, symulując klienta Antigravity przez lokalną bramę i oficjalny protokół Language Server.",
+        "line2": "Operacja zużywa niewielką liczbę tokenów (zwykle jedną krótką rozmowę). Rzeczywiste zużycie zależy od modelu i polityki konta.",
+        "line3": "Ta operacja nie zmienia konfiguracji zadań wybudzania. Służy jedynie do sprawdzenia dostępności konta i zapisania historii weryfikacji.",
+        "line4": "Jeśli zwrócony zostanie kod 403, najpierw należy ukończyć weryfikację konta. Wynik zawiera adres weryfikacyjny i szybkie akcje."
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "Limit tygodniowy",
       "hourly": "Limit 5-godzinny",
       "weeklyReset": "Czas tygodniowego resetu",
-      "hourlyReset": "Czas resetu 5-godzinnego"
+      "hourlyReset": "Czas resetu 5-godzinnego",
+      "premium": "Według użycia żądań premium"
     },
     "columns": {
       "hourly": "Limit 5h",
-      "weekly": "Limit tyg."
+      "weekly": "Limit tyg.",
+      "premium": "Żądania premium"
     },
     "flowNotice": {
       "title": "Przewodnik po kontach GitHub Copilot (kliknij, aby rozwinąć/zwinąć)",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "Przełącz do VS Code",
     "injectSuccess": "Token został pomyślnie wstrzyknięty do VS Code. VS Code jest uruchamiany.",
-    "injectRequireClose": "Przed wstrzyknięciem zamknij VS Code."
+    "injectRequireClose": "Przed wstrzyknięciem zamknij VS Code.",
+    "usage": {
+      "included": "Wliczone"
+    }
   },
   "quickSettings": {
     "antigravity": {

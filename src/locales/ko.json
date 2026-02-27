@@ -615,6 +615,21 @@
     "historyEmpty": "기록이 없습니다",
     "historyClear": "기록 삭제",
     "historyPromptLabel": "프롬프트: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "인증 필요",
+      "quotaTitle": "할당량 제한",
+      "temporaryTitle": "일시적 오류",
+      "genericTitle": "실행 오류",
+      "validationUrlLabel": "인증 URL(복사 가능)",
+      "completeVerification": "인증 완료",
+      "copyValidationUrl": "인증 URL 복사",
+      "copyDebugInfo": "디버그 정보 복사",
+      "errorCode": "오류 코드: {{code}}",
+      "trajectoryId": "트래젝터리 ID: {{id}}",
+      "copySuccess": "복사됨",
+      "copyFailed": "복사 실패",
+      "openFailed": "링크를 열지 못했습니다. 브라우저에서 열기를 시도했습니다."
+    },
     "format": {
       "noReply": "(응답 없음)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "다음 {{time}}"
     },
     "dialogs": {
-      "enableTitle": "깨우기 활성화",
-      "enableDesc": "깨우기를 활성화하면 플러그인 깨우기 기능이 꺼집니다. 계속하시겠습니까?",
       "deleteConfirm": "작업 \"{{name}}\"를 삭제할까요?",
       "testTitle": "즉시 테스트",
       "historyTitle": "트리거 기록",
       "taskTitleEdit": "깨우기 작업 편집",
-      "taskTitleNew": "새 깨우기 작업"
+      "taskTitleNew": "새 깨우기 작업",
+      "riskWarning": "⚠️ 위험 경고\n최근 Google 리스크 제어 강화로 인해 깨우기 기능을 사용하면 계정 리스크 제어(추가 인증, 임시 제한 등)가 발생할 가능성이 높아질 수 있습니다.\n계정 상태를 고려해 신중히 사용하고, 위험은 직접 판단해 주세요.\n\n계속하시겠습니까?"
     },
     "form": {
       "taskName": "작업 이름",
@@ -748,6 +762,27 @@
       "accountsHint": "테스트에 사용할 계정을 여러 개 선택하세요.",
       "start": "테스트 시작",
       "testing": "테스트 중..."
+    },
+    "verification": {
+      "title": "인증 필요",
+      "columns": {
+        "verifiedAt": "검증 시간"
+      },
+      "filters": {
+        "all": "전체"
+      },
+      "actions": {
+        "selectAllAccounts": "전체 선택",
+        "clearSelectedAccounts": "선택 해제"
+      },
+      "deleteConfirm": "삭제를 확인하시겠습니까?",
+      "runHint": {
+        "title": "검증 안내",
+        "line1": "지금 검증은 로컬 게이트웨이와 공식 Language Server 프로토콜로 Antigravity 클라이언트를 모사해 최소 대화 요청을 전송합니다.",
+        "line2": "이 과정에서 소량의 토큰(일반적으로 짧은 대화 1회)이 소모되며, 실제 소모량은 모델과 계정 정책에 따라 달라집니다.",
+        "line3": "이 작업은 깨우기 작업 설정을 변경하지 않으며, 계정 가용성 확인 및 검증 기록 저장만 수행합니다.",
+        "line4": "403이 반환되면 먼저 계정 검증을 완료해야 하며, 결과에 검증 주소와 빠른 작업이 제공됩니다."
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "주간 할당량",
       "hourly": "5시간 할당량",
       "weeklyReset": "주간 할당량 재설정 시간",
-      "hourlyReset": "5시간 할당량 재설정 시간"
+      "hourlyReset": "5시간 할당량 재설정 시간",
+      "premium": "프리미엄 요청 사용량순"
     },
     "columns": {
       "hourly": "5시간 쿼터",
-      "weekly": "주간 쿼터"
+      "weekly": "주간 쿼터",
+      "premium": "프리미엄 요청"
     },
     "flowNotice": {
       "title": "GitHub Copilot 계정 안내(클릭하여 펼치기/접기)",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "VS Code로 전환",
     "injectSuccess": "토큰을 VS Code에 성공적으로 주입했습니다. VS Code를 실행하는 중입니다.",
-    "injectRequireClose": "주입하기 전에 VS Code를 종료해 주세요."
+    "injectRequireClose": "주입하기 전에 VS Code를 종료해 주세요.",
+    "usage": {
+      "included": "포함됨"
+    }
   },
   "quickSettings": {
     "antigravity": {

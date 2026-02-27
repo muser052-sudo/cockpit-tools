@@ -615,6 +615,21 @@
     "historyEmpty": "履歴はありません",
     "historyClear": "履歴をクリア",
     "historyPromptLabel": "ウェイクアップ語：{{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "認証が必要です",
+      "quotaTitle": "クォータ制限",
+      "temporaryTitle": "一時的なエラー",
+      "genericTitle": "実行エラー",
+      "validationUrlLabel": "認証URL（コピー可能）",
+      "completeVerification": "認証を完了",
+      "copyValidationUrl": "認証URLをコピー",
+      "copyDebugInfo": "デバッグ情報をコピー",
+      "errorCode": "エラーコード: {{code}}",
+      "trajectoryId": "トラジェクトリID: {{id}}",
+      "copySuccess": "コピーしました",
+      "copyFailed": "コピーに失敗しました",
+      "openFailed": "リンクを開けませんでした。ブラウザでの起動を試みました。"
+    },
     "format": {
       "noReply": "(返信なし)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "次回 {{time}}"
     },
     "dialogs": {
-      "enableTitle": "ウェイクアップを有効化",
-      "enableDesc": "ウェイクアップを有効にするとプラグイン側のウェイクアップ機能が無効になります。続行しますか？",
       "deleteConfirm": "タスク「{{name}}」を削除しますか？",
       "testTitle": "すぐにテスト",
       "historyTitle": "トリガー履歴",
       "taskTitleEdit": "ウェイクアップタスクを編集",
-      "taskTitleNew": "ウェイクアップタスクを新規作成"
+      "taskTitleNew": "ウェイクアップタスクを新規作成",
+      "riskWarning": "⚠️ リスク警告\n最近の Google のリスク制御強化により、ウェイクアップ機能の利用はアカウントのリスク判定（追加認証・一時制限など）にかかる可能性を高める場合があります。\nアカウントの状況に応じて慎重に利用し、リスクはご自身で判断してください。\n\n続行しますか？"
     },
     "form": {
       "taskName": "タスク名",
@@ -748,6 +762,27 @@
       "accountsHint": "複数のアカウントでテストできます。",
       "start": "テスト開始",
       "testing": "テスト中..."
+    },
+    "verification": {
+      "title": "認証が必要です",
+      "columns": {
+        "verifiedAt": "検証時間"
+      },
+      "filters": {
+        "all": "すべて"
+      },
+      "actions": {
+        "selectAllAccounts": "すべて選択",
+        "clearSelectedAccounts": "選択解除"
+      },
+      "deleteConfirm": "削除を確認しますか？",
+      "runHint": {
+        "title": "検証の説明",
+        "line1": "「今すぐ検証」は、ローカルゲートウェイと公式 Language Server プロトコルで Antigravity クライアントを模擬し、最小限の対話リクエストを送信します。",
+        "line2": "この処理では少量のトークン（通常は短い1回の対話分）を消費します。実際の消費量はモデルとアカウントポリシーに依存します。",
+        "line3": "この操作は起動タスクの設定を変更せず、アカウント可用性の確認と検証履歴の記録のみを行います。",
+        "line4": "403 が返された場合は、先にアカウント検証を完了してください。結果には検証 URL とクイック操作が表示されます。"
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "週間クォータ",
       "hourly": "5時間クォータ",
       "weeklyReset": "週間クォータのリセット時間",
-      "hourlyReset": "5時間クォータのリセット時間"
+      "hourlyReset": "5時間クォータのリセット時間",
+      "premium": "プレミアム リクエストの使用量順"
     },
     "columns": {
       "hourly": "5時間クォータ",
-      "weekly": "週間クォータ"
+      "weekly": "週間クォータ",
+      "premium": "プレミアム リクエスト"
     },
     "flowNotice": {
       "title": "GitHub Copilot アカウントガイド（クリックで展開/折りたたみ）",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "VS Codeに切り替え",
     "injectSuccess": "トークンをVS Codeに正常に注入しました。VS Codeを起動しています。",
-    "injectRequireClose": "注入する前にVS Codeを閉じてください。"
+    "injectRequireClose": "注入する前にVS Codeを閉じてください。",
+    "usage": {
+      "included": "含まれる"
+    }
   },
   "quickSettings": {
     "antigravity": {

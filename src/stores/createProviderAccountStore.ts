@@ -3,6 +3,10 @@ import { create } from 'zustand';
 type ProviderUsage = {
   inlineSuggestionsUsedPercent: number | null;
   chatMessagesUsedPercent: number | null;
+  premiumRequestsUsedPercent?: number | null;
+  inlineIncluded?: boolean;
+  chatIncluded?: boolean;
+  premiumIncluded?: boolean;
   allowanceResetAt?: number | null;
   remainingCompletions?: number | null;
   remainingChat?: number | null;
@@ -93,6 +97,10 @@ export function createProviderAccountStore<TAccount extends ProviderAccountAugme
                 remainingChat: usage.remainingChat,
                 totalCompletions: usage.totalCompletions,
                 totalChat: usage.totalChat,
+                premiumRequestsUsedPercent: usage.premiumRequestsUsedPercent ?? null,
+                inlineIncluded: usage.inlineIncluded === true,
+                chatIncluded: usage.chatIncluded === true,
+                premiumIncluded: usage.premiumIncluded === true,
               },
             };
 

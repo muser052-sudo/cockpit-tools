@@ -1,7 +1,7 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Mutex, OnceLock};
 
 use crate::modules;
@@ -18,9 +18,10 @@ const ANTIGRAVITY_SYSTEM_PROMPT: &str = "You are Antigravity, a powerful agentic
 const DEFAULT_ATTEMPTS: usize = 2;
 const BACKOFF_BASE_MS: u64 = 500;
 const BACKOFF_MAX_MS: u64 = 4000;
+const WAKEUP_ERROR_JSON_PREFIX: &str = "AG_WAKEUP_ERROR_JSON:";
 static BASE_URL_ORDER: OnceLock<Mutex<Vec<&'static str>>> = OnceLock::new();
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WakeupResponse {
     pub reply: String,
@@ -40,6 +41,19 @@ struct StreamParseResult {
     total_tokens: Option<u32>,
     trace_id: Option<String>,
     response_id: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct WakeupUiErrorPayload {
+    version: u8,
+    kind: String,
+    message: String,
+    error_code: Option<i64>,
+    validation_url: Option<String>,
+    trajectory_id: Option<String>,
+    error_message_json: Option<String>,
+    step_json: Option<String>,
 }
 
 fn random_suffix(len: usize) -> String {
@@ -434,8 +448,779 @@ async fn send_stream_request(
     Err(last_error.unwrap_or_else(|| "唤醒请求失败".to_string()))
 }
 
-/// 触发单个账号的唤醒请求
-pub async fn trigger_wakeup(
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WakeupTransportMode {
+    LegacyCloudCode,
+    ClientGateway,
+}
+
+fn resolve_wakeup_transport_mode() -> WakeupTransportMode {
+    match std::env::var("AG_WAKEUP_TRANSPORT_MODE")
+        .ok()
+        .unwrap_or_else(|| "client_gateway".to_string())
+        .trim()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "client_gateway" | "client-gateway" | "gateway" => WakeupTransportMode::ClientGateway,
+        _ => WakeupTransportMode::LegacyCloudCode,
+    }
+}
+
+fn gateway_start_bind_lock() -> &'static tokio::sync::Mutex<()> {
+    static LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
+}
+
+fn build_gateway_client(base_url: &str, timeout_secs: u64) -> Result<reqwest::Client, String> {
+    let mut builder = reqwest::Client::builder().timeout(std::time::Duration::from_secs(timeout_secs));
+    if base_url.starts_with("https://127.0.0.1:") || base_url.starts_with("https://localhost:") {
+        // 本地自签名网关证书（协议形态对齐客户端，校验在此放宽）
+        builder = builder.danger_accept_invalid_certs(true);
+    }
+    builder
+        .build()
+        .map_err(|e| format!("创建网关 HTTP 客户端失败: {}", e))
+}
+
+async fn post_gateway_json(
+    client: &reqwest::Client,
+    url: &str,
+    body: &serde_json::Value,
+    op_name: &str,
+) -> Result<serde_json::Value, String> {
+    let resp = client
+        .post(url)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .json(body)
+        .send()
+        .await
+        .map_err(|e| {
+            let message = format!("网关 {} 请求失败: {} (url={})", op_name, e, url);
+            crate::modules::logger::log_error(&format!("[Wakeup] {}", message));
+            message
+        })?;
+
+    let status = resp.status();
+    let text = resp.text().await.unwrap_or_default();
+    if !status.is_success() {
+        crate::modules::logger::log_error(&format!(
+            "[Wakeup] 网关 {} 返回错误: url={}, status={}, body={}",
+            op_name,
+            url,
+            status,
+            if status == reqwest::StatusCode::FORBIDDEN {
+                text.clone()
+            } else {
+                truncate_log_text(&text, 8000)
+            }
+        ));
+        return Err(format!("网关 {} 返回错误: {} - {}", op_name, status, text));
+    }
+
+    serde_json::from_str::<serde_json::Value>(&text).map_err(|e| {
+        let message = format!("网关 {} 响应解析失败: {} (url={})", op_name, e, url);
+        crate::modules::logger::log_error(&format!(
+            "[Wakeup] {}，原始响应={}",
+            message,
+            truncate_log_text(&text, 4000)
+        ));
+        message
+    })
+}
+
+async fn resolve_requested_model_for_official_ls(
+    account_id: &str,
+    model: &str,
+) -> Result<serde_json::Value, String> {
+    let trimmed = model.trim();
+    if let Ok(num) = trimmed.parse::<i64>() {
+        return Ok(json!({ "model": num }));
+    }
+
+    let mut account = match modules::load_account(account_id) {
+        Ok(v) => v,
+        Err(err) => {
+            return Err(format!(
+                "requestedModel 严格模式解析失败（读取账号失败）: account_id={}, err={}",
+                account_id, err
+            ));
+        }
+    };
+
+    let token = match modules::oauth::ensure_fresh_token(&account.token).await {
+        Ok(v) => {
+            if v.access_token != account.token.access_token
+                || v.refresh_token != account.token.refresh_token
+                || v.expiry_timestamp != account.token.expiry_timestamp
+                || v.project_id != account.token.project_id
+                || v.is_gcp_tos != account.token.is_gcp_tos
+            {
+                account.token = v.clone();
+                let _ = modules::save_account(&account);
+            }
+            v
+        }
+        Err(err) => {
+            return Err(format!(
+                "requestedModel 严格模式解析失败（刷新 token 失败）: account_id={}, err={}",
+                account_id, err
+            ));
+        }
+    };
+
+    let client = crate::utils::http::create_client(15);
+    let payload = json!({});
+    let mut last_error: Option<String> = None;
+
+    for base in CLOUD_CODE_BASE_URLS {
+        for attempt in 1..=DEFAULT_ATTEMPTS {
+            let url = format!("{}{}", base, FETCH_MODELS_PATH);
+            let response = client
+                .post(&url)
+                .bearer_auth(&token.access_token)
+                .header(reqwest::header::USER_AGENT, USER_AGENT)
+                .header(reqwest::header::CONTENT_TYPE, "application/json")
+                .header(reqwest::header::ACCEPT_ENCODING, "gzip")
+                .json(&payload)
+                .send()
+                .await;
+
+            match response {
+                Ok(res) => {
+                    let status = res.status();
+                    if status.is_success() {
+                        match res.json::<AvailableModelsResponse>().await {
+                            Ok(parsed) => {
+                                if let Some(models) = extract_available_models_map(&parsed) {
+                                    if let Some(meta) = models.get(trimmed) {
+                                        if let Some(model_constant) = meta
+                                            .model_constant
+                                            .as_deref()
+                                            .map(str::trim)
+                                            .filter(|v| !v.is_empty())
+                                        {
+                                            if let Ok(num) = model_constant.parse::<i64>() {
+                                                crate::modules::logger::log_info(&format!(
+                                                    "[Wakeup] requestedModel 解析: {} -> modelConstant({})",
+                                                    trimmed, num
+                                                ));
+                                                return Ok(json!({ "model": num }));
+                                            }
+                                            if let Some(num) = parse_codeium_model_enum_name(model_constant) {
+                                                crate::modules::logger::log_info(&format!(
+                                                    "[Wakeup] requestedModel 解析: {} -> model({})（由 enum 名 {} 映射）",
+                                                    trimmed, num, model_constant
+                                                ));
+                                                return Ok(json!({ "model": num }));
+                                            }
+
+                                            last_error = Some(format!(
+                                                "requestedModel 严格模式解析失败（模型常量无法映射）: model={}, model_constant={}",
+                                                trimmed, model_constant
+                                            ));
+                                        } else {
+                                            last_error = Some(format!(
+                                                "requestedModel 严格模式解析失败（模型缺少 model_constant）: model={}",
+                                                trimmed
+                                            ));
+                                        }
+                                    } else {
+                                        last_error = Some(format!(
+                                            "requestedModel 严格模式解析失败（fetchAvailableModels 未返回该模型）: model={}",
+                                            trimmed
+                                        ));
+                                    }
+                                } else {
+                                    last_error = Some(format!(
+                                        "requestedModel 严格模式解析失败（fetchAvailableModels 响应缺少 models）: model={}",
+                                        trimmed
+                                    ));
+                                }
+                                break;
+                            }
+                            Err(err) => {
+                                last_error = Some(format!("解析模型列表失败: {}", err));
+                            }
+                        }
+                    } else {
+                        let text = res.text().await.unwrap_or_default();
+                        let retryable =
+                            status == reqwest::StatusCode::TOO_MANY_REQUESTS || status.as_u16() >= 500;
+                        last_error = Some(format!("获取模型列表失败: {} - {}", status, text));
+                        if retryable && attempt < DEFAULT_ATTEMPTS {
+                            let delay = get_backoff_delay_ms(attempt + 1);
+                            if delay > 0 {
+                                tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
+                            }
+                            continue;
+                        }
+                    }
+                }
+                Err(err) => {
+                    last_error = Some(format!("获取模型列表失败: {}", err));
+                    if attempt < DEFAULT_ATTEMPTS {
+                        let delay = get_backoff_delay_ms(attempt + 1);
+                        if delay > 0 {
+                            tokio::time::sleep(std::time::Duration::from_millis(delay)).await;
+                        }
+                        continue;
+                    }
+                }
+            }
+        }
+    }
+
+    if let Some(err) = last_error {
+        crate::modules::logger::log_warn(&format!(
+            "[Wakeup] {}",
+            err
+        ));
+        return Err(err);
+    } else {
+        crate::modules::logger::log_warn(&format!(
+            "[Wakeup] requestedModel 严格模式解析失败（未知原因）: model={}",
+            trimmed
+        ));
+        return Err(format!(
+            "requestedModel 严格模式解析失败（未知原因）: model={}",
+            trimmed
+        ));
+    }
+}
+
+fn parse_codeium_model_enum_name(model_constant: &str) -> Option<i64> {
+    let trimmed = model_constant.trim();
+    if let Some(idx) = parse_placeholder_model_index(trimmed) {
+        // 官方 exa.codeium_common_pb.Model 枚举中 PLACEHOLDER_M0 从 1000 开始连续递增。
+        return Some(1000 + idx);
+    }
+
+    match trimmed {
+        // 目前先补已确认枚举；后续如出现更多非 placeholder 枚举名，再按需补充。
+        "MODEL_OPENAI_GPT_OSS_120B_MEDIUM" | "OPENAI_GPT_OSS_120B_MEDIUM" => Some(342),
+        _ => None,
+    }
+}
+
+fn parse_placeholder_model_index(raw: &str) -> Option<i64> {
+    // fetchAvailableModels 的枚举 JSON 名在不同接口/版本里可能带前缀或尾随字符，
+    // 这里按子串 PLACEHOLDER_M<digits> 做宽松匹配，避免误回退成 alias。
+    let marker = "PLACEHOLDER_M";
+    let start = raw.find(marker)? + marker.len();
+    let digits: String = raw[start..]
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    if digits.is_empty() {
+        return None;
+    }
+    digits.parse::<i64>().ok()
+}
+
+fn normalize_local_gateway_base_url(base_url: String) -> String {
+    if let Some(rest) = base_url.strip_prefix("https://127.0.0.1:") {
+        return format!("https://localhost:{}", rest);
+    }
+    if let Some(rest) = base_url.strip_prefix("http://127.0.0.1:") {
+        return format!("http://localhost:{}", rest);
+    }
+    base_url
+}
+
+fn build_client_like_cascade_config(requested_model: serde_json::Value, max_output_tokens: u32) -> serde_json::Value {
+    let max_tokens = if max_output_tokens > 0 {
+        max_output_tokens
+    } else {
+        8192
+    };
+
+    json!({
+        "plannerConfig": {
+            "requestedModel": requested_model,
+            "maxOutputTokens": max_tokens,
+        },
+        "checkpointConfig": {
+            "maxOutputTokens": max_tokens,
+        }
+    })
+}
+
+fn summarize_gateway_trajectory_for_log(get_resp: &serde_json::Value) -> String {
+    let status = get_resp
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("-");
+
+    let Some(steps) = get_resp
+        .get("trajectory")
+        .and_then(|v| v.get("steps"))
+        .and_then(|v| v.as_array())
+    else {
+        return format!("status={}, steps=0", status);
+    };
+
+    let last_step_case = steps
+        .last()
+        .and_then(step_case_name)
+        .unwrap_or("-");
+
+    let planner_keys = steps
+        .iter()
+        .rev()
+        .find(|step| step_case_name(step) == Some("plannerResponse"))
+        .and_then(|step| step_case_value(step, "plannerResponse"))
+        .and_then(|v| v.as_object())
+        .map(|obj| {
+            let mut keys: Vec<&str> = obj.keys().map(|k| k.as_str()).collect();
+            keys.sort_unstable();
+            keys.join(",")
+        })
+        .unwrap_or_else(|| "-".to_string());
+
+    format!(
+        "status={}, steps={}, last_step_case={}, planner_keys={}",
+        status,
+        steps.len(),
+        last_step_case,
+        planner_keys
+    )
+}
+
+fn step_case_name(step: &serde_json::Value) -> Option<&str> {
+    if let Some(case_name) = step
+        .get("step")
+        .and_then(|v| v.get("case"))
+        .and_then(|v| v.as_str())
+    {
+        return Some(case_name);
+    }
+
+    // 官方 LS 原生 JSON（proto oneof）通常直接把 oneof 字段展开到 step 顶层。
+    for key in [
+        "plannerResponse",
+        "errorMessage",
+        "userInput",
+        "toolCall",
+        "checkpoint",
+        "commandStatus",
+        "notifyUser",
+        "ephemeralMessage",
+    ] {
+        if step.get(key).is_some() {
+            return Some(key);
+        }
+    }
+
+    None
+}
+
+fn step_case_value<'a>(step: &'a serde_json::Value, case_name: &str) -> Option<&'a serde_json::Value> {
+    if step_case_name(step) == Some(case_name) {
+        if let Some(v) = step.get("step").and_then(|v| v.get("value")) {
+            return Some(v);
+        }
+        if let Some(v) = step.get(case_name) {
+            return Some(v);
+        }
+    }
+    None
+}
+
+#[derive(Debug)]
+struct GatewayTrajectoryErrorDetail {
+    message: String,
+    error_code: Option<i64>,
+    validation_url: Option<String>,
+    trajectory_id: Option<String>,
+    error_message_json: String,
+    step_json: String,
+}
+
+fn classify_gateway_error_kind(error_code: Option<i64>) -> &'static str {
+    match error_code {
+        Some(403) => "verification_required",
+        Some(429) => "quota",
+        // gRPC canonical codes: RESOURCE_EXHAUSTED=8, DEADLINE_EXCEEDED=4, INTERNAL=13, UNAVAILABLE=14
+        Some(8) | Some(4) | Some(13) | Some(14) => "temporary",
+        _ => "generic",
+    }
+}
+
+fn encode_wakeup_ui_error_payload(detail: &GatewayTrajectoryErrorDetail) -> String {
+    let payload = WakeupUiErrorPayload {
+        version: 1,
+        kind: classify_gateway_error_kind(detail.error_code).to_string(),
+        message: detail.message.clone(),
+        error_code: detail.error_code,
+        validation_url: detail.validation_url.clone(),
+        trajectory_id: detail.trajectory_id.clone(),
+        error_message_json: Some(detail.error_message_json.clone()),
+        step_json: Some(detail.step_json.clone()),
+    };
+    match serde_json::to_string(&payload) {
+        Ok(text) => format!("{}{}", WAKEUP_ERROR_JSON_PREFIX, text),
+        Err(_) => detail.message.clone(),
+    }
+}
+
+fn extract_wakeup_response_from_gateway_trajectory(
+    get_resp: &serde_json::Value,
+    duration_ms: u64,
+) -> Option<WakeupResponse> {
+    let steps = get_resp
+        .get("trajectory")
+        .and_then(|v| v.get("steps"))
+        .and_then(|v| v.as_array())?;
+
+    for step in steps.iter().rev() {
+        if step_case_name(step) != Some("plannerResponse") {
+            continue;
+        }
+
+        let value = step_case_value(step, "plannerResponse")?;
+        let reply = value
+            .get("modifiedResponse")
+            .and_then(|v| v.as_str())
+            .or_else(|| value.get("response").and_then(|v| v.as_str()))
+            .or_else(|| {
+                value.get("response")
+                    .and_then(|v| v.get("text"))
+                    .and_then(|v| v.as_str())
+            })
+            .or_else(|| {
+                value.get("response")
+                    .and_then(|v| v.get("candidates"))
+                    .and_then(|v| v.as_array())
+                    .and_then(|arr| arr.first())
+                    .and_then(|v| v.get("content"))
+                    .and_then(|v| v.get("parts"))
+                    .and_then(|v| v.as_array())
+                    .and_then(|arr| arr.iter().find_map(|part| part.get("text").and_then(|v| v.as_str())))
+            })?;
+        let reply = reply.trim();
+        if reply.is_empty() {
+            continue;
+        }
+
+        return Some(WakeupResponse {
+            reply: reply.to_string(),
+            prompt_tokens: None,
+            completion_tokens: None,
+            total_tokens: None,
+            trace_id: None,
+            response_id: None,
+            duration_ms,
+        });
+    }
+
+    None
+}
+
+fn extract_gateway_error_from_trajectory(
+    get_resp: &serde_json::Value,
+) -> Option<GatewayTrajectoryErrorDetail> {
+    let steps = get_resp
+        .get("trajectory")
+        .and_then(|v| v.get("steps"))
+        .and_then(|v| v.as_array())?;
+    let trajectory_id = get_resp
+        .get("trajectory")
+        .and_then(|v| v.get("trajectoryId"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(ToString::to_string);
+
+    for step in steps.iter().rev() {
+        if step_case_name(step) != Some("errorMessage") {
+            continue;
+        }
+
+        let error_value = step_case_value(step, "errorMessage")?;
+        let error_obj = error_value
+            .get("error")
+            .filter(|v| v.is_object())
+            .unwrap_or(error_value);
+
+        let msg = error_obj
+            .get("userErrorMessage")
+            .or_else(|| error_obj.get("message"))
+            .or_else(|| error_obj.get("shortError"))
+            .or_else(|| error_obj.get("fullError"))
+            .or_else(|| error_value.get("userErrorMessage"))
+            .or_else(|| error_value.get("message"))
+            .and_then(|v| v.as_str())
+            .map(|v| v.trim())
+            .filter(|v| !v.is_empty())
+            .map(str::to_string)
+            .unwrap_or_else(|| "官方 LS 返回错误".to_string());
+
+        let error_code = error_obj
+            .get("errorCode")
+            .or_else(|| error_obj.get("code"))
+            .or_else(|| error_value.get("errorCode"))
+            .or_else(|| error_value.get("code"))
+            .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())));
+        let validation_url = extract_validation_url_from_error_details(
+            error_obj
+                .get("details")
+                .or_else(|| error_value.get("details")),
+        );
+        let error_message_json = serde_json::to_string(error_value).unwrap_or_else(|_| "{}".to_string());
+        let step_json = serde_json::to_string(step).unwrap_or_else(|_| "{}".to_string());
+
+        return Some(GatewayTrajectoryErrorDetail {
+            message: msg,
+            error_code,
+            validation_url,
+            trajectory_id: trajectory_id.clone(),
+            error_message_json,
+            step_json,
+        });
+    }
+
+    None
+}
+
+fn extract_validation_url_from_error_details(details: Option<&serde_json::Value>) -> Option<String> {
+    let details = details?;
+    let parsed = match details {
+        serde_json::Value::String(text) => serde_json::from_str::<serde_json::Value>(text).ok()?,
+        other => other.clone(),
+    };
+
+    let error_details = parsed
+        .get("error")
+        .and_then(|v| v.get("details"))
+        .and_then(|v| v.as_array())?;
+
+    for item in error_details {
+        let ty = item.get("@type").and_then(|v| v.as_str()).unwrap_or_default();
+        let reason = item.get("reason").and_then(|v| v.as_str()).unwrap_or_default();
+        let url = item
+            .get("metadata")
+            .and_then(|v| v.get("validation_url"))
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|v| !v.is_empty());
+        if ty == "type.googleapis.com/google.rpc.ErrorInfo" && reason == "VALIDATION_REQUIRED" {
+            if let Some(url) = url {
+                return Some(url.to_string());
+            }
+        }
+    }
+
+    None
+}
+
+async fn trigger_wakeup_via_client_gateway(
+    account_id: &str,
+    model: &str,
+    prompt: &str,
+    max_output_tokens: u32,
+) -> Result<WakeupResponse, String> {
+    crate::modules::logger::log_info(&format!(
+        "[Wakeup] 开始唤醒(网关): account_id={}, model={}, max_tokens={}, prompt={}",
+        account_id,
+        model,
+        max_output_tokens,
+        format_prompt_for_log(prompt)
+    ));
+
+    let base_url = if let Ok(value) = std::env::var("AG_WAKEUP_GATEWAY_BASE_URL") {
+        let trimmed = value.trim().trim_end_matches('/').to_string();
+        if !trimmed.is_empty() {
+            normalize_local_gateway_base_url(trimmed)
+        } else {
+            normalize_local_gateway_base_url(modules::wakeup_gateway::ensure_local_gateway_started().await?)
+        }
+    } else {
+        normalize_local_gateway_base_url(modules::wakeup_gateway::ensure_local_gateway_started().await?)
+    };
+
+    crate::modules::logger::log_info(&format!(
+        "[Wakeup] 使用 client-like 网关通道（官方协议）: base_url={}",
+        base_url
+    ));
+
+    let client = build_gateway_client(&base_url, 30)?;
+    let service_base = format!("{}/exa.language_server_pb.LanguageServerService", base_url);
+    let start_resp: serde_json::Value;
+
+    {
+        let _bind_guard = gateway_start_bind_lock().lock().await;
+
+        client
+            .post(format!(
+                "{}{}",
+                base_url,
+                modules::wakeup_gateway::INTERNAL_PREPARE_START_CONTEXT_PATH
+            ))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .json(&json!({
+                "accountId": account_id,
+                "model": model,
+                "maxOutputTokens": max_output_tokens,
+            }))
+            .send()
+            .await
+            .map_err(|e| format!("网关 prepareStartContext 请求失败: {}", e))?
+            .error_for_status()
+            .map_err(|e| format!("网关 prepareStartContext 返回错误: {}", e))?;
+
+        start_resp = post_gateway_json(
+            &client,
+            &format!("{}/StartCascade", service_base),
+            &json!({}),
+            "StartCascade",
+        )
+        .await?;
+    }
+
+    let cascade_id = start_resp
+        .get("cascadeId")
+        .and_then(|v| v.as_str())
+        .filter(|v| !v.trim().is_empty())
+        .ok_or_else(|| "网关 StartCascade 未返回 cascadeId".to_string())?
+        .to_string();
+    crate::modules::logger::log_info(&format!(
+        "[Wakeup] 网关 StartCascade 成功: cascade_id={}",
+        cascade_id
+    ));
+
+    let wakeup_result: Result<WakeupResponse, String> = async {
+        let requested_model = resolve_requested_model_for_official_ls(account_id, model).await?;
+
+        let send_body = json!({
+            "cascadeId": cascade_id,
+            "items": [{ "text": prompt }],
+            "cascadeConfig": build_client_like_cascade_config(requested_model, max_output_tokens),
+        });
+
+        post_gateway_json(
+            &client,
+            &format!("{}/SendUserCascadeMessage", service_base),
+            &send_body,
+            "SendUserCascadeMessage",
+        )
+        .await?;
+        crate::modules::logger::log_info(&format!(
+            "[Wakeup] 网关 SendUserCascadeMessage 成功: cascade_id={}",
+            cascade_id
+        ));
+
+        let get_body = json!({ "cascadeId": cascade_id });
+        let started_at = std::time::Instant::now();
+        let mut last_status = String::new();
+        let mut last_trajectory_summary = String::new();
+
+        for poll_idx in 0..120 {
+            let get_resp: serde_json::Value = post_gateway_json(
+                &client,
+                &format!("{}/GetCascadeTrajectory", service_base),
+                &get_body,
+                "GetCascadeTrajectory",
+            )
+            .await?;
+
+            last_status = get_resp
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+
+            if poll_idx == 0 || poll_idx % 8 == 0 {
+                let summary = summarize_gateway_trajectory_for_log(&get_resp);
+                if summary != last_trajectory_summary {
+                    crate::modules::logger::log_info(&format!(
+                        "[Wakeup] 网关轨迹轮询#{}: {}",
+                        poll_idx + 1,
+                        summary
+                    ));
+                    last_trajectory_summary = summary;
+                }
+            }
+
+            if let Some(parsed) = extract_wakeup_response_from_gateway_trajectory(
+                &get_resp,
+                started_at.elapsed().as_millis() as u64,
+            ) {
+                crate::modules::logger::log_info(&format!(
+                    "[Wakeup] 网关唤醒成功: cascade_id={}, duration={}ms, reply={}",
+                    cascade_id,
+                    parsed.duration_ms,
+                    truncate_log_text(&parsed.reply, 1000)
+                ));
+                return Ok(parsed);
+            }
+
+            if let Some(err) = extract_gateway_error_from_trajectory(&get_resp) {
+                if err.error_code == Some(403) {
+                    crate::modules::logger::log_error(&format!(
+                        "[Wakeup] 网关轨迹错误(403): cascade_id={}, status={}, message={}, validation_url={:?}, errorMessage={}, step={}",
+                        cascade_id,
+                        if last_status.is_empty() { "-" } else { &last_status },
+                        err.message,
+                        err.validation_url,
+                        err.error_message_json,
+                        err.step_json
+                    ));
+                } else {
+                    crate::modules::logger::log_error(&format!(
+                        "[Wakeup] 网关轨迹错误: cascade_id={}, status={}, error_code={:?}, message={}, errorMessage={}",
+                        cascade_id,
+                        if last_status.is_empty() { "-" } else { &last_status },
+                        err.error_code,
+                        err.message,
+                        truncate_log_text(&err.error_message_json, 4000)
+                    ));
+                }
+                return Err(encode_wakeup_ui_error_payload(&err));
+            }
+
+            tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+        }
+
+        let message = if last_status.is_empty() {
+            "网关未返回唤醒结果（轨迹中未出现 plannerResponse.modifiedResponse）".to_string()
+        } else {
+            format!("网关未在超时时间内返回唤醒结果，最后状态={}", last_status)
+        };
+        crate::modules::logger::log_error(&format!(
+            "[Wakeup] 网关唤醒失败(超时/无结果): cascade_id={}, error={}",
+            cascade_id, message
+        ));
+        Err(message)
+    }
+    .await;
+
+    let delete_resp = client
+        .post(format!("{}/DeleteCascadeTrajectory", service_base))
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .json(&json!({ "cascadeId": cascade_id }))
+        .send()
+        .await;
+
+    if let Err(err) = delete_resp {
+        crate::modules::logger::log_error(&format!(
+            "[Wakeup] 删除网关轨迹失败: cascade_id={}, error={}",
+            cascade_id, err
+        ));
+    }
+
+    if let Err(err) = &wakeup_result {
+        crate::modules::logger::log_error(&format!(
+            "[Wakeup] 网关唤醒失败: cascade_id={}, error={}",
+            cascade_id, err
+        ));
+    }
+
+    wakeup_result
+}
+
+/// 旧版直连 Cloud Code 唤醒（保留给兼容模式与网关内部调用）
+pub(crate) async fn trigger_wakeup_direct(
     account_id: &str,
     model: &str,
     prompt: &str,
@@ -499,6 +1284,25 @@ pub async fn trigger_wakeup(
     }
 }
 
+/// 触发单个账号的唤醒请求（根据配置/环境变量分发通道）
+pub async fn trigger_wakeup(
+    account_id: &str,
+    model: &str,
+    prompt: &str,
+    max_output_tokens: u32,
+) -> Result<WakeupResponse, String> {
+    match resolve_wakeup_transport_mode() {
+        WakeupTransportMode::LegacyCloudCode => {
+            crate::modules::logger::log_info("[Wakeup] 通道=legacy_cloudcode");
+            trigger_wakeup_direct(account_id, model, prompt, max_output_tokens).await
+        }
+        WakeupTransportMode::ClientGateway => {
+            crate::modules::logger::log_info("[Wakeup] 通道=client_gateway");
+            trigger_wakeup_via_client_gateway(account_id, model, prompt, max_output_tokens).await
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AvailableModel {
@@ -510,7 +1314,28 @@ pub struct AvailableModel {
 
 #[derive(Debug, Deserialize)]
 struct AvailableModelsResponse {
+    payload: Option<AvailableModelsPayload>,
+    #[serde(rename = "agentModelSorts")]
+    agent_model_sorts: Option<Vec<AvailableAgentModelSort>>,
     models: Option<HashMap<String, AvailableModelMeta>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AvailableModelsPayload {
+    #[serde(rename = "agentModelSorts")]
+    agent_model_sorts: Option<Vec<AvailableAgentModelSort>>,
+    models: Option<HashMap<String, AvailableModelMeta>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AvailableAgentModelSort {
+    groups: Option<Vec<AvailableAgentModelGroup>>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AvailableAgentModelGroup {
+    #[serde(rename = "modelIds")]
+    model_ids: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -521,6 +1346,94 @@ struct AvailableModelMeta {
     model_constant: Option<String>,
     #[serde(rename = "recommended")]
     recommended: Option<bool>,
+}
+
+const HARDCODED_WAKEUP_MODELS: [(&str, &str, &str); 6] = [
+    (
+        "gemini-3.1-pro-high",
+        "Gemini 3.1 Pro (High)",
+        "MODEL_PLACEHOLDER_M37",
+    ),
+    (
+        "gemini-3.1-pro-low",
+        "Gemini 3.1 Pro (Low)",
+        "MODEL_PLACEHOLDER_M36",
+    ),
+    ("gemini-3-flash", "Gemini 3 Flash", "MODEL_PLACEHOLDER_M18"),
+    (
+        "claude-sonnet-4-6",
+        "Claude Sonnet 4.6 (Thinking)",
+        "MODEL_PLACEHOLDER_M35",
+    ),
+    (
+        "claude-opus-4-6-thinking",
+        "Claude Opus 4.6 (Thinking)",
+        "MODEL_PLACEHOLDER_M26",
+    ),
+    (
+        "gpt-oss-120b-medium",
+        "GPT-OSS 120B (Medium)",
+        "MODEL_OPENAI_GPT_OSS_120B_MEDIUM",
+    ),
+];
+
+fn extract_available_models_map(
+    response: &AvailableModelsResponse,
+) -> Option<&HashMap<String, AvailableModelMeta>> {
+    response
+        .payload
+        .as_ref()
+        .and_then(|payload| payload.models.as_ref())
+        .or(response.models.as_ref())
+}
+
+fn extract_agent_model_sorts(
+    response: &AvailableModelsResponse,
+) -> Option<&Vec<AvailableAgentModelSort>> {
+    response
+        .payload
+        .as_ref()
+        .and_then(|payload| payload.agent_model_sorts.as_ref())
+        .or(response.agent_model_sorts.as_ref())
+}
+
+fn extract_ordered_model_ids(response: &AvailableModelsResponse) -> Vec<String> {
+    let mut ids: Vec<String> = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+
+    if let Some(sorts) = extract_agent_model_sorts(response) {
+        for sort in sorts {
+            if let Some(groups) = sort.groups.as_ref() {
+                for group in groups {
+                    if let Some(model_ids) = group.model_ids.as_ref() {
+                        for id in model_ids {
+                            let trimmed = id.trim();
+                            if trimmed.is_empty() {
+                                continue;
+                            }
+                            if seen.insert(trimmed.to_string()) {
+                                ids.push(trimmed.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ids
+}
+
+fn hardcoded_wakeup_models() -> Vec<AvailableModel> {
+    HARDCODED_WAKEUP_MODELS
+        .iter()
+        .map(|(id, display_name, model_constant)| AvailableModel {
+            id: (*id).to_string(),
+            display_name: (*display_name).to_string(),
+            model_constant: Some((*model_constant).to_string()),
+            recommended: Some(true),
+        })
+        .collect()
 }
 
 /// 获取可用模型列表（用于唤醒配置）
@@ -609,18 +1522,29 @@ pub async fn fetch_available_models() -> Result<Vec<AvailableModel>, String> {
     let data = data.ok_or_else(|| last_error.unwrap_or_else(|| "获取模型列表失败".to_string()))?;
 
     let mut models = Vec::new();
-    if let Some(entries) = data.models {
-        for (id, meta) in entries {
-            let display_name = meta.display_name.clone().unwrap_or_else(|| id.clone());
-            models.push(AvailableModel {
-                id,
-                display_name,
-                model_constant: meta.model_constant.clone(),
-                recommended: meta.recommended,
-            });
+    if let Some(entries) = extract_available_models_map(&data) {
+        let ordered_ids = extract_ordered_model_ids(&data);
+        for id in ordered_ids {
+            if let Some(meta) = entries.get(&id) {
+                models.push(AvailableModel {
+                    id: id.clone(),
+                    display_name: meta
+                        .display_name
+                        .clone()
+                        .unwrap_or_else(|| id.clone()),
+                    model_constant: meta.model_constant.clone(),
+                    recommended: meta.recommended,
+                });
+            }
         }
     }
 
-    models.sort_by(|a, b| a.display_name.cmp(&b.display_name));
+    if models.is_empty() {
+        crate::modules::logger::log_warn(
+            "[Wakeup] fetchAvailableModels 未返回可用 agentModelSorts 映射，回退固定模型列表",
+        );
+        return Ok(hardcoded_wakeup_models());
+    }
+
     Ok(models)
 }

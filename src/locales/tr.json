@@ -615,6 +615,21 @@
     "historyEmpty": "Henüz geçmiş yok",
     "historyClear": "Geçmişi temizle",
     "historyPromptLabel": "İstem: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Doğrulama gerekli",
+      "quotaTitle": "Kota sınırı",
+      "temporaryTitle": "Geçici hata",
+      "genericTitle": "Yürütme hatası",
+      "validationUrlLabel": "Doğrulama URL'si (kopyalanabilir)",
+      "completeVerification": "Doğrulamayı tamamla",
+      "copyValidationUrl": "Doğrulama URL'sini kopyala",
+      "copyDebugInfo": "Hata ayıklama bilgisini kopyala",
+      "errorCode": "Hata kodu: {{code}}",
+      "trajectoryId": "Yörünge Kimliği: {{id}}",
+      "copySuccess": "Kopyalandı",
+      "copyFailed": "Kopyalama başarısız",
+      "openFailed": "Bağlantı açılamadı. Tarayıcıda açmayı denedik."
+    },
     "format": {
       "noReply": "(Yanıt yok)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "Sonraki {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Uyandırmayı etkinleştir",
-      "enableDesc": "Uyandırmayı etkinleştirmek, eklenti uyandırma özelliğini devre dışı bırakacaktır. Devam edilsin mi?",
       "deleteConfirm": "\"{{name}}\" görevini silmek istiyor musunuz?",
       "testTitle": "Testi Çalıştır",
       "historyTitle": "Tetikleme Geçmişi",
       "taskTitleEdit": "Uyandırma Görevini Düzenle",
-      "taskTitleNew": "Yeni Uyandırma Görevi"
+      "taskTitleNew": "Yeni Uyandırma Görevi",
+      "riskWarning": "⚠️ Risk uyarısı\nGoogle’ın son dönemde sıkılaştırdığı risk kontrolleri nedeniyle uyandırma özelliğini kullanmak, hesapta risk kontrollerinin tetiklenme olasılığını artırabilir (ek doğrulama veya geçici kısıtlamalar dahil ancak bunlarla sınırlı olmamak üzere).\nLütfen hesabınızın durumuna göre dikkatli kullanın ve riski kendiniz değerlendirin.\n\nDevam edilsin mi?"
     },
     "form": {
       "taskName": "Görev adı",
@@ -748,6 +762,27 @@
       "accountsHint": "Test edilecek birden fazla hesap seçin.",
       "start": "Testi başlat",
       "testing": "Test ediliyor..."
+    },
+    "verification": {
+      "title": "Doğrulama gerekli",
+      "columns": {
+        "verifiedAt": "Doğrulama zamanı"
+      },
+      "filters": {
+        "all": "Tümü"
+      },
+      "actions": {
+        "selectAllAccounts": "Tümünü seç",
+        "clearSelectedAccounts": "Seçimi temizle"
+      },
+      "deleteConfirm": "Silme işlemi onaylansın mı?",
+      "runHint": {
+        "title": "Doğrulama notları",
+        "line1": "“Şimdi doğrula”, Antigravity istemcisini yerel ağ geçidi ve resmi Language Server protokolü ile simüle ederek minimum bir sohbet isteği gönderir.",
+        "line2": "Bu işlem az miktarda token tüketir (genelde kısa bir konuşma). Gerçek tüketim modele ve hesap politikasına bağlıdır.",
+        "line3": "Bu işlem uyandırma görevi ayarlarını değiştirmez. Yalnızca hesap kullanılabilirliğini doğrular ve doğrulama kaydı oluşturur.",
+        "line4": "403 dönerse önce hesap doğrulaması tamamlanmalıdır. Sonuçta doğrulama adresi ve hızlı işlemler gösterilir."
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "Haftalık kota",
       "hourly": "5 saatlik kota",
       "weeklyReset": "Haftalık sıfırlama zamanı",
-      "hourlyReset": "5 saatlik sıfırlama zamanı"
+      "hourlyReset": "5 saatlik sıfırlama zamanı",
+      "premium": "Premium istek kullanımına göre"
     },
     "columns": {
       "hourly": "5 saatlik kota",
-      "weekly": "Haftalık kota"
+      "weekly": "Haftalık kota",
+      "premium": "Premium istekler"
     },
     "flowNotice": {
       "title": "GitHub Copilot hesap kılavuzu (genişletmek/daraltmak için tıklayın)",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "VS Code'a geç",
     "injectSuccess": "Belirteç VS Code'a başarıyla enjekte edildi. VS Code başlatılıyor.",
-    "injectRequireClose": "Enjeksiyondan önce lütfen VS Code'u kapatın."
+    "injectRequireClose": "Enjeksiyondan önce lütfen VS Code'u kapatın.",
+    "usage": {
+      "included": "Dahil"
+    }
   },
   "quickSettings": {
     "antigravity": {

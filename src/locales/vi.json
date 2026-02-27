@@ -615,6 +615,21 @@
     "historyEmpty": "Chưa có lịch sử",
     "historyClear": "Xóa lịch sử",
     "historyPromptLabel": "Từ đánh thức: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Yêu cầu xác minh",
+      "quotaTitle": "Giới hạn hạn ngạch",
+      "temporaryTitle": "Lỗi tạm thời",
+      "genericTitle": "Lỗi thực thi",
+      "validationUrlLabel": "URL xác minh (có thể sao chép)",
+      "completeVerification": "Hoàn tất xác minh",
+      "copyValidationUrl": "Sao chép URL xác minh",
+      "copyDebugInfo": "Sao chép thông tin gỡ lỗi",
+      "errorCode": "Mã lỗi: {{code}}",
+      "trajectoryId": "ID quỹ đạo: {{id}}",
+      "copySuccess": "Đã sao chép",
+      "copyFailed": "Sao chép thất bại",
+      "openFailed": "Không thể mở liên kết. Đã thử mở bằng trình duyệt."
+    },
     "format": {
       "noReply": "(Không có phản hồi)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "Lần chạy tiếp {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Bật chức năng đánh thức",
-      "enableDesc": "Việc bật chức năng đánh thức sẽ vô hiệu hóa chức năng đánh thức trong plugin. Tiếp tục?",
       "deleteConfirm": "Xóa nhiệm vụ \"{{name}}\"?",
       "testTitle": "Chạy thử",
       "historyTitle": "Lịch sử kích hoạt",
       "taskTitleEdit": "Chỉnh sửa nhiệm vụ đánh thức",
-      "taskTitleNew": "Nhiệm vụ đánh thức mới"
+      "taskTitleNew": "Nhiệm vụ đánh thức mới",
+      "riskWarning": "⚠️ Cảnh báo rủi ro\nDo Google gần đây siết chặt kiểm soát rủi ro, việc sử dụng tính năng wakeup có thể làm tăng khả năng kích hoạt cơ chế kiểm soát rủi ro của tài khoản (bao gồm nhưng không giới hạn ở xác minh bổ sung hoặc giới hạn tạm thời).\nVui lòng sử dụng thận trọng theo tình trạng tài khoản và tự đánh giá rủi ro.\n\nTiếp tục?"
     },
     "form": {
       "taskName": "Tên nhiệm vụ",
@@ -748,6 +762,27 @@
       "accountsHint": "Chọn nhiều tài khoản để thử nghiệm.",
       "start": "Bắt đầu thử nghiệm",
       "testing": "Đang thử nghiệm..."
+    },
+    "verification": {
+      "title": "Yêu cầu xác minh",
+      "columns": {
+        "verifiedAt": "Thời gian xác minh"
+      },
+      "filters": {
+        "all": "Tất cả"
+      },
+      "actions": {
+        "selectAllAccounts": "Chọn tất cả",
+        "clearSelectedAccounts": "Bỏ chọn"
+      },
+      "deleteConfirm": "Xác nhận xóa?",
+      "runHint": {
+        "title": "Ghi chú xác minh",
+        "line1": "“Xác minh ngay” sẽ gửi một yêu cầu chat tối thiểu bằng cách mô phỏng client Antigravity qua cổng nội bộ và giao thức Language Server chính thức.",
+        "line2": "Quy trình này tiêu tốn một lượng nhỏ token (thường là một đoạn hội thoại ngắn). Mức tiêu thụ thực tế phụ thuộc vào model và chính sách tài khoản.",
+        "line3": "Thao tác này không thay đổi cấu hình tác vụ đánh thức. Nó chỉ kiểm tra khả dụng của tài khoản và ghi lịch sử xác minh.",
+        "line4": "Nếu trả về 403, bạn cần hoàn tất xác minh tài khoản trước. Kết quả sẽ cung cấp URL xác minh và thao tác nhanh."
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "Hạn mức tuần",
       "hourly": "Hạn mức 5 giờ",
       "weeklyReset": "Thời gian đặt lại theo tuần",
-      "hourlyReset": "Thời gian đặt lại 5 giờ"
+      "hourlyReset": "Thời gian đặt lại 5 giờ",
+      "premium": "Theo mức dùng yêu cầu Premium"
     },
     "columns": {
       "hourly": "Hạn mức 5h",
-      "weekly": "Hạn mức tuần"
+      "weekly": "Hạn mức tuần",
+      "premium": "Yêu cầu Premium"
     },
     "flowNotice": {
       "title": "Hướng dẫn tài khoản GitHub Copilot (bấm để mở rộng/thu gọn)",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "Chuyển sang VS Code",
     "injectSuccess": "Đã chèn token vào VS Code thành công. VS Code đang được khởi chạy.",
-    "injectRequireClose": "Vui lòng đóng VS Code trước khi chèn."
+    "injectRequireClose": "Vui lòng đóng VS Code trước khi chèn.",
+    "usage": {
+      "included": "Đã bao gồm"
+    }
   },
   "quickSettings": {
     "antigravity": {

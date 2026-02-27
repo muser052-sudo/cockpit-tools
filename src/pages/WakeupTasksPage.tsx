@@ -1,18 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { confirm as confirmDialog } from '@tauri-apps/plugin-dialog';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { Plus, Pencil, Trash2, Power, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAccountStore } from '../stores/useAccountStore';
 import { Page } from '../types/navigation';
 import { Account } from '../types/account';
-import { getModelShortName } from '../utils/account';
+import {
+  buildAntigravityFallbackModelOptions,
+  collectAntigravityQuotaModelKeys,
+  filterAntigravityModelOptions,
+  getAntigravityModelDisplayName,
+  type AntigravityModelOption,
+} from '../utils/antigravityModels';
 import { OverviewTabsHeader } from '../components/OverviewTabsHeader';
 
 const TASKS_STORAGE_KEY = 'agtools.wakeup.tasks';
 const WAKEUP_ENABLED_KEY = 'agtools.wakeup.enabled';
+const WAKEUP_FORCE_DISABLE_MIGRATION_KEY = 'agtools.wakeup.migration.force_disable_0_8_14';
 const LEGACY_SCHEDULE_KEY = 'agtools.wakeup.schedule';
 const MAX_HISTORY_ITEMS = 100;
+const WAKEUP_ERROR_JSON_PREFIX = 'AG_WAKEUP_ERROR_JSON:';
 
 const BASE_TIME_OPTIONS = [
   '06:00',
@@ -33,87 +42,7 @@ const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const DEFAULT_PROMPT = 'hi';
 
 type Translator = (key: string, options?: Record<string, unknown>) => string;
-
-const BLOCKED_MODEL_IDS = new Set([
-  'chat_20706',
-  'chat_23310',
-  'gemini-2.5-flash-thinking',
-  'gemini-2.5-pro',
-]);
-const BLOCKED_DISPLAY_NAMES = new Set([
-  'Gemini 2.5 Flash (Thinking)',
-  'Gemini 2.5 Pro',
-  'chat_20706',
-  'chat_23310',
-]);
-const RECOMMENDED_LABELS = [
-  'Claude Opus 4.5 (Thinking)',
-  'Claude Opus 4.6 (Thinking)',
-  'Claude Sonnet 4.5',
-  'Claude Sonnet 4.5 (Thinking)',
-  'Gemini 3 Flash',
-  'Gemini 3 Pro (High)',
-  'Gemini 3 Pro (Low)',
-  'Gemini 3 Pro Image',
-  'GPT-OSS 120B (Medium)',
-];
-const RECOMMENDED_MODEL_IDS = [
-  'MODEL_PLACEHOLDER_M12',
-  'MODEL_PLACEHOLDER_M26',
-  'MODEL_CLAUDE_4_5_SONNET',
-  'MODEL_CLAUDE_4_5_SONNET_THINKING',
-  'MODEL_PLACEHOLDER_M18',
-  'MODEL_PLACEHOLDER_M7',
-  'MODEL_PLACEHOLDER_M8',
-  'MODEL_PLACEHOLDER_M9',
-  'MODEL_OPENAI_GPT_OSS_120B_MEDIUM',
-  'gemini-3-flash',
-  'gemini-3-pro-high',
-  'gemini-3-pro-low',
-  'gemini-3-pro-image',
-  'claude-sonnet-4-5',
-  'claude-sonnet-4-5-thinking',
-  'claude-opus-4-5-thinking',
-  'claude-opus-4-6-thinking',
-  'gpt-oss-120b-medium',
-];
-const RECOMMENDED_LABEL_BY_ID: Record<string, string> = {
-  'gemini-3-flash': 'Gemini 3 Flash',
-  'gemini-3-pro-high': 'Gemini 3 Pro (High)',
-  'gemini-3-pro-low': 'Gemini 3 Pro (Low)',
-  'gemini-3-pro-image': 'Gemini 3 Pro Image',
-  'claude-sonnet-4-5': 'Claude Sonnet 4.5',
-  'claude-sonnet-4-5-thinking': 'Claude Sonnet 4.5 (Thinking)',
-  'claude-opus-4-5-thinking': 'Claude Opus 4.5 (Thinking)',
-  'claude-opus-4-6-thinking': 'Claude Opus 4.6 (Thinking)',
-  'MODEL_PLACEHOLDER_M12': 'Claude Opus 4.5 (Thinking)',
-  'MODEL_PLACEHOLDER_M26': 'Claude Opus 4.6 (Thinking)',
-  'gpt-oss-120b-medium': 'GPT-OSS 120B (Medium)',
-};
-const getReadableModelLabel = (id: string) => RECOMMENDED_LABEL_BY_ID[id] || getModelShortName(id);
-const normalizeModelKey = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
-const RECOMMENDED_LABEL_KEYS = new Set(RECOMMENDED_LABELS.map(normalizeModelKey));
-const RECOMMENDED_ID_SET = new Set(RECOMMENDED_MODEL_IDS.map((id) => id.toLowerCase()));
-const RECOMMENDED_ID_KEYS = new Set(RECOMMENDED_MODEL_IDS.map(normalizeModelKey));
-const RECOMMENDED_ORDER = (() => {
-  const order = new Map<string, number>();
-  RECOMMENDED_LABELS.forEach((label, index) => {
-    order.set(normalizeModelKey(label), index);
-  });
-  const offset = RECOMMENDED_LABELS.length;
-  RECOMMENDED_MODEL_IDS.forEach((id, index) => {
-    const baseIndex = offset + index;
-    const lower = id.toLowerCase();
-    if (!order.has(lower)) {
-      order.set(lower, baseIndex);
-    }
-    const normalized = normalizeModelKey(id);
-    if (!order.has(normalized)) {
-      order.set(normalized, baseIndex);
-    }
-  });
-  return order;
-})();
+const getReadableModelLabel = (id: string) => getAntigravityModelDisplayName(id);
 
 type TriggerMode = 'scheduled' | 'crontab' | 'quota_reset';
 type RepeatMode = 'daily' | 'weekly' | 'interval';
@@ -128,12 +57,7 @@ interface WakeupPageProps {
   onNavigate?: (page: Page) => void;
 }
 
-interface AvailableModel {
-  id: string;
-  displayName: string;
-  modelConstant?: string | null;
-  recommended?: boolean | null;
-}
+type AvailableModel = AntigravityModelOption;
 
 interface ScheduleConfig {
   repeatMode: RepeatMode;
@@ -177,6 +101,40 @@ interface WakeupHistoryRecord {
   message?: string;
   duration?: number;
 }
+
+type WakeupStructuredErrorKind = 'verification_required' | 'quota' | 'temporary' | 'generic';
+
+interface WakeupStructuredErrorPayload {
+  version?: number;
+  kind?: WakeupStructuredErrorKind;
+  message?: string;
+  errorCode?: number | null;
+  validationUrl?: string | null;
+  trajectoryId?: string | null;
+  errorMessageJson?: string | null;
+  stepJson?: string | null;
+}
+
+const parseWakeupStructuredError = (message?: string | null): WakeupStructuredErrorPayload | null => {
+  if (!message || typeof message !== 'string') return null;
+  if (!message.startsWith(WAKEUP_ERROR_JSON_PREFIX)) return null;
+  const payloadText = message.slice(WAKEUP_ERROR_JSON_PREFIX.length).trim();
+  if (!payloadText) return null;
+  try {
+    const parsed = JSON.parse(payloadText) as WakeupStructuredErrorPayload;
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const getWakeupErrorDisplayText = (message?: string | null): string => {
+  if (!message) return '';
+  const payload = parseWakeupStructuredError(message);
+  if (!payload) return message;
+  return (payload.message || '').trim() || message;
+};
 
 interface WakeupInvokeResult {
   reply: string;
@@ -464,78 +422,17 @@ const formatSelectionPreview = (items: string[], maxItems: number, t: Translator
   });
 };
 
-const isRecommendedModel = (model: AvailableModel) => {
-  if (model.recommended) return true;
-  const name = model.displayName || model.id;
-  const normalizedName = normalizeModelKey(name);
-  const id = model.id || '';
-  const modelConstant = model.modelConstant || '';
-  if (RECOMMENDED_ID_SET.has(id.toLowerCase()) || RECOMMENDED_ID_SET.has(modelConstant.toLowerCase())) {
-    return true;
-  }
-  if (RECOMMENDED_LABEL_KEYS.has(normalizedName)) {
-    return true;
-  }
-  const normalizedId = normalizeModelKey(id);
-  const normalizedConstant = normalizeModelKey(modelConstant);
-  return RECOMMENDED_ID_KEYS.has(normalizedId) || RECOMMENDED_ID_KEYS.has(normalizedConstant);
-};
-
-const getModelOrderRank = (model: AvailableModel) => {
-  const idLower = (model.id || '').toLowerCase();
-  const constantLower = (model.modelConstant || '').toLowerCase();
-  const normalizedId = normalizeModelKey(model.id || '');
-  const normalizedConstant = normalizeModelKey(model.modelConstant || '');
-  const normalizedName = normalizeModelKey(model.displayName || model.id);
-  return (
-    RECOMMENDED_ORDER.get(idLower)
-    ?? RECOMMENDED_ORDER.get(constantLower)
-    ?? RECOMMENDED_ORDER.get(normalizedId)
-    ?? RECOMMENDED_ORDER.get(normalizedConstant)
-    ?? RECOMMENDED_ORDER.get(normalizedName)
-    ?? Number.MAX_SAFE_INTEGER
-  );
-};
-
-const sortRecommendedModels = (models: AvailableModel[]) =>
-  [...models].sort((a, b) => {
-    const rankDiff = getModelOrderRank(a) - getModelOrderRank(b);
-    if (rankDiff !== 0) return rankDiff;
-    const nameA = a.displayName || a.id;
-    const nameB = b.displayName || b.id;
-    return nameA.localeCompare(nameB, 'en', { sensitivity: 'base', numeric: true });
+const filterAvailableModels = (
+  models: AvailableModel[],
+  allowedModelKeys?: Iterable<string>,
+) =>
+  filterAntigravityModelOptions(models, {
+    allowedModelKeys,
+    includeNonRecommended: false,
   });
 
-const filterAvailableModels = (models: AvailableModel[]) =>
-  sortRecommendedModels(
-    models.filter((model) => {
-      const name = model.displayName || model.id;
-      if (BLOCKED_MODEL_IDS.has(model.id) || BLOCKED_DISPLAY_NAMES.has(name)) {
-        return false;
-      }
-      return isRecommendedModel(model);
-    })
-  );
-
-const buildFallbackModels = (accounts: Account[]): AvailableModel[] => {
-  const seen = new Set<string>();
-  const models: AvailableModel[] = [];
-  accounts.forEach((account) => {
-    const quotaModels = account.quota?.models || [];
-    quotaModels.forEach((model) => {
-      const id = model.name;
-      if (!id || seen.has(id)) return;
-      seen.add(id);
-      models.push({
-        id,
-        displayName: getReadableModelLabel(id),
-        modelConstant: id,
-        recommended: isRecommendedModel({ id, displayName: id, modelConstant: id }),
-      });
-    });
-  });
-  return models;
-};
+const buildFallbackModels = (accounts: Account[]): AvailableModel[] =>
+  buildAntigravityFallbackModelOptions(accounts);
 
 const getTriggerMode = (task: WakeupTask): TriggerMode => {
   if (task.schedule.wakeOnReset) return 'quota_reset';
@@ -549,6 +446,11 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
   const locale = i18n.language || 'zh-CN';
   const [tasks, setTasks] = useState<WakeupTask[]>(() => loadTasks(t('wakeup.defaultTaskName')));
   const [wakeupEnabled, setWakeupEnabled] = useState(() => {
+    if (localStorage.getItem(WAKEUP_FORCE_DISABLE_MIGRATION_KEY) !== '1') {
+      localStorage.setItem(WAKEUP_ENABLED_KEY, 'false');
+      localStorage.setItem(WAKEUP_FORCE_DISABLE_MIGRATION_KEY, '1');
+      return false;
+    }
     const raw = localStorage.getItem(WAKEUP_ENABLED_KEY);
     return raw ? raw === 'true' : false;
   });
@@ -559,7 +461,6 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
   const [testing, setTesting] = useState(false);
   const [showTestModal, setShowTestModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [showWakeupConfirm, setShowWakeupConfirm] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -605,7 +506,11 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
   }, [accounts]);
   const activeAccountEmail = currentAccount?.email || accountEmails[0] || '';
 
-  const filteredModels = useMemo(() => filterAvailableModels(availableModels), [availableModels]);
+  const quotaModelKeys = useMemo(() => collectAntigravityQuotaModelKeys(accounts), [accounts]);
+  const filteredModels = useMemo(
+    () => filterAvailableModels(availableModels, quotaModelKeys),
+    [availableModels, quotaModelKeys],
+  );
   const modelById = useMemo(() => {
     const map = new Map<string, AvailableModel>();
     filteredModels.forEach((model) => map.set(model.id, model));
@@ -689,10 +594,10 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
         return;
       }
       setModelsLoading(true);
-      const fallbackModels = filterAvailableModels(buildFallbackModels(accounts));
+      const fallbackModels = buildFallbackModels(accounts);
       try {
         const models = await invoke<AvailableModel[]>('fetch_available_models');
-        const filtered = filterAvailableModels(models);
+        const filtered = filterAvailableModels(models || [], quotaModelKeys);
         if (filtered.length > 0) {
           setAvailableModels(filtered);
         } else if (fallbackModels.length > 0) {
@@ -713,7 +618,7 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
       }
     };
     loadModels();
-  }, [accounts.length, currentAccount?.id]);
+  }, [accounts, currentAccount?.id, quotaModelKeys, t]);
 
   useEffect(() => {
     if (tasks.length === 0) return;
@@ -795,8 +700,13 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     });
   }
 
-  const clearHistoryRecords = () => {
-    setHistoryRecords([]);
+  const clearHistoryRecords = async () => {
+    try {
+      await invoke('wakeup_clear_history');
+      setHistoryRecords([]);
+    } catch (error) {
+      console.error('清空唤醒历史失败:', error);
+    }
   };
 
   const getHistoryModelLabel = (modelId: string) =>
@@ -806,6 +716,117 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     emails
       .map((email) => accountByEmail.get(email.toLowerCase()))
       .filter((account): account is (typeof accounts)[number] => Boolean(account));
+
+  const copyWakeupErrorText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice({ text: t('wakeup.errorUi.copySuccess'), tone: 'success' });
+    } catch (error) {
+      console.error('复制唤醒错误信息失败:', error);
+      setNotice({ text: t('wakeup.errorUi.copyFailed'), tone: 'error' });
+    }
+  };
+
+  const openWakeupErrorUrl = async (url: string) => {
+    try {
+      await openUrl(url);
+    } catch (error) {
+      console.error('打开验证链接失败:', error);
+      setNotice({ text: t('wakeup.errorUi.openFailed'), tone: 'error' });
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const buildWakeupDebugText = (payload: WakeupStructuredErrorPayload, record: WakeupHistoryRecord) => {
+    const lines: string[] = [];
+    if (payload.trajectoryId) lines.push(`Trajectory ID: ${payload.trajectoryId}`);
+    if (typeof payload.errorCode === 'number') lines.push(`Error Code: ${payload.errorCode}`);
+    if (payload.message) lines.push(`Message: ${payload.message}`);
+    if (record.accountEmail) lines.push(`Account: ${record.accountEmail}`);
+    if (record.modelId) lines.push(`Model: ${record.modelId}`);
+    if (record.prompt) lines.push(`Prompt: ${record.prompt}`);
+    if (payload.validationUrl) lines.push(`Validation URL: ${payload.validationUrl}`);
+    if (payload.errorMessageJson) lines.push(`Error JSON: ${payload.errorMessageJson}`);
+    if (payload.stepJson) lines.push(`Step JSON: ${payload.stepJson}`);
+    return lines.join('\n');
+  };
+
+  const renderWakeupHistoryMessage = (record: WakeupHistoryRecord) => {
+    const rawMessage = record.message || '';
+    const payload = parseWakeupStructuredError(rawMessage);
+    const plainText = getWakeupErrorDisplayText(rawMessage);
+    if (!payload || record.success) {
+      return plainText;
+    }
+
+    const kind = payload.kind || 'generic';
+    const titleKey =
+      kind === 'verification_required'
+        ? 'wakeup.errorUi.verificationRequiredTitle'
+        : kind === 'quota'
+          ? 'wakeup.errorUi.quotaTitle'
+          : kind === 'temporary'
+            ? 'wakeup.errorUi.temporaryTitle'
+            : 'wakeup.errorUi.genericTitle';
+    const summaryText =
+      kind === 'verification_required'
+        ? t('wakeup.errorUi.errorCode', {
+            code: typeof payload.errorCode === 'number' ? payload.errorCode : 403,
+          })
+        : plainText;
+    const shouldShowErrorCodeMeta = typeof payload.errorCode === 'number' && kind !== 'verification_required';
+    const shouldShowTrajectoryMeta = Boolean(payload.trajectoryId);
+
+    return (
+      <div className={`wakeup-error-panel is-${kind}`}>
+        <div className="wakeup-error-title">{t(titleKey)}</div>
+        <div className="wakeup-error-text">{summaryText}</div>
+        {shouldShowErrorCodeMeta || shouldShowTrajectoryMeta ? (
+          <div className="wakeup-error-meta">
+            {shouldShowErrorCodeMeta && (
+              <span>{t('wakeup.errorUi.errorCode', { code: payload.errorCode })}</span>
+            )}
+            {shouldShowTrajectoryMeta && (
+              <span>{t('wakeup.errorUi.trajectoryId', { id: payload.trajectoryId })}</span>
+            )}
+          </div>
+        ) : null}
+        {payload.validationUrl ? (
+          <div className="wakeup-error-link-box">
+            <div className="wakeup-error-link-label">{t('wakeup.errorUi.validationUrlLabel')}</div>
+            <div className="wakeup-error-link-value">{payload.validationUrl}</div>
+          </div>
+        ) : null}
+        <div className="wakeup-error-actions">
+          {payload.validationUrl ? (
+            <>
+              <button
+                type="button"
+                className="btn btn-primary wakeup-error-btn"
+                onClick={() => openWakeupErrorUrl(payload.validationUrl!)}
+              >
+                {t('wakeup.errorUi.completeVerification')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary wakeup-error-btn"
+                onClick={() => copyWakeupErrorText(payload.validationUrl!)}
+              >
+                {t('wakeup.errorUi.copyValidationUrl')}
+              </button>
+            </>
+          ) : null}
+          <button
+            type="button"
+            className="btn btn-secondary wakeup-error-btn"
+            onClick={() => copyWakeupErrorText(buildWakeupDebugText(payload, record))}
+          >
+            {t('wakeup.errorUi.copyDebugInfo')}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const runImmediateTest = async () => {
     if (testing) return;
@@ -871,7 +892,7 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
         timestamp,
         triggerType: 'manual' as HistoryTriggerType,
         triggerSource: 'manual' as HistoryTriggerSource,
-        taskName: t('wakeup.runTest'),
+        taskName: '',
         accountEmail: action.accountEmail,
         modelId: action.modelId,
         prompt: promptText,
@@ -880,7 +901,16 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
         duration,
       };
     });
-    appendHistoryRecords(historyItems);
+    if (historyItems.length > 0) {
+      try {
+        await invoke('wakeup_add_history', { items: historyItems });
+        const latest = await loadHistory();
+        setHistoryRecords(latest);
+      } catch (error) {
+        console.error('写入唤醒历史失败:', error);
+        appendHistoryRecords(historyItems);
+      }
+    }
     setTesting(false);
     setShowTestModal(false);
 
@@ -1013,16 +1043,46 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     return [...list, value];
   };
 
+  const getPendingCustomTime = (mode: 'daily' | 'weekly' | 'fallback') => {
+    if (mode === 'daily') return normalizeTimeInput(customDailyTime);
+    if (mode === 'weekly') return normalizeTimeInput(customWeeklyTime);
+    return normalizeTimeInput(customFallbackTime);
+  };
+
+  const hasPendingCustomTime = (mode: 'daily' | 'weekly' | 'fallback') =>
+    Boolean(getPendingCustomTime(mode));
+
   const toggleTimeSelection = (time: string, mode: 'daily' | 'weekly' | 'fallback') => {
     if (mode === 'daily') {
-      setFormDailyTimes((prev) => toggleListValue(prev, time).sort());
+      const hasPending = hasPendingCustomTime('daily');
+      setFormDailyTimes((prev) => {
+        if (prev.includes(time)) {
+          if (prev.length <= 1 && !hasPending) return prev;
+          return prev.filter((item) => item !== time).sort();
+        }
+        return [...prev, time].sort();
+      });
       return;
     }
     if (mode === 'weekly') {
-      setFormWeeklyTimes((prev) => toggleListValue(prev, time).sort());
+      const hasPending = hasPendingCustomTime('weekly');
+      setFormWeeklyTimes((prev) => {
+        if (prev.includes(time)) {
+          if (prev.length <= 1 && !hasPending) return prev;
+          return prev.filter((item) => item !== time).sort();
+        }
+        return [...prev, time].sort();
+      });
       return;
     }
-    setFormFallbackTimes((prev) => toggleListValue(prev, time).sort());
+    const hasPending = hasPendingCustomTime('fallback');
+    setFormFallbackTimes((prev) => {
+      if (prev.includes(time)) {
+        if (prev.length <= 1 && !hasPending) return prev;
+        return prev.filter((item) => item !== time).sort();
+      }
+      return [...prev, time].sort();
+    });
   };
 
   const addCustomTime = (value: string, mode: 'daily' | 'weekly' | 'fallback') => {
@@ -1051,6 +1111,15 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     if (preset === 'workdays') setFormWeeklyDays([1, 2, 3, 4, 5]);
     if (preset === 'weekend') setFormWeeklyDays([0, 6]);
     if (preset === 'all') setFormWeeklyDays([0, 1, 2, 3, 4, 5, 6]);
+  };
+
+  const getEffectiveTimesForPreview = (mode: 'daily' | 'weekly') => {
+    const base = mode === 'daily' ? [...formDailyTimes] : [...formWeeklyTimes];
+    const pending = getPendingCustomTime(mode);
+    if (pending && !base.includes(pending)) {
+      base.push(pending);
+    }
+    return base.sort();
   };
 
   const normalizeMaxOutputTokens = (value?: number, fallback: number = 0) => {
@@ -1126,12 +1195,48 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
       return;
     }
 
+    const resolvedDailyTimes = [...formDailyTimes];
+    const pendingDailyTime = getPendingCustomTime('daily');
+    if (
+      formTriggerMode === 'scheduled' &&
+      formRepeatMode === 'daily' &&
+      pendingDailyTime &&
+      !resolvedDailyTimes.includes(pendingDailyTime)
+    ) {
+      resolvedDailyTimes.push(pendingDailyTime);
+    }
+    resolvedDailyTimes.sort();
+
+    const resolvedWeeklyTimes = [...formWeeklyTimes];
+    const pendingWeeklyTime = getPendingCustomTime('weekly');
+    if (
+      formTriggerMode === 'scheduled' &&
+      formRepeatMode === 'weekly' &&
+      pendingWeeklyTime &&
+      !resolvedWeeklyTimes.includes(pendingWeeklyTime)
+    ) {
+      resolvedWeeklyTimes.push(pendingWeeklyTime);
+    }
+    resolvedWeeklyTimes.sort();
+
+    const resolvedFallbackTimes = [...formFallbackTimes];
+    const pendingFallbackTime = getPendingCustomTime('fallback');
+    if (
+      formTriggerMode === 'quota_reset' &&
+      formTimeWindowEnabled &&
+      pendingFallbackTime &&
+      !resolvedFallbackTimes.includes(pendingFallbackTime)
+    ) {
+      resolvedFallbackTimes.push(pendingFallbackTime);
+    }
+    resolvedFallbackTimes.sort();
+
     const schedule = normalizeSchedule({
       ...DEFAULT_SCHEDULE,
       repeatMode: formRepeatMode,
-      dailyTimes: formDailyTimes,
+      dailyTimes: resolvedDailyTimes,
       weeklyDays: formWeeklyDays,
-      weeklyTimes: formWeeklyTimes,
+      weeklyTimes: resolvedWeeklyTimes,
       intervalHours: formIntervalHours,
       intervalStartTime: formIntervalStart,
       intervalEndTime: formIntervalEnd,
@@ -1152,7 +1257,7 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
           : undefined,
       fallbackTimes:
         formTriggerMode === 'quota_reset' && formTimeWindowEnabled
-          ? formFallbackTimes
+          ? resolvedFallbackTimes
           : undefined,
     });
 
@@ -1211,21 +1316,15 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     );
   };
 
-  const handleToggleWakeup = (event?: React.MouseEvent) => {
+  const handleToggleWakeup = async (event?: React.MouseEvent) => {
     event?.preventDefault();
     if (!wakeupEnabled) {
-      setShowWakeupConfirm(true);
+      setWakeupEnabled(true);
+      setNotice({ text: t('wakeup.notice.featureOn') });
       return;
     }
     setWakeupEnabled(false);
     setNotice({ text: t('wakeup.notice.featureOff') });
-  };
-
-  const confirmEnableWakeup = () => {
-    setShowWakeupConfirm(false);
-    if (wakeupEnabled) return;
-    setWakeupEnabled(true);
-    setNotice({ text: t('wakeup.notice.featureOn') });
   };
 
   const previewSchedule = useMemo(() => {
@@ -1233,9 +1332,9 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     const config = normalizeSchedule({
       ...DEFAULT_SCHEDULE,
       repeatMode: formRepeatMode,
-      dailyTimes: formDailyTimes,
+      dailyTimes: getEffectiveTimesForPreview('daily'),
       weeklyDays: formWeeklyDays,
-      weeklyTimes: formWeeklyTimes,
+      weeklyTimes: getEffectiveTimesForPreview('weekly'),
       intervalHours: formIntervalHours,
       intervalStartTime: formIntervalStart,
       intervalEndTime: formIntervalEnd,
@@ -1245,8 +1344,10 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
     formTriggerMode,
     formRepeatMode,
     formDailyTimes,
+    customDailyTime,
     formWeeklyDays,
     formWeeklyTimes,
+    customWeeklyTime,
     formIntervalHours,
     formIntervalStart,
     formIntervalEnd,
@@ -1274,13 +1375,25 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
   };
 
   return (
-    <main className="main-content wakeup-page">
+    <main className="main-content wakeup-page accounts-page">
       <OverviewTabsHeader
         active="wakeup"
         onNavigate={onNavigate}
         subtitle={t('wakeup.subtitle')}
       />
-      <div className="toolbar">
+      <div className="toolbar wakeup-toolbar">
+        <div className="toolbar-left">
+          <div className={`wakeup-global-toggle ${wakeupEnabled ? 'is-on' : 'is-off'}`}>
+            <span className="toggle-label">{t('wakeup.globalToggle')}</span>
+            <span className={`pill ${wakeupEnabled ? 'pill-success' : 'pill-secondary'}`}>
+              {wakeupEnabled ? t('wakeup.statusEnabled') : t('wakeup.statusDisabled')}
+            </span>
+            <label className="wakeup-switch" onClick={handleToggleWakeup}>
+              <input type="checkbox" checked={wakeupEnabled} readOnly />
+              <span className="wakeup-slider" />
+            </label>
+          </div>
+        </div>
         <div className="toolbar-right">
           <button className="btn btn-primary" onClick={openCreateModal}>
             <Plus size={16} /> {t('wakeup.newTask')}
@@ -1296,13 +1409,6 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
               ? t('wakeup.historyCount', { count: historyRecords.length })
               : t('wakeup.history')}
           </button>
-          <div className="wakeup-global-toggle">
-            <span className="toggle-label">{t('wakeup.globalToggle')}</span>
-            <label className="wakeup-switch" onClick={handleToggleWakeup}>
-              <input type="checkbox" checked={wakeupEnabled} readOnly />
-              <span className="wakeup-slider" />
-            </label>
-          </div>
           {accounts.length === 0 && (
             <button className="btn btn-secondary" onClick={() => onNavigate?.('overview')}>
               {t('wakeup.gotoAddAccount')}
@@ -1404,34 +1510,6 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {showWakeupConfirm && (
-        <div className="modal-overlay" onClick={() => setShowWakeupConfirm(false)}>
-          <div className="modal" onClick={(event) => event.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{t('wakeup.dialogs.enableTitle')}</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowWakeupConfirm(false)}
-                aria-label={t('common.close', '关闭')}
-              >
-                <X />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>{t('wakeup.dialogs.enableDesc')}</p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowWakeupConfirm(false)}>
-                {t('common.cancel')}
-              </button>
-              <button className="btn btn-primary" onClick={confirmEnableWakeup}>
-                {t('common.confirm')}
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -1568,7 +1646,7 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
                         <span className={`wakeup-history-badge ${record.triggerType}`}>
                           {triggerSourceLabel(record.triggerSource)}
                         </span>
-                        {record.taskName && (
+                        {record.taskName && record.triggerSource !== 'manual' && (
                           <span className="wakeup-history-task">{record.taskName}</span>
                         )}
                       </div>
@@ -1583,7 +1661,9 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
                         </div>
                       )}
                       {record.message && (
-                        <div className="wakeup-history-message">{record.message}</div>
+                        <div className="wakeup-history-message">
+                          {renderWakeupHistoryMessage(record)}
+                        </div>
                       )}
                     </li>
                   ))}
@@ -1750,7 +1830,7 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
                   <div className="wakeup-form-group">
                     <label>{t('wakeup.form.repeatMode')}</label>
                     <select
-                      className="wakeup-input"
+                      className="wakeup-input wakeup-select"
                       value={formRepeatMode}
                       onChange={(event) => setFormRepeatMode(event.target.value as RepeatMode)}
                     >
@@ -1790,10 +1870,17 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
                       <div className="wakeup-custom-row">
                         <span>{t('wakeup.form.customTime')}</span>
                         <input
-                          className="wakeup-input wakeup-input-time"
+                          className="wakeup-input wakeup-input-time wakeup-input-time-compact"
                           type="time"
-                          value={customDailyTime}
+                          step={60}
+                          value={customDailyTime || ''}
                           onChange={(event) => setCustomDailyTime(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key !== 'Enter') return;
+                            event.preventDefault();
+                            addCustomTime(customDailyTime, 'daily');
+                            setCustomDailyTime('');
+                          }}
                         />
                         <button
                           className="btn btn-secondary"
@@ -1862,10 +1949,17 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
                       <div className="wakeup-custom-row">
                         <span>{t('wakeup.form.customTime')}</span>
                         <input
-                          className="wakeup-input wakeup-input-time"
+                          className="wakeup-input wakeup-input-time wakeup-input-time-compact"
                           type="time"
-                          value={customWeeklyTime}
+                          step={60}
+                          value={customWeeklyTime || ''}
                           onChange={(event) => setCustomWeeklyTime(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key !== 'Enter') return;
+                            event.preventDefault();
+                            addCustomTime(customWeeklyTime, 'weekly');
+                            setCustomWeeklyTime('');
+                          }}
                         />
                         <button
                           className="btn btn-secondary"
@@ -2037,10 +2131,17 @@ export function WakeupTasksPage({ onNavigate }: WakeupPageProps) {
                       <div className="wakeup-custom-row">
                         <span>{t('wakeup.form.customTime')}</span>
                         <input
-                          className="wakeup-input wakeup-input-time"
+                          className="wakeup-input wakeup-input-time wakeup-input-time-compact"
                           type="time"
-                          value={customFallbackTime}
+                          step={60}
+                          value={customFallbackTime || ''}
                           onChange={(event) => setCustomFallbackTime(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key !== 'Enter') return;
+                            event.preventDefault();
+                            addCustomTime(customFallbackTime, 'fallback');
+                            setCustomFallbackTime('');
+                          }}
                         />
                         <button
                           className="btn btn-secondary"

@@ -615,6 +615,21 @@
     "historyEmpty": "Kein Verlauf",
     "historyClear": "Verlauf löschen",
     "historyPromptLabel": "Weckwort: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Bestätigung erforderlich",
+      "quotaTitle": "Kontingentlimit",
+      "temporaryTitle": "Temporärer Fehler",
+      "genericTitle": "Ausführungsfehler",
+      "validationUrlLabel": "Bestätigungs-URL (kopierbar)",
+      "completeVerification": "Bestätigung abschließen",
+      "copyValidationUrl": "Bestätigungs-URL kopieren",
+      "copyDebugInfo": "Debug-Infos kopieren",
+      "errorCode": "Fehlercode: {{code}}",
+      "trajectoryId": "Trajektorien-ID: {{id}}",
+      "copySuccess": "Kopiert",
+      "copyFailed": "Kopieren fehlgeschlagen",
+      "openFailed": "Link konnte nicht geöffnet werden. Browser wurde versucht."
+    },
     "format": {
       "noReply": "(Keine Antwort)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "Nächste {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Weckfunktion aktivieren",
-      "enableDesc": "Durch Aktivieren der Weckfunktion wird die Plugin-Weckfunktion deaktiviert. Fortfahren?",
       "deleteConfirm": "Aufgabe „{{name}}“ löschen?",
       "testTitle": "Jetzt testen",
       "historyTitle": "Auslöseverlauf",
       "taskTitleEdit": "Weckaufgabe bearbeiten",
-      "taskTitleNew": "Neue Weckaufgabe"
+      "taskTitleNew": "Neue Weckaufgabe",
+      "riskWarning": "⚠️ Risikowarnung\nAufgrund der jüngsten Verschärfung der Google-Risikokontrollen kann die Nutzung der Wakeup-Funktion die Wahrscheinlichkeit erhöhen, dass Risikomaßnahmen für das Konto ausgelöst werden (z. B. zusätzliche Verifizierung oder temporäre Einschränkungen).\nBitte nutzen Sie die Funktion abhängig von Ihrer Kontosituation mit Vorsicht und bewerten Sie das Risiko selbst.\n\nFortfahren?"
     },
     "form": {
       "taskName": "Aufgabenname",
@@ -748,6 +762,27 @@
       "accountsHint": "Mehrere Konten für den Test auswählen.",
       "start": "Test starten",
       "testing": "Teste..."
+    },
+    "verification": {
+      "title": "Bestätigung erforderlich",
+      "columns": {
+        "verifiedAt": "Verifizierungszeit"
+      },
+      "filters": {
+        "all": "Alle"
+      },
+      "actions": {
+        "selectAllAccounts": "Alle auswählen",
+        "clearSelectedAccounts": "Auswahl aufheben"
+      },
+      "deleteConfirm": "Möchten Sie das wirklich löschen?",
+      "runHint": {
+        "title": "Hinweise zur Verifizierung",
+        "line1": "„Jetzt verifizieren“ sendet eine minimale Chat-Anfrage, indem der Antigravity-Client über ein lokales Gateway und das offizielle Language-Server-Protokoll simuliert wird.",
+        "line2": "Dabei werden wenige Token verbraucht (in der Regel ein kurzer Dialog). Der tatsächliche Verbrauch hängt von Modell und Kontorichtlinie ab.",
+        "line3": "Diese Aktion ändert keine Wakeup-Task-Einstellungen. Sie prüft nur die Kontoverfügbarkeit und schreibt einen Verifizierungsdatensatz.",
+        "line4": "Wenn 403 zurückgegeben wird, muss zuerst die Kontoverifizierung abgeschlossen werden. Das Ergebnis enthält Verifizierungs-URL und Schnellaktionen."
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "Wöchentliches Kontingent",
       "hourly": "5-Stunden-Kontingent",
       "weeklyReset": "Wöchentliche Reset-Zeit",
-      "hourlyReset": "5-Stunden-Reset-Zeit"
+      "hourlyReset": "5-Stunden-Reset-Zeit",
+      "premium": "Nach Nutzung der Premium-Anfragen"
     },
     "columns": {
       "hourly": "5-Std-Quote",
-      "weekly": "Wochenquote"
+      "weekly": "Wochenquote",
+      "premium": "Premium-Anfragen"
     },
     "flowNotice": {
       "title": "GitHub-Copilot-Kontoleitfaden (zum Auf-/Zuklappen klicken)",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "Zu VS Code wechseln",
     "injectSuccess": "Das Token wurde erfolgreich in VS Code eingefügt. VS Code wird gestartet.",
-    "injectRequireClose": "Bitte schließen Sie VS Code vor dem Injizieren."
+    "injectRequireClose": "Bitte schließen Sie VS Code vor dem Injizieren.",
+    "usage": {
+      "included": "Inbegriffen"
+    }
   },
   "quickSettings": {
     "antigravity": {

@@ -615,6 +615,21 @@
     "historyEmpty": "暫無紀錄",
     "historyClear": "清空歷史",
     "historyPromptLabel": "喚醒詞：{{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "需要驗證",
+      "quotaTitle": "配額限制",
+      "temporaryTitle": "暫時性錯誤",
+      "genericTitle": "執行錯誤",
+      "validationUrlLabel": "驗證網址（可複製）",
+      "completeVerification": "完成驗證",
+      "copyValidationUrl": "複製驗證網址",
+      "copyDebugInfo": "複製除錯資訊",
+      "errorCode": "錯誤碼：{{code}}",
+      "trajectoryId": "軌跡ID：{{id}}",
+      "copySuccess": "已複製",
+      "copyFailed": "複製失敗",
+      "openFailed": "無法開啟連結，已嘗試使用瀏覽器開啟"
+    },
     "format": {
       "noReply": "(無回覆)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "下次 {{time}}"
     },
     "dialogs": {
-      "enableTitle": "開啟喚醒功能",
-      "enableDesc": "開啟喚醒功能會自動關閉外掛內的喚醒功能，是否繼續？",
       "deleteConfirm": "確定要刪除任務「{{name}}」嗎？",
       "testTitle": "立即測試",
       "historyTitle": "觸發歷史",
       "taskTitleEdit": "編輯喚醒任務",
-      "taskTitleNew": "新建喚醒任務"
+      "taskTitleNew": "新建喚醒任務",
+      "riskWarning": "⚠️ 風險提示\n近期 Google 風控策略收緊，使用喚醒功能可能提高帳號觸發風控的機率（包括但不限於額外驗證、暫時限制等）。\n請依帳號實際情況謹慎使用，並自行評估風險。\n\n確認繼續？"
     },
     "form": {
       "taskName": "任務名稱",
@@ -748,6 +762,27 @@
       "accountsHint": "可多選，用這些帳號進行測試。",
       "start": "開始測試",
       "testing": "測試中..."
+    },
+    "verification": {
+      "title": "帳號驗證",
+      "columns": {
+        "verifiedAt": "驗證時間"
+      },
+      "filters": {
+        "all": "全部"
+      },
+      "actions": {
+        "selectAllAccounts": "全選",
+        "clearSelectedAccounts": "取消全選"
+      },
+      "deleteConfirm": "是否確認刪除？",
+      "runHint": {
+        "title": "驗證說明",
+        "line1": "立即驗證會透過「本地閘道 + 官方 Language Server 協議」模擬 Antigravity 客戶端發起最小對話請求。",
+        "line2": "此流程會消耗少量 Token（通常為一次短對話），實際消耗取決於模型與帳號策略。",
+        "line3": "此操作不會修改喚醒任務設定，僅用於檢查帳號可用性並寫入驗證記錄。",
+        "line4": "若返回 403，需先完成帳號驗證；結果中會提供驗證網址與快捷操作。"
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "按週配額",
       "hourly": "按5小時配額",
       "weeklyReset": "按週配額重置時間",
-      "hourlyReset": "按5小時配額重置時間"
+      "hourlyReset": "按5小時配額重置時間",
+      "premium": "按進階請求使用量"
     },
     "columns": {
       "hourly": "5小時配額",
-      "weekly": "週配額"
+      "weekly": "週配額",
+      "premium": "進階請求"
     },
     "flowNotice": {
       "title": "GitHub Copilot 帳號指南（點擊展開/收合）",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "切換到 VS Code",
     "injectSuccess": "已成功將權杖注入 VS Code，VS Code 正在啟動。",
-    "injectRequireClose": "注入前請先關閉 VS Code。"
+    "injectRequireClose": "注入前請先關閉 VS Code。",
+    "usage": {
+      "included": "已包含"
+    }
   },
   "quickSettings": {
     "antigravity": {

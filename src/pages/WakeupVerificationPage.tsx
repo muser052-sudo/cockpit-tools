@@ -1,0 +1,1029 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { confirm as confirmDialog } from '@tauri-apps/plugin-dialog';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { ShieldCheck, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { OverviewTabsHeader } from '../components/OverviewTabsHeader';
+import { useAccountStore } from '../stores/useAccountStore';
+import { Page } from '../types/navigation';
+import {
+  buildAntigravityFallbackModelOptions,
+  collectAntigravityQuotaModelKeys,
+  filterAntigravityModelOptions,
+  getAntigravityModelDisplayName,
+  type AntigravityModelOption,
+} from '../utils/antigravityModels';
+import {
+  isPrivacyModeEnabledByDefault,
+  maskSensitiveValue,
+  PRIVACY_MODE_CHANGED_EVENT,
+} from '../utils/privacy';
+
+interface WakeupVerificationPageProps {
+  onNavigate?: (page: Page) => void;
+}
+
+type AvailableModel = AntigravityModelOption;
+type DetailFilter = 'all' | 'success' | 'verification_required' | 'failed';
+type DetailMode = 'running' | 'history';
+
+interface WakeupVerificationStateItem {
+  accountId: string;
+  accountEmail: string;
+  status: string;
+  lastVerifyAt?: number | null;
+  lastModel?: string | null;
+  lastErrorCode?: number | null;
+  lastMessage?: string | null;
+  validationUrl?: string | null;
+  trajectoryId?: string | null;
+  durationMs?: number | null;
+}
+
+interface WakeupVerificationProgressPayload {
+  batchId: string;
+  total: number;
+  completed: number;
+  successCount: number;
+  verificationRequiredCount: number;
+  failedCount: number;
+  running: boolean;
+  item?: WakeupVerificationStateItem | null;
+}
+
+interface WakeupVerificationBatchHistoryItem {
+  batchId: string;
+  verifiedAt: number;
+  model: string;
+  prompt: string;
+  total: number;
+  completed: number;
+  successCount: number;
+  verificationRequiredCount: number;
+  failedCount: number;
+  records: WakeupVerificationStateItem[];
+}
+
+interface WakeupVerificationBatchResult {
+  batchId: string;
+  verifiedAt: number;
+  model: string;
+  prompt: string;
+  total: number;
+  completed: number;
+  successCount: number;
+  verificationRequiredCount: number;
+  failedCount: number;
+  records: WakeupVerificationStateItem[];
+}
+
+const DEFAULT_PROMPT = 'hi';
+const STATUS_IDLE = 'idle';
+const STATUS_RUNNING = 'running';
+const STATUS_SUCCESS = 'success';
+const STATUS_VERIFICATION_REQUIRED = 'verification_required';
+const STATUS_AUTH_EXPIRED = 'auth_expired';
+const STATUS_FAILED = 'failed';
+
+function normalizeStatus(value?: string | null): string {
+  const status = (value || '').trim().toLowerCase();
+  if (!status) return STATUS_IDLE;
+  switch (status) {
+    case STATUS_RUNNING:
+    case STATUS_SUCCESS:
+    case STATUS_VERIFICATION_REQUIRED:
+    case STATUS_AUTH_EXPIRED:
+    case STATUS_FAILED:
+    case STATUS_IDLE:
+      return status;
+    default:
+      return STATUS_FAILED;
+  }
+}
+
+function buildIdleState(accountId: string, accountEmail: string): WakeupVerificationStateItem {
+  return {
+    accountId,
+    accountEmail,
+    status: STATUS_IDLE,
+    lastVerifyAt: null,
+    lastModel: null,
+    lastErrorCode: null,
+    lastMessage: null,
+    validationUrl: null,
+    trajectoryId: null,
+    durationMs: null,
+  };
+}
+
+function mergeHistoryBatches(
+  current: WakeupVerificationBatchHistoryItem[],
+  updates: WakeupVerificationBatchHistoryItem[],
+): WakeupVerificationBatchHistoryItem[] {
+  if (updates.length === 0) return current;
+  const map = new Map<string, WakeupVerificationBatchHistoryItem>();
+  current.forEach((item) => map.set(item.batchId, item));
+  updates.forEach((item) => map.set(item.batchId, item));
+  return Array.from(map.values()).sort((a, b) => b.verifiedAt - a.verifiedAt);
+}
+
+function isFailedStatus(status: string): boolean {
+  const normalized = normalizeStatus(status);
+  return normalized === STATUS_FAILED || normalized === STATUS_AUTH_EXPIRED;
+}
+
+function matchesDetailFilter(item: WakeupVerificationStateItem, filter: DetailFilter): boolean {
+  const normalized = normalizeStatus(item.status);
+  if (filter === 'all') return true;
+  if (filter === 'success') return normalized === STATUS_SUCCESS;
+  if (filter === 'verification_required') return normalized === STATUS_VERIFICATION_REQUIRED;
+  return isFailedStatus(normalized);
+}
+
+export function WakeupVerificationPage({ onNavigate }: WakeupVerificationPageProps) {
+  const { t, i18n } = useTranslation();
+  const { accounts, fetchAccounts } = useAccountStore();
+  const locale = i18n.language || 'zh-CN';
+
+  const [running, setRunning] = useState(false);
+  const [notice, setNotice] = useState<{ text: string; tone: 'success' | 'warning' | 'error' } | null>(null);
+  const [availableModels, setAvailableModels] = useState<AvailableModel[]>([]);
+  const [historyBatches, setHistoryBatches] = useState<WakeupVerificationBatchHistoryItem[]>([]);
+  const [liveStates, setLiveStates] = useState<Record<string, WakeupVerificationStateItem>>({});
+
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [batchAccountIds, setBatchAccountIds] = useState<string[]>([]);
+  const [progress, setProgress] = useState<WakeupVerificationProgressPayload | null>(null);
+  const [runningModel, setRunningModel] = useState('');
+  const [runningPrompt, setRunningPrompt] = useState(DEFAULT_PROMPT);
+  const [runningStartedAt, setRunningStartedAt] = useState<number | null>(null);
+  const [detailMode, setDetailMode] = useState<DetailMode>('history');
+  const [detailBatchId, setDetailBatchId] = useState<string | null>(null);
+  const [detailFilter, setDetailFilter] = useState<DetailFilter>('all');
+  const [selectedBatchIds, setSelectedBatchIds] = useState<string[]>([]);
+  const [privacyModeEnabled, setPrivacyModeEnabled] = useState<boolean>(() =>
+    isPrivacyModeEnabledByDefault(),
+  );
+
+  const activeBatchIdRef = useRef<string | null>(null);
+  const accountSelectAllRef = useRef<HTMLInputElement | null>(null);
+
+  const accountById = useMemo(() => {
+    const map = new Map<string, (typeof accounts)[number]>();
+    accounts.forEach((account) => map.set(account.id, account));
+    return map;
+  }, [accounts]);
+  const accountIds = useMemo(() => accounts.map((account) => account.id), [accounts]);
+  const selectedAccountSet = useMemo(() => new Set(selectedAccounts), [selectedAccounts]);
+  const allAccountsSelected = useMemo(
+    () => accountIds.length > 0 && accountIds.every((id) => selectedAccountSet.has(id)),
+    [accountIds, selectedAccountSet],
+  );
+  const hasSelectedAccounts = useMemo(
+    () => accountIds.some((id) => selectedAccountSet.has(id)),
+    [accountIds, selectedAccountSet],
+  );
+  const partiallyAccountsSelected = useMemo(
+    () => hasSelectedAccounts && !allAccountsSelected,
+    [hasSelectedAccounts, allAccountsSelected],
+  );
+
+  const quotaModelKeys = useMemo(() => collectAntigravityQuotaModelKeys(accounts), [accounts]);
+  const filteredModels = useMemo(
+    () =>
+      filterAntigravityModelOptions(availableModels, {
+        allowedModelKeys: quotaModelKeys,
+        includeNonRecommended: false,
+      }),
+    [availableModels, quotaModelKeys],
+  );
+
+  const modelNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    filteredModels.forEach((model) => {
+      const displayName = (model.displayName || '').trim();
+      map.set(model.id, displayName || getAntigravityModelDisplayName(model.id) || model.id);
+    });
+    return map;
+  }, [filteredModels]);
+
+  const historyById = useMemo(() => {
+    const map = new Map<string, WakeupVerificationBatchHistoryItem>();
+    historyBatches.forEach((item) => map.set(item.batchId, item));
+    return map;
+  }, [historyBatches]);
+
+  const allHistorySelected = useMemo(
+    () => historyBatches.length > 0 && selectedBatchIds.length === historyBatches.length,
+    [historyBatches.length, selectedBatchIds.length],
+  );
+
+  const progressRows = useMemo(() => {
+    if (batchAccountIds.length === 0) return [];
+    return batchAccountIds
+      .map((accountId) => {
+        const account = accountById.get(accountId);
+        return liveStates[accountId] || buildIdleState(accountId, account?.email || accountId);
+      })
+      .sort((a, b) => a.accountEmail.localeCompare(b.accountEmail));
+  }, [batchAccountIds, accountById, liveStates]);
+
+  const activeDetail = useMemo<WakeupVerificationBatchHistoryItem | null>(() => {
+    if (!detailBatchId) {
+      return null;
+    }
+    if (detailMode === 'history') {
+      return historyById.get(detailBatchId) || null;
+    }
+
+    const batchId = activeBatchIdRef.current || progress?.batchId || detailBatchId;
+    return {
+      batchId,
+      verifiedAt: runningStartedAt || Date.now(),
+      model: runningModel || selectedModel,
+      prompt: runningPrompt,
+      total: progress?.total ?? batchAccountIds.length,
+      completed: progress?.completed ?? 0,
+      successCount: progress?.successCount ?? 0,
+      verificationRequiredCount: progress?.verificationRequiredCount ?? 0,
+      failedCount: progress?.failedCount ?? 0,
+      records: progressRows,
+    };
+  }, [
+    detailBatchId,
+    detailMode,
+    historyById,
+    progress,
+    runningStartedAt,
+    runningModel,
+    selectedModel,
+    runningPrompt,
+    batchAccountIds.length,
+    progressRows,
+  ]);
+
+  const detailRows = useMemo(() => {
+    if (!activeDetail) return [];
+    return activeDetail.records || [];
+  }, [activeDetail]);
+
+  const detailCounts = useMemo(() => {
+    const all = detailRows.length;
+    let success = 0;
+    let verificationRequired = 0;
+    let failed = 0;
+
+    detailRows.forEach((item) => {
+      const status = normalizeStatus(item.status);
+      if (status === STATUS_SUCCESS) {
+        success += 1;
+      } else if (status === STATUS_VERIFICATION_REQUIRED) {
+        verificationRequired += 1;
+      } else if (isFailedStatus(status)) {
+        failed += 1;
+      }
+    });
+
+    return {
+      all,
+      success,
+      verificationRequired,
+      failed,
+    };
+  }, [detailRows]);
+
+  const filteredDetailRows = useMemo(
+    () => detailRows.filter((item) => matchesDetailFilter(item, detailFilter)),
+    [detailRows, detailFilter],
+  );
+
+  const maskAccountText = useCallback(
+    (value?: string | null) => maskSensitiveValue(value, privacyModeEnabled),
+    [privacyModeEnabled],
+  );
+
+  const fetchHistory = async () => {
+    const result = await invoke<WakeupVerificationBatchHistoryItem[]>('wakeup_verification_load_history');
+    setHistoryBatches((result || []).sort((a, b) => b.verifiedAt - a.verifiedAt));
+  };
+
+  const fetchModels = async (accountList: typeof accounts = accounts) => {
+    const allowedModelKeys = collectAntigravityQuotaModelKeys(accountList);
+    const fallbackModels = buildAntigravityFallbackModelOptions(accountList);
+    try {
+      const models = await invoke<AvailableModel[]>('fetch_available_models');
+      const filtered = filterAntigravityModelOptions(models || [], {
+        allowedModelKeys,
+        includeNonRecommended: false,
+      });
+      if (filtered.length > 0) {
+        setAvailableModels(filtered);
+      } else if (fallbackModels.length > 0) {
+        setAvailableModels(fallbackModels);
+      } else {
+        setAvailableModels([]);
+      }
+    } catch (error) {
+      console.error('获取模型列表失败:', error);
+      if (fallbackModels.length > 0) {
+        setAvailableModels(fallbackModels);
+      } else {
+        setNotice({ text: t('wakeup.notice.modelsFetchFailed'), tone: 'warning' });
+        setAvailableModels([]);
+      }
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const initPage = async () => {
+      try {
+        await fetchAccounts();
+        if (!active) return;
+        const latestAccounts = useAccountStore.getState().accounts;
+        await Promise.all([fetchHistory(), fetchModels(latestAccounts)]);
+      } catch (error) {
+        if (!active) return;
+        setNotice({ text: String(error), tone: 'error' });
+      }
+    };
+    initPage();
+    return () => {
+      active = false;
+    };
+  }, [fetchAccounts]);
+
+  useEffect(() => {
+    if (!selectedModel && filteredModels.length > 0) {
+      setSelectedModel(filteredModels[0].id);
+    }
+  }, [filteredModels, selectedModel]);
+
+  useEffect(() => {
+    const validIds = new Set(historyBatches.map((item) => item.batchId));
+    setSelectedBatchIds((prev) => prev.filter((id) => validIds.has(id)));
+    if (detailMode === 'history' && detailBatchId && !validIds.has(detailBatchId)) {
+      setShowDetailModal(false);
+      setDetailBatchId(null);
+    }
+  }, [historyBatches, detailBatchId, detailMode]);
+
+  useEffect(() => {
+    const syncPrivacyMode = () => {
+      setPrivacyModeEnabled(isPrivacyModeEnabledByDefault());
+    };
+
+    const handlePrivacyModeChanged = (event: Event) => {
+      const detail = (event as CustomEvent<boolean>).detail;
+      if (typeof detail === 'boolean') {
+        setPrivacyModeEnabled(detail);
+      } else {
+        syncPrivacyMode();
+      }
+    };
+
+    window.addEventListener(PRIVACY_MODE_CHANGED_EVENT, handlePrivacyModeChanged as EventListener);
+    window.addEventListener('focus', syncPrivacyMode);
+    return () => {
+      window.removeEventListener(PRIVACY_MODE_CHANGED_EVENT, handlePrivacyModeChanged as EventListener);
+      window.removeEventListener('focus', syncPrivacyMode);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!accountSelectAllRef.current) return;
+    accountSelectAllRef.current.indeterminate = partiallyAccountsSelected;
+  }, [partiallyAccountsSelected]);
+
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    listen<WakeupVerificationProgressPayload>('wakeup://verification-progress', (event) => {
+      const payload = event.payload;
+      if (!payload?.batchId) return;
+
+      if (activeBatchIdRef.current && payload.batchId !== activeBatchIdRef.current) {
+        return;
+      }
+      if (!activeBatchIdRef.current) {
+        activeBatchIdRef.current = payload.batchId;
+      }
+
+      setProgress(payload);
+      setRunning(Boolean(payload.running));
+      if (payload.item) {
+        setLiveStates((prev) => ({
+          ...prev,
+          [payload.item!.accountId]: payload.item!,
+        }));
+      }
+      setDetailBatchId((prev) => {
+        if (detailMode !== 'running') return prev;
+        return payload.batchId;
+      });
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, [detailMode]);
+
+  const openConfigModal = () => {
+    setSelectedAccounts(accounts.map((account) => account.id));
+    if (!selectedModel && filteredModels.length > 0) {
+      setSelectedModel(filteredModels[0].id);
+    }
+    setShowConfigModal(true);
+  };
+
+  const openDetailModal = (batch: WakeupVerificationBatchHistoryItem) => {
+    setDetailFilter('all');
+    setDetailMode('history');
+    setDetailBatchId(batch.batchId);
+    setShowDetailModal(true);
+  };
+
+  const toggleAccountSelection = (accountId: string) => {
+    setSelectedAccounts((prev) => {
+      if (prev.includes(accountId)) {
+        return prev.filter((id) => id !== accountId);
+      }
+      return [...prev, accountId];
+    });
+  };
+
+  const selectAllAccounts = () => {
+    setSelectedAccounts(accountIds);
+  };
+
+  const clearSelectedAccounts = () => {
+    setSelectedAccounts([]);
+  };
+
+  const toggleAllAccountsSelection = () => {
+    if (allAccountsSelected) {
+      clearSelectedAccounts();
+      return;
+    }
+    selectAllAccounts();
+  };
+
+  const toggleBatchSelection = (batchId: string) => {
+    setSelectedBatchIds((prev) => {
+      if (prev.includes(batchId)) {
+        return prev.filter((id) => id !== batchId);
+      }
+      return [...prev, batchId];
+    });
+  };
+
+  const toggleSelectAllBatches = () => {
+    if (allHistorySelected) {
+      setSelectedBatchIds([]);
+      return;
+    }
+    setSelectedBatchIds(historyBatches.map((item) => item.batchId));
+  };
+
+  const deleteHistoryBatches = async (batchIds: string[]) => {
+    if (batchIds.length === 0) return;
+    const confirmText = t('wakeup.verification.deleteConfirm');
+    const confirmed = await confirmDialog(confirmText, {
+      kind: 'warning',
+      okLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+    });
+    if (!confirmed) return;
+
+    try {
+      const deleted = await invoke<number>('wakeup_verification_delete_history', { batchIds });
+      if (deleted > 0) {
+        const deletedSet = new Set(batchIds);
+        setHistoryBatches((prev) => prev.filter((item) => !deletedSet.has(item.batchId)));
+        setSelectedBatchIds((prev) => prev.filter((id) => !deletedSet.has(id)));
+        setNotice({ text: t('messages.actionSuccess', { action: t('common.delete') }), tone: 'success' });
+      }
+    } catch (error) {
+      console.error('删除验证记录失败:', error);
+      setNotice({
+        text: t('messages.actionFailed', { action: t('common.delete'), error: String(error) }),
+        tone: 'error',
+      });
+    }
+  };
+
+  const getStatusText = (status?: string | null) => {
+    const normalized = normalizeStatus(status);
+    switch (normalized) {
+      case STATUS_RUNNING:
+        return t('wakeup.statusRunning');
+      case STATUS_SUCCESS:
+        return t('common.success');
+      case STATUS_VERIFICATION_REQUIRED:
+        return t('wakeup.errorUi.verificationRequiredTitle');
+      case STATUS_AUTH_EXPIRED:
+        return t('accounts.status.authInvalid');
+      case STATUS_FAILED:
+        return t('common.failed');
+      default:
+        return t('common.none');
+    }
+  };
+
+  const getStatusClass = (status?: string | null) => {
+    const normalized = normalizeStatus(status);
+    switch (normalized) {
+      case STATUS_RUNNING:
+        return 'is-running';
+      case STATUS_SUCCESS:
+        return 'is-success';
+      case STATUS_VERIFICATION_REQUIRED:
+        return 'is-warning';
+      case STATUS_AUTH_EXPIRED:
+      case STATUS_FAILED:
+        return 'is-failed';
+      default:
+        return 'is-idle';
+    }
+  };
+
+  const formatTime = (timestamp?: number | null) => {
+    if (!timestamp) return t('wakeup.format.none');
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return t('wakeup.format.none');
+    return date.toLocaleString(locale);
+  };
+
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setNotice({ text: t('wakeup.errorUi.copySuccess'), tone: 'success' });
+    } catch (error) {
+      console.error('复制失败:', error);
+      setNotice({ text: t('wakeup.errorUi.copyFailed'), tone: 'error' });
+    }
+  };
+
+  const openValidationUrl = async (url: string) => {
+    try {
+      await openUrl(url);
+    } catch (error) {
+      console.error('打开验证地址失败:', error);
+      setNotice({ text: t('wakeup.errorUi.openFailed'), tone: 'error' });
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const startBatchVerification = async () => {
+    if (running) return;
+    if (!selectedModel) {
+      setNotice({ text: t('wakeup.notice.testMissingModel'), tone: 'warning' });
+      return;
+    }
+    if (selectedAccounts.length === 0) {
+      setNotice({ text: t('wakeup.notice.testMissingAccount'), tone: 'warning' });
+      return;
+    }
+
+    const now = Date.now();
+    const pendingStates: Record<string, WakeupVerificationStateItem> = {};
+    selectedAccounts.forEach((accountId) => {
+      const account = accountById.get(accountId);
+      if (!account) return;
+      pendingStates[accountId] = {
+        accountId,
+        accountEmail: account.email,
+        status: STATUS_RUNNING,
+        lastVerifyAt: now,
+        lastModel: selectedModel,
+        lastErrorCode: null,
+        lastMessage: null,
+        validationUrl: null,
+        trajectoryId: null,
+        durationMs: null,
+      };
+    });
+
+    const localBatchId = `pending_${now}`;
+    setLiveStates(pendingStates);
+    setBatchAccountIds([...selectedAccounts]);
+    setProgress({
+      batchId: localBatchId,
+      total: selectedAccounts.length,
+      completed: 0,
+      successCount: 0,
+      verificationRequiredCount: 0,
+      failedCount: 0,
+      running: true,
+      item: null,
+    });
+    setRunningStartedAt(now);
+    setRunningModel(selectedModel);
+    setRunningPrompt(DEFAULT_PROMPT);
+    setShowConfigModal(false);
+    setShowDetailModal(true);
+    setDetailMode('running');
+    setDetailBatchId(localBatchId);
+    setDetailFilter('all');
+    setRunning(true);
+    activeBatchIdRef.current = null;
+
+    try {
+      const result = await invoke<WakeupVerificationBatchResult>('wakeup_verification_run_batch', {
+        accountIds: selectedAccounts,
+        model: selectedModel,
+        prompt: DEFAULT_PROMPT,
+        maxOutputTokens: 0,
+      });
+
+      const finalBatch: WakeupVerificationBatchHistoryItem = {
+        batchId: result.batchId,
+        verifiedAt: result.verifiedAt,
+        model: result.model,
+        prompt: result.prompt,
+        total: result.total,
+        completed: result.completed,
+        successCount: result.successCount,
+        verificationRequiredCount: result.verificationRequiredCount,
+        failedCount: result.failedCount,
+        records: result.records || [],
+      };
+
+      activeBatchIdRef.current = result.batchId;
+      setProgress({
+        batchId: result.batchId,
+        total: result.total,
+        completed: result.completed,
+        successCount: result.successCount,
+        verificationRequiredCount: result.verificationRequiredCount,
+        failedCount: result.failedCount,
+        running: false,
+        item: null,
+      });
+      setRunning(false);
+      setHistoryBatches((prev) => mergeHistoryBatches(prev, [finalBatch]));
+      setDetailMode('history');
+      setDetailBatchId(result.batchId);
+      setShowDetailModal(true);
+
+      const tone = result.failedCount > 0 ? 'warning' : 'success';
+      setNotice({
+        text:
+          result.failedCount > 0
+            ? t('wakeup.notice.testFailed', { count: result.failedCount })
+            : t('wakeup.notice.testCompleted'),
+        tone,
+      });
+
+      await fetchHistory();
+    } catch (error) {
+      console.error('批量验证失败:', error);
+      setRunning(false);
+      setNotice({ text: String(error), tone: 'error' });
+    }
+  };
+
+  const renderValidationActions = (item: WakeupVerificationStateItem) => {
+    if (!item.validationUrl) return null;
+    return (
+      <div className="verification-inline-actions">
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={() => openValidationUrl(item.validationUrl!)}
+        >
+          {t('wakeup.errorUi.completeVerification')}
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={() => copyText(item.validationUrl!)}
+        >
+          {t('wakeup.errorUi.copyValidationUrl')}
+        </button>
+      </div>
+    );
+  };
+
+  const resolveModelLabel = (modelId?: string | null) => {
+    if (!modelId) return t('wakeup.format.none');
+    return modelNameById.get(modelId) || getAntigravityModelDisplayName(modelId) || modelId;
+  };
+
+  const activeDetailBatchLabel = useMemo(() => {
+    if (!activeDetail?.batchId) return '--';
+    return activeDetail.batchId;
+  }, [activeDetail]);
+
+  return (
+    <main className="main-content wakeup-page wakeup-verification-page">
+      <OverviewTabsHeader
+        active="verification"
+        onNavigate={onNavigate}
+        subtitle={t('wakeup.subtitle')}
+      />
+
+      <div className="toolbar">
+        <div className="toolbar-left">
+          <span className="wakeup-hint">{t('wakeup.historyCount', { count: historyBatches.length })}</span>
+        </div>
+        <div className="toolbar-right verification-toolbar-actions">
+          <button
+            className="btn btn-secondary"
+            onClick={() => deleteHistoryBatches(selectedBatchIds)}
+            disabled={running || selectedBatchIds.length === 0}
+          >
+            {t('common.delete')} ({selectedBatchIds.length})
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={openConfigModal}
+            disabled={running || accounts.length === 0}
+          >
+            <ShieldCheck size={16} />
+            {t('wakeup.errorUi.completeVerification')}
+          </button>
+        </div>
+      </div>
+
+      {notice ? (
+        <div className={`verification-notice is-${notice.tone}`}>
+          <span className="verification-notice-text">{notice.text}</span>
+          <button
+            type="button"
+            className="verification-notice-close"
+            onClick={() => setNotice(null)}
+            aria-label={t('common.close')}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ) : null}
+
+      <div className="account-table-container">
+        <table className="account-table verification-table">
+          <thead>
+            <tr>
+              <th className="verification-check-col">
+                <input
+                  type="checkbox"
+                  checked={allHistorySelected}
+                  onChange={toggleSelectAllBatches}
+                  aria-label={t('common.shared.filter.all', { count: historyBatches.length })}
+                />
+              </th>
+              <th>{t('wakeup.verification.columns.verifiedAt')}</th>
+              <th>{t('wakeup.form.modelSelect')}</th>
+              <th>{t('wakeup.verification.filters.all')}</th>
+              <th>{t('common.success')}</th>
+              <th>{t('wakeup.errorUi.verificationRequiredTitle')}</th>
+              <th>{t('common.failed')}</th>
+              <th>{t('accounts.columns.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {historyBatches.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="verification-empty-cell">
+                  {t('wakeup.historyEmpty')}
+                </td>
+              </tr>
+            ) : (
+              historyBatches.map((batch) => (
+                <tr key={batch.batchId}>
+                  <td className="verification-check-col">
+                    <input
+                      type="checkbox"
+                      checked={selectedBatchIds.includes(batch.batchId)}
+                      onChange={() => toggleBatchSelection(batch.batchId)}
+                      aria-label={batch.batchId}
+                    />
+                  </td>
+                  <td>{formatTime(batch.verifiedAt)}</td>
+                  <td>{resolveModelLabel(batch.model)}</td>
+                  <td>
+                    <span className="verification-count-badge is-all">{batch.total}</span>
+                  </td>
+                  <td>
+                    <span className="verification-count-badge is-success">{batch.successCount}</span>
+                  </td>
+                  <td>
+                    <span className="verification-count-badge is-warning">{batch.verificationRequiredCount}</span>
+                  </td>
+                  <td>
+                    <span className="verification-count-badge is-failed">{batch.failedCount}</span>
+                  </td>
+                  <td>
+                    <div className="verification-inline-actions">
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => openDetailModal(batch)}
+                      >
+                        {t('accounts.actions.viewDetails')}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => deleteHistoryBatches([batch.batchId])}
+                      >
+                        {t('common.delete')}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {showConfigModal && (
+        <div className="modal-overlay" onClick={() => !running && setShowConfigModal(false)}>
+          <div className="modal wakeup-modal verification-config-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('wakeup.errorUi.completeVerification')}</h2>
+              <button className="modal-close" onClick={() => setShowConfigModal(false)} disabled={running}>
+                <X />
+              </button>
+            </div>
+            <div className="modal-body verification-modal-body">
+              <div className="wakeup-form-group">
+                <label>{t('wakeup.form.modelSelect')}</label>
+                <div className="verification-select-wrap">
+                  <select
+                    className="wakeup-input verification-select"
+                    value={selectedModel}
+                    onChange={(event) => setSelectedModel(event.target.value)}
+                  >
+                    {filteredModels.length === 0 ? (
+                      <option value="">{t('wakeup.form.modelsEmpty')}</option>
+                    ) : (
+                      filteredModels.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.displayName || getAntigravityModelDisplayName(model.id) || model.id}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              </div>
+              <div className="verification-confirm-hint verification-run-hint">
+                <h3>{t('wakeup.verification.runHint.title')}</h3>
+                <ul>
+                  <li>{t('wakeup.verification.runHint.line1')}</li>
+                  <li>{t('wakeup.verification.runHint.line2')}</li>
+                  <li>{t('wakeup.verification.runHint.line3')}</li>
+                  <li>{t('wakeup.verification.runHint.line4')}</li>
+                </ul>
+              </div>
+              <div className="wakeup-form-group">
+                <label>{t('wakeup.test.accountsLabel')}</label>
+                <div className="verification-account-select-all">
+                  <label className="verification-checkbox-row verification-checkbox-row-head">
+                    <input
+                      ref={accountSelectAllRef}
+                      type="checkbox"
+                      className="verification-checkbox-input"
+                      checked={allAccountsSelected}
+                      disabled={running || accountIds.length === 0}
+                      onChange={toggleAllAccountsSelection}
+                    />
+                    <span className="verification-checkbox-ui" aria-hidden="true" />
+                    <span className="verification-checkbox-label">{t('wakeup.verification.actions.selectAllAccounts')}</span>
+                  </label>
+                  <span className="verification-account-select-count">
+                    {selectedAccounts.length}/{accountIds.length}
+                  </span>
+                </div>
+                <div className="verification-account-list">
+                  {accounts.map((account) => (
+                    <label
+                      key={account.id}
+                      className={`verification-account-item ${
+                        selectedAccounts.includes(account.id) ? 'selected' : ''
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="verification-checkbox-input"
+                        checked={selectedAccounts.includes(account.id)}
+                        onChange={() => toggleAccountSelection(account.id)}
+                      />
+                      <span className="verification-checkbox-ui" aria-hidden="true" />
+                      <span className="verification-account-item-email">{maskAccountText(account.email)}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowConfigModal(false)} disabled={running}>
+                {t('common.cancel')}
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={startBatchVerification}
+                disabled={running || filteredModels.length === 0}
+              >
+                {running ? t('wakeup.statusRunning') : t('wakeup.errorUi.completeVerification')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDetailModal && (
+        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="modal wakeup-modal verification-progress-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('accounts.actions.viewDetails')}</h2>
+              <button className="modal-close" onClick={() => setShowDetailModal(false)}>
+                <X />
+              </button>
+            </div>
+            <div className="modal-body verification-modal-body">
+              <div className="verification-detail-meta">
+                <span>
+                  {t('accounts.columns.lastUsed')}: {formatTime(activeDetail?.verifiedAt)}
+                </span>
+                <span>{t('wakeup.form.modelSelect')}: {resolveModelLabel(activeDetail?.model)}</span>
+                <span>Batch: {activeDetailBatchLabel}</span>
+              </div>
+
+              <div className="verification-progress-metrics">
+                <button
+                  type="button"
+                  className={`pill pill-secondary verification-filter-pill ${detailFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setDetailFilter('all')}
+                >
+                  {t('common.shared.filter.all', { count: detailCounts.all })}
+                </button>
+                <button
+                  type="button"
+                  className={`pill pill-success verification-filter-pill ${detailFilter === 'success' ? 'active' : ''}`}
+                  onClick={() => setDetailFilter('success')}
+                >
+                  {t('common.success')} {detailCounts.success}
+                </button>
+                <button
+                  type="button"
+                  className={`pill pill-emphasis verification-filter-pill ${detailFilter === 'verification_required' ? 'active' : ''}`}
+                  onClick={() => setDetailFilter('verification_required')}
+                >
+                  {t('wakeup.errorUi.verificationRequiredTitle')} {detailCounts.verificationRequired}
+                </button>
+                <button
+                  type="button"
+                  className={`pill pill-danger verification-filter-pill ${detailFilter === 'failed' ? 'active' : ''}`}
+                  onClick={() => setDetailFilter('failed')}
+                >
+                  {t('common.failed')} {detailCounts.failed}
+                </button>
+              </div>
+
+              <ul className="verification-progress-list">
+                {filteredDetailRows.length === 0 ? (
+                  <li className="verification-progress-empty">{t('wakeup.historyEmpty')}</li>
+                ) : (
+                  filteredDetailRows.map((item) => (
+                    <li key={`${activeDetailBatchLabel}-${item.accountId}`} className="verification-progress-item">
+                      <div className="verification-progress-main">
+                        <span className="verification-account-email">{maskAccountText(item.accountEmail)}</span>
+                        <span className={`verification-status-pill ${getStatusClass(item.status)}`}>
+                          {getStatusText(item.status)}
+                        </span>
+                        {item.durationMs ? <span className="verification-duration">{item.durationMs}ms</span> : null}
+                      </div>
+                      <div className="verification-progress-sub">
+                        {resolveModelLabel(item.lastModel)}
+                        {typeof item.lastErrorCode === 'number'
+                          ? ` · ${t('wakeup.errorUi.errorCode', { code: item.lastErrorCode })}`
+                          : ''}
+                        {item.trajectoryId ? ` · ${t('wakeup.errorUi.trajectoryId', { id: item.trajectoryId })}` : ''}
+                      </div>
+                      {item.validationUrl ? renderValidationActions(item) : null}
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDetailModal(false)}>
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

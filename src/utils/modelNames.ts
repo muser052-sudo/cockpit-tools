@@ -75,11 +75,9 @@ const AUTH_MODEL_BLACKLIST_NAME_SET = new Set(
 // 按模型家族分组，忽略具体版本号（如 Gemini 3.1 / 4 / 4.5）
 const GEMINI_ANY_PRO_TIER_ID_PATTERN = /^gemini-\d+(?:\.\d+)?-pro-(high|low)(?:-|$)/;
 const GEMINI_ANY_FLASH_ID_PATTERN = /^gemini-\d+(?:\.\d+)?-flash(?:-|$)/;
-const GEMINI_ANY_IMAGE_ID_PATTERN = /^gemini-\d+(?:\.\d+)?-pro-image(?:-|$)/;
 
 const GEMINI_ANY_PRO_TIER_NAME_PATTERN = /^gemini \d+(?:\.\d+)? pro(?: \((high|low)\)| (high|low))\b/;
 const GEMINI_ANY_FLASH_NAME_PATTERN = /^gemini \d+(?:\.\d+)? flash\b/;
-const GEMINI_ANY_IMAGE_NAME_PATTERN = /^gemini \d+(?:\.\d+)? pro image\b/;
 
 type GroupPrefixMatcher = (normalizedModelId: string, normalizedModelName: string) => boolean;
 
@@ -94,9 +92,6 @@ const DEFAULT_GROUP_PREFIX_MATCHERS: Record<string, GroupPrefixMatcher> = {
   g3_flash: (normalizedModelId, normalizedModelName) =>
     GEMINI_ANY_FLASH_ID_PATTERN.test(normalizedModelId) ||
     GEMINI_ANY_FLASH_NAME_PATTERN.test(normalizedModelName),
-  g3_image: (normalizedModelId, normalizedModelName) =>
-    GEMINI_ANY_IMAGE_ID_PATTERN.test(normalizedModelId) ||
-    GEMINI_ANY_IMAGE_NAME_PATTERN.test(normalizedModelName),
 };
 
 /**
@@ -215,16 +210,6 @@ export function getDefaultGroups(): DefaultGroup[] {
         'MODEL_PLACEHOLDER_M18',
       ],
     },
-    {
-      id: 'g3_image',
-      name: 'Gemini Image',
-      desktopModels: [
-        'gemini-3-pro-image',
-      ],
-      pluginModels: [
-        'MODEL_PLACEHOLDER_M9',
-      ],
-    },
   ];
 }
 
@@ -306,7 +291,6 @@ export const RECOMMENDED_MODELS = [
   'gemini-3-flash',
   'gemini-3-pro-high',
   'gemini-3-pro-low',
-  'gemini-3-pro-image',
   'gpt-oss-120b-medium',
   // 插件端格式
   'MODEL_PLACEHOLDER_M12',
@@ -316,7 +300,6 @@ export const RECOMMENDED_MODELS = [
   'MODEL_PLACEHOLDER_M18',
   'MODEL_PLACEHOLDER_M7',
   'MODEL_PLACEHOLDER_M8',
-  'MODEL_PLACEHOLDER_M9',
   'MODEL_OPENAI_GPT_OSS_120B_MEDIUM',
 ];
 

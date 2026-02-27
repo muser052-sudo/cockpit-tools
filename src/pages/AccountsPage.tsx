@@ -302,7 +302,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
   // 根据分组配置获取模型所属分组的名称
   const getGroupNameForModel = (modelId: string): string | null => {
     for (const group of displayGroups) {
-      if (group.models.includes(modelId)) {
+      if (group.models.some((groupModelId) => matchModelName(modelId.toLowerCase(), groupModelId.toLowerCase()))) {
         return group.name
       }
     }
@@ -313,6 +313,78 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
   const getModelDisplayLabel = (modelId: string): string => {
     const groupName = getGroupNameForModel(modelId)
     return groupName || getModelShortName(modelId)
+  }
+
+  const buildDisplayGroupSettings = (groups: DisplayGroup[]): GroupSettings => {
+    const settings: GroupSettings = {
+      groupMappings: {},
+      groupNames: {},
+      groupOrder: groups.map((group) => group.id),
+      updatedAt: 0,
+      updatedBy: 'desktop',
+    }
+
+    for (const group of groups) {
+      settings.groupNames[group.id] = group.name
+      for (const modelId of group.models) {
+        settings.groupMappings[modelId] = group.id
+      }
+    }
+
+    return settings
+  }
+
+  type QuotaDisplayItem = {
+    key: string
+    label: string
+    percentage: number
+    resetTime: string
+  }
+
+  const getQuotaDisplayItems = (account: Account): QuotaDisplayItem[] => {
+    const rawDisplayModels = getDisplayModels(account.quota)
+    if (rawDisplayModels.length === 0) {
+      return []
+    }
+
+    if (displayGroups.length === 0) {
+      return rawDisplayModels.map((model) => ({
+        key: model.name,
+        label: getModelDisplayLabel(model.name),
+        percentage: model.percentage,
+        resetTime: model.reset_time,
+      }))
+    }
+
+    const quotas = getAccountQuotas(account)
+    const settings = buildDisplayGroupSettings(displayGroups)
+    const groupedItems: QuotaDisplayItem[] = []
+
+    for (const group of displayGroups) {
+      const percentage = calculateGroupQuota(group.id, quotas, settings)
+      if (percentage === null) {
+        continue
+      }
+
+      const resetTimestamp = getGroupResetTimestamp(account, group)
+      groupedItems.push({
+        key: `group:${group.id}`,
+        label: group.name,
+        percentage,
+        resetTime: resetTimestamp ? new Date(resetTimestamp).toISOString() : '',
+      })
+    }
+
+    if (groupedItems.length > 0) {
+      return groupedItems
+    }
+
+    return rawDisplayModels.map((model) => ({
+      key: model.name,
+      label: getModelDisplayLabel(model.name),
+      percentage: model.percentage,
+      resetTime: model.reset_time,
+    }))
   }
 
   const normalizeTag = (tag: string) => tag.trim().toLowerCase()
@@ -1358,7 +1430,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
       const isCurrent = currentAccount?.id === account.id
       const tier = getSubscriptionTier(account.quota)
       const tierLabel = tier
-      const displayModels = getDisplayModels(account.quota)
+      const quotaDisplayItems = getQuotaDisplayItems(account)
       const isDisabled = account.disabled
       const isForbidden = Boolean(account.quota?.is_forbidden)
       const isSelected = selected.has(account.id)
@@ -1378,7 +1450,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
         ? `${t('accounts.status.disabled')}${account.disabled_reason ? `: ${account.disabled_reason}` : ''}`
         : ''
 
-      if (displayModels.length === 0) {
+      if (quotaDisplayItems.length === 0) {
         console.log('[AccountsPage] 账号无配额数据:', {
           email: account.email,
           isCurrent,
@@ -1452,24 +1524,22 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
               </div>
             ) : (
               <>
-                {displayModels.map((model) => {
-                  const resetLabel = formatResetTimeDisplay(model.reset_time, t)
+                {quotaDisplayItems.map((item) => {
+                  const resetLabel = formatResetTimeDisplay(item.resetTime, t)
                   return (
-                    <div key={model.name} className="quota-compact-item">
+                    <div key={item.key} className="quota-compact-item">
                       <div className="quota-compact-header">
-                        <span className="model-label">
-                          {getModelDisplayLabel(model.name)}
-                        </span>
+                        <span className="model-label">{item.label}</span>
                         <span
-                          className={`model-pct ${getQuotaClass(model.percentage)}`}
+                          className={`model-pct ${getQuotaClass(item.percentage)}`}
                         >
-                          {model.percentage}%
+                          {item.percentage}%
                         </span>
                       </div>
                       <div className="quota-compact-bar-track">
                         <div
-                          className={`quota-compact-bar ${getQuotaClass(model.percentage)}`}
-                          style={{ width: `${model.percentage}%` }}
+                          className={`quota-compact-bar ${getQuotaClass(item.percentage)}`}
+                          style={{ width: `${item.percentage}%` }}
                         />
                       </div>
                       {resetLabel && (
@@ -1478,7 +1548,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                     </div>
                   )
                 })}
-                {displayModels.length === 0 && (
+                {quotaDisplayItems.length === 0 && (
                   <div className="quota-empty">{t('overview.noQuotaData')}</div>
                 )}
               </>
@@ -1892,7 +1962,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
       const isCurrent = currentAccount?.id === account.id
       const tier = getSubscriptionTier(account.quota)
       const tierLabel = tier
-      const displayModels = getDisplayModels(account.quota)
+      const quotaDisplayItems = getQuotaDisplayItems(account)
       const isForbidden = Boolean(account.quota?.is_forbidden)
       const quotaError = account.quota_error
       const hasQuotaError = Boolean(quotaError?.message)
@@ -1978,32 +2048,30 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                 </div>
               ) : (
                 <>
-                  {displayModels.map((model) => (
-                    <div className="quota-item" key={model.name}>
+                  {quotaDisplayItems.map((item) => (
+                    <div className="quota-item" key={item.key}>
                       <div className="quota-header">
-                        <span className="quota-name">
-                          {getModelDisplayLabel(model.name)}
-                        </span>
+                        <span className="quota-name">{item.label}</span>
                         <span
-                          className={`quota-value ${getQuotaClass(model.percentage)}`}
+                          className={`quota-value ${getQuotaClass(item.percentage)}`}
                         >
-                          {model.percentage}%
+                          {item.percentage}%
                         </span>
                       </div>
                       <div className="quota-progress-track">
                         <div
-                          className={`quota-progress-bar ${getQuotaClass(model.percentage)}`}
-                          style={{ width: `${model.percentage}%` }}
+                          className={`quota-progress-bar ${getQuotaClass(item.percentage)}`}
+                          style={{ width: `${item.percentage}%` }}
                         />
                       </div>
                       <div className="quota-footer">
                         <span className="quota-reset">
-                          {formatResetTimeDisplay(model.reset_time, t)}
+                          {formatResetTimeDisplay(item.resetTime, t)}
                         </span>
                       </div>
                     </div>
                   ))}
-                  {displayModels.length === 0 && (
+                  {quotaDisplayItems.length === 0 && (
                     <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                       {t('overview.noQuotaData')}
                     </span>
@@ -2841,40 +2909,46 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                   </button>
                 </div>
                 <div className="modal-body">
-                  {account.quota?.models ? (
+                  {(() => {
+                    const quotaDisplayItems = getQuotaDisplayItems(account)
+                    if (quotaDisplayItems.length === 0) {
+                      return (
+                        <div className="empty-state-small">
+                          {t('overview.noQuotaData')}
+                        </div>
+                      )
+                    }
+                    return (
                     <div className="quota-list">
-                      {account.quota.models.map((model) => (
-                        <div key={model.name} className="quota-card">
-                          <h4>{model.display_name?.trim() || model.name}</h4>
+                      {quotaDisplayItems.map((item) => (
+                        <div key={item.key} className="quota-card">
+                          <h4>{item.label}</h4>
                           <div className="quota-value-row">
                             <span
-                              className={`quota-value ${getQuotaClass(model.percentage)}`}
+                              className={`quota-value ${getQuotaClass(item.percentage)}`}
                             >
-                              {model.percentage}%
+                              {item.percentage}%
                             </span>
                           </div>
                           <div className="quota-bar">
                             <div
-                              className={`quota-fill ${getQuotaClass(model.percentage)}`}
+                              className={`quota-fill ${getQuotaClass(item.percentage)}`}
                               style={{
-                                width: `${Math.min(100, model.percentage)}%`
+                                width: `${Math.min(100, item.percentage)}%`
                               }}
                             ></div>
                           </div>
                           <div className="quota-reset-info">
                             <p>
                               <strong>{t('modals.quota.resetTime')}:</strong>{' '}
-                              {formatResetTimeDisplay(model.reset_time, t)}
+                              {formatResetTimeDisplay(item.resetTime, t)}
                             </p>
                           </div>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <div className="empty-state-small">
-                      {t('overview.noQuotaData')}
-                    </div>
-                  )}
+                    )
+                  })()}
 
                   <div className="modal-actions" style={{ marginTop: 20 }}>
                     <button

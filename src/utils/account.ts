@@ -1,15 +1,33 @@
 import { QuotaData } from '../types/account';
+import {
+  AUTH_RECOMMENDED_LABELS,
+  getAntigravityDisplayModelsFromQuota,
+  getAntigravityModelDisplayName,
+} from './antigravityModels';
 
-// 显示顺序与分组管理一致：Claude 4.5, Gemini Pro, Gemini Flash, Gemini Image
 export const DISPLAY_MODEL_ORDER = [
-  { ids: ['claude-sonnet-4-5-thinking', 'claude-sonnet-4-5', 'claude-opus-4-6-thinking', 'claude-opus-4-5-thinking'], label: 'Claude 4.5' },
-  { ids: ['gemini-3-pro-high', 'gemini-3-pro-low'], label: 'Gemini Pro' },
-  { ids: ['gemini-3-flash'], label: 'Gemini Flash' },
-  { ids: ['gemini-3-pro-image'], label: 'Gemini Image' },
+  ...AUTH_RECOMMENDED_LABELS.map((label) => ({ ids: [label], label })),
 ];
 
+const MODEL_MATCH_REPLACEMENTS: Record<string, string> = {
+  'gemini-3-pro-high': 'gemini-3.1-pro-high',
+  'gemini-3-pro-low': 'gemini-3.1-pro-low',
+  'claude-sonnet-4-5': 'claude-sonnet-4-6',
+  'claude-sonnet-4-5-thinking': 'claude-sonnet-4-6',
+  'claude-opus-4-5-thinking': 'claude-opus-4-6-thinking',
+};
+
+const normalizeModelForMatch = (value: string): string => {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return '';
+  return MODEL_MATCH_REPLACEMENTS[normalized] || normalized;
+};
+
 export function matchModelName(modelName: string, target: string): boolean {
-  return modelName === target || modelName.startsWith(`${target}-`);
+  const left = normalizeModelForMatch(modelName);
+  const right = normalizeModelForMatch(target);
+  if (!left || !right) return false;
+  return left === right || left.startsWith(`${right}-`) || right.startsWith(`${left}-`);
 }
 
 export function getSubscriptionTier(quota?: QuotaData): string {
@@ -92,40 +110,9 @@ export function formatResetTimeDisplay(resetTime: string, t: Translate): string 
 }
 
 export function getDisplayModels(quota?: QuotaData) {
-  if (!quota?.models) {
-    console.log('[getDisplayModels] quota 或 models 为空:', { quota });
-    return [];
-  }
-  
-  const normalized = quota.models.map((model) => ({
-    model,
-    nameLower: model.name.toLowerCase(),
-  }));
-  
-  const pickModel = (ids: string[]) =>
-    normalized.find((item) => ids.some((id) => matchModelName(item.nameLower, id)))?.model;
-  
-  const result = DISPLAY_MODEL_ORDER
-    .map((item) => pickModel(item.ids))
-    .filter((model): model is (typeof quota.models)[number] => Boolean(model));
-  
-  // 调试日志：显示匹配过程
-  if (result.length === 0 && quota.models.length > 0) {
-    console.log('[getDisplayModels] 有模型数据但匹配失败:', {
-      availableModels: quota.models.map(m => m.name),
-      expectedIds: DISPLAY_MODEL_ORDER.flatMap(item => item.ids),
-    });
-  }
-  
-  return result;
+  return getAntigravityDisplayModelsFromQuota(quota);
 }
 
 export function getModelShortName(name: string): string {
-  const normalized = name.toLowerCase();
-  for (const item of DISPLAY_MODEL_ORDER) {
-    if (item.ids.some((id) => matchModelName(normalized, id))) {
-      return item.label;
-    }
-  }
-  return name;
+  return getAntigravityModelDisplayName(name);
 }

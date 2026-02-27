@@ -615,6 +615,21 @@
     "historyEmpty": "Nessuna cronologia",
     "historyClear": "Svuota cronologia",
     "historyPromptLabel": "Parola di risveglio: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Verifica richiesta",
+      "quotaTitle": "Limite quota",
+      "temporaryTitle": "Errore temporaneo",
+      "genericTitle": "Errore di esecuzione",
+      "validationUrlLabel": "URL di verifica (copiabile)",
+      "completeVerification": "Completa verifica",
+      "copyValidationUrl": "Copia URL di verifica",
+      "copyDebugInfo": "Copia informazioni di debug",
+      "errorCode": "Codice errore: {{code}}",
+      "trajectoryId": "ID traiettoria: {{id}}",
+      "copySuccess": "Copiato",
+      "copyFailed": "Copia non riuscita",
+      "openFailed": "Impossibile aprire il link. Tentata apertura nel browser."
+    },
     "format": {
       "noReply": "(Nessuna risposta)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "Prossima {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Abilita risveglio",
-      "enableDesc": "Abilitando il risveglio, la funzione di risveglio del plugin verrà disattivata. Continuare?",
       "deleteConfirm": "Eliminare l'attività \"{{name}}\"?",
       "testTitle": "Test immediato",
       "historyTitle": "Cronologia attivazioni",
       "taskTitleEdit": "Modifica attività di risveglio",
-      "taskTitleNew": "Nuova attività di risveglio"
+      "taskTitleNew": "Nuova attività di risveglio",
+      "riskWarning": "⚠️ Avviso di rischio\nA causa del recente rafforzamento dei controlli di rischio di Google, l’uso della funzione wakeup può aumentare la probabilità di attivare controlli di rischio sull’account (inclusi, ma non limitati a, verifiche aggiuntive o limitazioni temporanee).\nUsala con cautela in base allo stato del tuo account e valuta autonomamente il rischio.\n\nContinuare?"
     },
     "form": {
       "taskName": "Nome attività",
@@ -748,6 +762,27 @@
       "accountsHint": "Seleziona più account per il test.",
       "start": "Avvia test",
       "testing": "Test in corso..."
+    },
+    "verification": {
+      "title": "Verifica richiesta",
+      "columns": {
+        "verifiedAt": "Ora di verifica"
+      },
+      "filters": {
+        "all": "Tutti"
+      },
+      "actions": {
+        "selectAllAccounts": "Seleziona tutto",
+        "clearSelectedAccounts": "Deseleziona tutto"
+      },
+      "deleteConfirm": "Confermare l'eliminazione?",
+      "runHint": {
+        "title": "Note di verifica",
+        "line1": "« Verifica ora » invia una richiesta chat minima simulando il client Antigravity tramite gateway locale e protocollo ufficiale Language Server.",
+        "line2": "Questa operazione consuma una piccola quantità di token (di solito un breve dialogo). Il consumo reale dipende da modello e policy dell’account.",
+        "line3": "Questa azione non modifica la configurazione delle attività di risveglio. Verifica solo la disponibilità dell’account e registra lo storico di verifica.",
+        "line4": "Se viene restituito 403, è necessario completare prima la verifica dell’account. Il risultato includerà URL di verifica e azioni rapide."
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "Quota settimanale",
       "hourly": "Quota 5 ore",
       "weeklyReset": "Ora di reset settimanale",
-      "hourlyReset": "Ora di reset 5 ore"
+      "hourlyReset": "Ora di reset 5 ore",
+      "premium": "Per utilizzo delle richieste premium"
     },
     "columns": {
       "hourly": "Quota 5h",
-      "weekly": "Quota sett."
+      "weekly": "Quota sett.",
+      "premium": "Richieste premium"
     },
     "flowNotice": {
       "title": "Guida agli account GitHub Copilot (clicca per espandere/comprimere)",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "Passa a VS Code",
     "injectSuccess": "Il token è stato inserito correttamente in VS Code. VS Code si sta avviando.",
-    "injectRequireClose": "Chiudi VS Code prima di eseguire l'iniezione."
+    "injectRequireClose": "Chiudi VS Code prima di eseguire l'iniezione.",
+    "usage": {
+      "included": "Incluso"
+    }
   },
   "quickSettings": {
     "antigravity": {

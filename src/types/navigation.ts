@@ -10,4 +10,5 @@ export type Page =
   | 'accounts'
   | 'fingerprints'
   | 'wakeup'
+  | 'verification'
   | 'settings';

@@ -615,6 +615,21 @@
     "historyEmpty": "Aucun historique",
     "historyClear": "Effacer l'historique",
     "historyPromptLabel": "Mot de réveil : {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Vérification requise",
+      "quotaTitle": "Limite de quota",
+      "temporaryTitle": "Erreur temporaire",
+      "genericTitle": "Erreur d'exécution",
+      "validationUrlLabel": "URL de vérification (copiable)",
+      "completeVerification": "Terminer la vérification",
+      "copyValidationUrl": "Copier l'URL de vérification",
+      "copyDebugInfo": "Copier les infos de débogage",
+      "errorCode": "Code d'erreur : {{code}}",
+      "trajectoryId": "ID de trajectoire : {{id}}",
+      "copySuccess": "Copié",
+      "copyFailed": "Échec de la copie",
+      "openFailed": "Impossible d’ouvrir le lien. Tentative d’ouverture dans le navigateur."
+    },
     "format": {
       "noReply": "(Aucune réponse)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "Prochaine {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Activer le réveil",
-      "enableDesc": "Activer le réveil désactivera la fonction de réveil du plugin. Continuer ?",
       "deleteConfirm": "Supprimer la tâche « {{name}} » ?",
       "testTitle": "Tester maintenant",
       "historyTitle": "Historique des déclenchements",
       "taskTitleEdit": "Modifier la tâche de réveil",
-      "taskTitleNew": "Nouvelle tâche de réveil"
+      "taskTitleNew": "Nouvelle tâche de réveil",
+      "riskWarning": "⚠️ Avertissement de risque\nEn raison du récent renforcement des contrôles de risque de Google, l’utilisation de la fonction de réveil peut augmenter la probabilité de déclencher des mesures de contrôle du compte (y compris, sans s’y limiter, une vérification supplémentaire ou des limitations temporaires).\nVeuillez l’utiliser avec prudence selon l’état de votre compte et évaluer vous-même le risque.\n\nContinuer ?"
     },
     "form": {
       "taskName": "Nom de la tâche",
@@ -748,6 +762,27 @@
       "accountsHint": "Sélectionnez plusieurs comptes pour tester.",
       "start": "Lancer le test",
       "testing": "Test en cours..."
+    },
+    "verification": {
+      "title": "Vérification requise",
+      "columns": {
+        "verifiedAt": "Heure de vérification"
+      },
+      "filters": {
+        "all": "Tous"
+      },
+      "actions": {
+        "selectAllAccounts": "Tout sélectionner",
+        "clearSelectedAccounts": "Effacer la sélection"
+      },
+      "deleteConfirm": "Confirmer la suppression ?",
+      "runHint": {
+        "title": "Notes de vérification",
+        "line1": "« Vérifier maintenant » envoie une requête de chat minimale en simulant le client Antigravity via une passerelle locale et le protocole officiel Language Server.",
+        "line2": "Cette opération consomme une petite quantité de jetons (généralement un court dialogue). La consommation réelle dépend du modèle et de la politique du compte.",
+        "line3": "Cette action ne modifie pas la configuration des tâches de réveil. Elle vérifie seulement la disponibilité du compte et enregistre l’historique de vérification.",
+        "line4": "Si un 403 est renvoyé, vous devez d’abord terminer la vérification du compte. Le résultat inclura l’URL de vérification et des actions rapides."
+      }
     }
   },
   "update_notification": {
@@ -1145,11 +1180,13 @@
       "weekly": "Quota hebdomadaire",
       "hourly": "Quota de 5 heures",
       "weeklyReset": "Heure de réinitialisation hebdomadaire",
-      "hourlyReset": "Heure de réinitialisation sur 5 heures"
+      "hourlyReset": "Heure de réinitialisation sur 5 heures",
+      "premium": "Par usage des requêtes premium"
     },
     "columns": {
       "hourly": "Quota 5h",
-      "weekly": "Quota hebdo"
+      "weekly": "Quota hebdo",
+      "premium": "Requêtes premium"
     },
     "flowNotice": {
       "title": "Guide des comptes GitHub Copilot (cliquer pour déplier/replier)",
@@ -1160,7 +1197,10 @@
     },
     "injectToVSCode": "Basculer vers VS Code",
     "injectSuccess": "Le jeton a été injecté dans VS Code avec succès. VS Code est en cours de lancement.",
-    "injectRequireClose": "Veuillez fermer VS Code avant l’injection."
+    "injectRequireClose": "Veuillez fermer VS Code avant l’injection.",
+    "usage": {
+      "included": "Inclus"
+    }
   },
   "quickSettings": {
     "antigravity": {

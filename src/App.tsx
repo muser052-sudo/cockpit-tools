@@ -47,6 +47,11 @@ const FingerprintsPage = lazy(() =>
 const WakeupTasksPage = lazy(() =>
   import('./pages/WakeupTasksPage').then((module) => ({ default: module.WakeupTasksPage })),
 );
+const WakeupVerificationPage = lazy(() =>
+  import('./pages/WakeupVerificationPage').then((module) => ({
+    default: module.WakeupVerificationPage,
+  })),
+);
 const SettingsPage = lazy(() =>
   import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })),
 );
@@ -88,6 +93,7 @@ type AppPathMissingDetail = {
 
 const WAKEUP_ENABLED_KEY = 'agtools.wakeup.enabled';
 const TASKS_STORAGE_KEY = 'agtools.wakeup.tasks';
+const WAKEUP_FORCE_DISABLE_MIGRATION_KEY = 'agtools.wakeup.migration.force_disable_0_8_14';
 
 type WakeupHistoryRecord = {
   id: string;
@@ -341,6 +347,11 @@ function App() {
   useEffect(() => {
     const syncWakeupStateOnStartup = async () => {
       try {
+        // 一次性迁移：升级到该版本后先将唤醒总开关置为关闭，用户仍可手动再开启
+        if (localStorage.getItem(WAKEUP_FORCE_DISABLE_MIGRATION_KEY) !== '1') {
+          localStorage.setItem(WAKEUP_ENABLED_KEY, 'false');
+          localStorage.setItem(WAKEUP_FORCE_DISABLE_MIGRATION_KEY, '1');
+        }
         const enabled = localStorage.getItem(WAKEUP_ENABLED_KEY) === 'true';
         const tasksRaw = localStorage.getItem(TASKS_STORAGE_KEY);
         const tasks = tasksRaw ? JSON.parse(tasksRaw) : [];
@@ -1005,6 +1016,7 @@ function App() {
           {page === 'instances' && <InstancesPage onNavigate={setPage} />}
           {page === 'fingerprints' && <FingerprintsPage onNavigate={setPage} />}
           {page === 'wakeup' && <WakeupTasksPage onNavigate={setPage} />}
+          {page === 'verification' && <WakeupVerificationPage onNavigate={setPage} />}
           {page === 'settings' && <SettingsPage />}
         </Suspense>
       </div>

@@ -8,7 +8,7 @@
 //! - 两端使用同一个 modelId (API 返回的 models Key)
 //! - groupMappings: modelId -> groupId
 //! - groupNames: groupId -> displayName
-//! - groupOrder: 分组排序（插件端可自定义，桌面端只显示前4个）
+//! - groupOrder: 分组排序（插件端可自定义，桌面端只显示前3个）
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -22,11 +22,12 @@ const GROUP_SETTINGS_FILE: &str = "group_settings.json";
 
 const LEGACY_GROUP_NAME_G3_PRO: &str = "G3-Pro";
 const LEGACY_GROUP_NAME_G3_FLASH: &str = "G3-Flash";
-const LEGACY_GROUP_NAME_G3_IMAGE: &str = "G3-Image";
 
 const GROUP_NAME_GEMINI_PRO: &str = "Gemini Pro";
 const GROUP_NAME_GEMINI_FLASH: &str = "Gemini Flash";
-const GROUP_NAME_GEMINI_IMAGE: &str = "Gemini Image";
+
+const DEPRECATED_GROUP_ID_G3_IMAGE: &str = "g3_image";
+const DEPRECATED_MODEL_ID_GEMINI_3_PRO_IMAGE: &str = "gemini-3-pro-image";
 
 /// 配置来源
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -43,7 +44,7 @@ impl Default for ConfigSource {
 }
 
 /// 分组配置
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct GroupSettings {
     /// 模型 -> 分组映射 (modelId -> groupId)
@@ -69,7 +70,7 @@ pub struct GroupSettings {
 
 impl Default for GroupSettings {
     fn default() -> Self {
-        // 固定的 4 个分组
+        // 固定的 3 个分组
         let mut group_mappings = HashMap::new();
         let mut group_names = HashMap::new();
 
@@ -83,6 +84,7 @@ impl Default for GroupSettings {
             "claude_45".to_string(),
         );
         group_mappings.insert("claude-sonnet-4-5".to_string(), "claude_45".to_string());
+        group_mappings.insert("claude-sonnet-4-6".to_string(), "claude_45".to_string());
         group_mappings.insert(
             "claude-sonnet-4-5-thinking".to_string(),
             "claude_45".to_string(),
@@ -93,21 +95,18 @@ impl Default for GroupSettings {
         // Gemini Pro 分组
         group_mappings.insert("gemini-3-pro-high".to_string(), "g3_pro".to_string());
         group_mappings.insert("gemini-3-pro-low".to_string(), "g3_pro".to_string());
+        group_mappings.insert("gemini-3.1-pro-high".to_string(), "g3_pro".to_string());
+        group_mappings.insert("gemini-3.1-pro-low".to_string(), "g3_pro".to_string());
         group_names.insert("g3_pro".to_string(), GROUP_NAME_GEMINI_PRO.to_string());
 
         // Gemini Flash 分组
         group_mappings.insert("gemini-3-flash".to_string(), "g3_flash".to_string());
         group_names.insert("g3_flash".to_string(), GROUP_NAME_GEMINI_FLASH.to_string());
 
-        // Gemini Image 分组
-        group_mappings.insert("gemini-3-pro-image".to_string(), "g3_image".to_string());
-        group_names.insert("g3_image".to_string(), GROUP_NAME_GEMINI_IMAGE.to_string());
-
         let group_order = vec![
             "claude_45".to_string(),
             "g3_pro".to_string(),
             "g3_flash".to_string(),
-            "g3_image".to_string(),
         ];
 
         Self {
@@ -220,11 +219,17 @@ fn migrate_legacy_group_names(settings: &mut GroupSettings) {
         LEGACY_GROUP_NAME_G3_FLASH,
         GROUP_NAME_GEMINI_FLASH,
     );
-    migrate_name(
-        "g3_image",
-        LEGACY_GROUP_NAME_G3_IMAGE,
-        GROUP_NAME_GEMINI_IMAGE,
-    );
+}
+
+fn remove_deprecated_groups(settings: &mut GroupSettings) {
+    settings.group_names.remove(DEPRECATED_GROUP_ID_G3_IMAGE);
+    settings
+        .group_order
+        .retain(|group_id| group_id != DEPRECATED_GROUP_ID_G3_IMAGE);
+    settings.group_mappings.retain(|model_id, group_id| {
+        group_id != DEPRECATED_GROUP_ID_G3_IMAGE
+            && model_id != DEPRECATED_MODEL_ID_GEMINI_3_PRO_IMAGE
+    });
 }
 
 /// 获取分组配置文件路径
@@ -250,6 +255,7 @@ pub fn load_group_settings() -> GroupSettings {
                 ));
                 default_settings.clone()
             });
+            let original_settings = settings.clone();
 
             // 兼容增量升级：补齐缺失的默认映射/名称/排序，保留用户自定义配置
             for (model_id, group_id) in &default_settings.group_mappings {
@@ -277,6 +283,15 @@ pub fn load_group_settings() -> GroupSettings {
             }
 
             migrate_legacy_group_names(&mut settings);
+            remove_deprecated_groups(&mut settings);
+            if settings != original_settings {
+                if let Err(e) = save_group_settings(&settings) {
+                    crate::modules::logger::log_warn(&format!(
+                        "[GroupSettings] 迁移后写回配置失败: {}",
+                        e
+                    ));
+                }
+            }
 
             settings
         }
@@ -325,9 +340,70 @@ mod tests {
     #[test]
     fn test_group_settings_default() {
         let settings = GroupSettings::default();
-        assert!(settings.group_mappings.is_empty());
-        assert!(settings.group_names.is_empty());
-        assert!(settings.group_order.is_empty());
+        assert_eq!(settings.updated_at, 0);
+        assert_eq!(settings.updated_by, ConfigSource::Desktop);
+
+        assert_eq!(
+            settings.group_order,
+            vec![
+                "claude_45".to_string(),
+                "g3_pro".to_string(),
+                "g3_flash".to_string(),
+            ]
+        );
+
+        assert_eq!(
+            settings.group_names.get("claude_45").map(String::as_str),
+            Some("Claude 4.5")
+        );
+        assert_eq!(
+            settings.group_names.get("g3_pro").map(String::as_str),
+            Some(GROUP_NAME_GEMINI_PRO)
+        );
+        assert_eq!(
+            settings.group_names.get("g3_flash").map(String::as_str),
+            Some(GROUP_NAME_GEMINI_FLASH)
+        );
+
+        assert_eq!(
+            settings
+                .group_mappings
+                .get("claude-sonnet-4-5")
+                .map(String::as_str),
+            Some("claude_45")
+        );
+        assert_eq!(
+            settings
+                .group_mappings
+                .get("gemini-3-pro-high")
+                .map(String::as_str),
+            Some("g3_pro")
+        );
+        assert_eq!(
+            settings
+                .group_mappings
+                .get("gemini-3-flash")
+                .map(String::as_str),
+            Some("g3_flash")
+        );
+    }
+
+    #[test]
+    fn test_remove_deprecated_groups() {
+        let mut settings = GroupSettings::default();
+        settings
+            .group_names
+            .insert("g3_image".to_string(), "Gemini Image".to_string());
+        settings.group_order.push("g3_image".to_string());
+        settings
+            .group_mappings
+            .insert("gemini-3-pro-image".to_string(), "g3_image".to_string());
+
+        remove_deprecated_groups(&mut settings);
+
+        assert!(!settings.group_names.contains_key("g3_image"));
+        assert!(!settings.group_order.iter().any(|group_id| group_id == "g3_image"));
+        assert!(!settings.group_mappings.contains_key("gemini-3-pro-image"));
     }
 
     #[test]

@@ -615,6 +615,21 @@
     "historyEmpty": "Sin historial",
     "historyClear": "Limpiar historial",
     "historyPromptLabel": "Palabra de activación: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Se requiere verificación",
+      "quotaTitle": "Límite de cuota",
+      "temporaryTitle": "Error temporal",
+      "genericTitle": "Error de ejecución",
+      "validationUrlLabel": "URL de verificación (copiable)",
+      "completeVerification": "Completar verificación",
+      "copyValidationUrl": "Copiar URL de verificación",
+      "copyDebugInfo": "Copiar información de depuración",
+      "errorCode": "Código de error: {{code}}",
+      "trajectoryId": "ID de trayectoria: {{id}}",
+      "copySuccess": "Copiado",
+      "copyFailed": "Error al copiar",
+      "openFailed": "No se pudo abrir el enlace. Se intentó abrir en el navegador."
+    },
     "format": {
       "noReply": "(Sin respuesta)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "Próxima {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Habilitar activación",
-      "enableDesc": "Al habilitar activación se desactivará la función de activación del plugin. ¿Continuar?",
       "deleteConfirm": "¿Eliminar la tarea \"{{name}}\"?",
       "testTitle": "Probar ahora",
       "historyTitle": "Historial de activación",
       "taskTitleEdit": "Editar tarea de activación",
-      "taskTitleNew": "Nueva tarea de activación"
+      "taskTitleNew": "Nueva tarea de activación",
+      "riskWarning": "⚠️ Advertencia de riesgo\nDebido al reciente endurecimiento del control de riesgo de Google, usar la función de wakeup puede aumentar la probabilidad de activar controles de riesgo de la cuenta (incluidos, entre otros, verificación adicional o restricciones temporales).\nÚsala con cautela según el estado de tu cuenta y evalúa el riesgo por tu cuenta.\n\n¿Continuar?"
     },
     "form": {
       "taskName": "Nombre de la tarea",
@@ -748,6 +762,27 @@
       "accountsHint": "Selecciona varias cuentas para probar.",
       "start": "Iniciar prueba",
       "testing": "Probando..."
+    },
+    "verification": {
+      "title": "Se requiere verificación",
+      "columns": {
+        "verifiedAt": "Hora de verificación"
+      },
+      "filters": {
+        "all": "Todos"
+      },
+      "actions": {
+        "selectAllAccounts": "Seleccionar todo",
+        "clearSelectedAccounts": "Borrar selección"
+      },
+      "deleteConfirm": "¿Confirmar eliminación?",
+      "runHint": {
+        "title": "Notas de verificación",
+        "line1": "« Verificar ahora » envía una solicitud mínima de chat simulando el cliente Antigravity mediante una puerta de enlace local y el protocolo oficial de Language Server.",
+        "line2": "Este proceso consume una pequeña cantidad de tokens (normalmente un diálogo corto). El consumo real depende del modelo y de la política de la cuenta.",
+        "line3": "Esta acción no modifica la configuración de las tareas de activación. Solo valida la disponibilidad de la cuenta y guarda el registro de verificación.",
+        "line4": "Si se devuelve un 403, primero debes completar la verificación de la cuenta. El resultado incluirá la URL de verificación y acciones rápidas."
+      }
     }
   },
   "update_notification": {
@@ -914,11 +949,13 @@
       "weekly": "Por uso de mensajes de chat",
       "hourly": "Por uso de sugerencias en línea",
       "weeklyReset": "Por hora de reinicio de mensajes de chat",
-      "hourlyReset": "Por hora de reinicio de sugerencias en línea"
+      "hourlyReset": "Por hora de reinicio de sugerencias en línea",
+      "premium": "Por uso de solicitudes premium"
     },
     "columns": {
       "hourly": "Sugerencias en línea",
-      "weekly": "Mensajes de chat"
+      "weekly": "Mensajes de chat",
+      "premium": "Solicitudes premium"
     },
     "flowNotice": {
       "title": "Guía de cuentas de GitHub Copilot (clic para expandir/contraer)",
@@ -929,7 +966,10 @@
     },
     "injectToVSCode": "Cambiar a VS Code",
     "injectSuccess": "El token se inyectó correctamente en VS Code. VS Code se está iniciando.",
-    "injectRequireClose": "Cierra VS Code antes de inyectar."
+    "injectRequireClose": "Cierra VS Code antes de inyectar.",
+    "usage": {
+      "included": "Incluido"
+    }
   },
   "dashboard": {
     "title": "Panel de cuentas",

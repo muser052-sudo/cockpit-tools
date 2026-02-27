@@ -41,7 +41,8 @@ export function getGitHubCopilotPlanDisplayName(planType?: string | null): strin
   if (upper.includes('FREE')) return 'FREE';
   if (upper.includes('INDIVIDUAL_PRO')) return 'PRO';
   if (upper === 'PRO') return 'PRO';
-  if (upper.includes('INDIVIDUAL')) return 'INDIVIDUAL';
+  // 与 VS Code 对齐：copilot_plan=individual 归为 Pro。
+  if (upper.includes('INDIVIDUAL')) return 'PRO';
   if (upper.includes('BUSINESS')) return 'BUSINESS';
   if (upper.includes('ENTERPRISE')) return 'ENTERPRISE';
   return upper;
@@ -54,7 +55,7 @@ function resolvePlanFromSku(sku: string): GitHubCopilotPlanBadge | null {
   if (lower.includes('enterprise')) return 'ENTERPRISE';
   if (lower.includes('business')) return 'BUSINESS';
   if (lower.includes('individual_pro') || lower === 'pro' || lower.includes('_pro')) return 'PRO';
-  if (lower.includes('individual')) return 'INDIVIDUAL';
+  if (lower.includes('individual')) return 'PRO';
   return null;
 }
 
@@ -70,7 +71,7 @@ export function getGitHubCopilotPlanBadge(account: GitHubCopilotAccount): GitHub
     case 'PRO':
       return 'PRO';
     case 'INDIVIDUAL':
-      return 'INDIVIDUAL';
+      return 'PRO';
     case 'BUSINESS':
       return 'BUSINESS';
     case 'ENTERPRISE':
@@ -97,6 +98,10 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 export type GitHubCopilotUsage = {
   inlineSuggestionsUsedPercent: number | null;
   chatMessagesUsedPercent: number | null;
+  premiumRequestsUsedPercent?: number | null;
+  inlineIncluded?: boolean;
+  chatIncluded?: boolean;
+  premiumIncluded?: boolean;
   allowanceResetAt?: number | null; // unix seconds
   remainingCompletions?: number | null;
   remainingChat?: number | null;
@@ -132,21 +137,17 @@ function isFreeLimitedSku(account: GitHubCopilotAccount, tokenMap: Record<string
   return plan.includes('free_limited');
 }
 
-function getPremiumQuotaSnapshot(account: GitHubCopilotAccount): Record<string, unknown> | null {
+function getQuotaSnapshot(
+  account: GitHubCopilotAccount,
+  key: 'chat' | 'completions' | 'premium_interactions',
+): Record<string, unknown> | null {
   const raw = account.copilot_quota_snapshots as unknown;
   if (!raw || typeof raw !== 'object') return null;
   const snapshots = raw as Record<string, unknown>;
-
-  const premiumInteractions = snapshots['premium_interactions'];
-  if (premiumInteractions && typeof premiumInteractions === 'object') {
-    return premiumInteractions as Record<string, unknown>;
+  const snapshot = snapshots[key];
+  if (snapshot && typeof snapshot === 'object') {
+    return snapshot as Record<string, unknown>;
   }
-
-  const premiumModels = snapshots['premium_models'];
-  if (premiumModels && typeof premiumModels === 'object') {
-    return premiumModels as Record<string, unknown>;
-  }
-
   return null;
 }
 
@@ -199,7 +200,7 @@ function calcUsedPercent(total: number | null, remaining: number | null): number
   return clampPercent((used / total) * 100);
 }
 
-function calcUsedPercentFromPremiumSnapshot(snapshot: Record<string, unknown>): number | null {
+function calcUsedPercentFromSnapshot(snapshot: Record<string, unknown>): number | null {
   const unlimited = snapshot['unlimited'] === true;
   if (unlimited) return 0;
 
@@ -216,7 +217,17 @@ function calcUsedPercentFromPremiumSnapshot(snapshot: Record<string, unknown>): 
   return null;
 }
 
-function calcRemainingFromPremiumSnapshot(snapshot: Record<string, unknown>): number | null {
+function isIncludedFromSnapshot(snapshot: Record<string, unknown> | null): boolean {
+  if (!snapshot) return false;
+  if (snapshot['unlimited'] === true) return true;
+  const entitlement = getNumber(snapshot['entitlement']);
+  return entitlement != null && entitlement < 0;
+}
+
+function calcRemainingFromSnapshot(snapshot: Record<string, unknown>): number | null {
+  const remaining = getNumber(snapshot['remaining']);
+  if (remaining != null) return remaining;
+
   const entitlement = getNumber(snapshot['entitlement']);
   const percentRemaining = getNumber(snapshot['percent_remaining']);
   if (entitlement == null || percentRemaining == null || entitlement <= 0) return null;
@@ -227,33 +238,45 @@ export function getGitHubCopilotUsage(account: GitHubCopilotAccount): GitHubCopi
   const tokenMap = parseTokenMap(account.copilot_token || '');
   const freeLimited = isFreeLimitedSku(account, tokenMap);
 
-  // 与 VS Code 扩展口径对齐：付费用户优先使用 quota_snapshots.premium_interactions。
-  if (!freeLimited) {
-    const premiumSnapshot = getPremiumQuotaSnapshot(account);
-    if (premiumSnapshot) {
-      const usedPercent = calcUsedPercentFromPremiumSnapshot(premiumSnapshot);
-      const entitlement = getNumber(premiumSnapshot['entitlement']);
-      const remaining = calcRemainingFromPremiumSnapshot(premiumSnapshot);
+  const completionsSnapshot = getQuotaSnapshot(account, 'completions');
+  const chatSnapshot = getQuotaSnapshot(account, 'chat');
+  const premiumSnapshot = getQuotaSnapshot(account, 'premium_interactions');
 
-      return {
-        inlineSuggestionsUsedPercent: usedPercent,
-        chatMessagesUsedPercent: usedPercent,
-        allowanceResetAt: pickAllowanceResetAt(account),
-        remainingCompletions: remaining,
-        remainingChat: remaining,
-        totalCompletions: entitlement,
-        totalChat: entitlement,
-      };
-    }
-  }
+  const snapshotInlineUsed =
+    completionsSnapshot ? calcUsedPercentFromSnapshot(completionsSnapshot) : null;
+  const snapshotChatUsed =
+    chatSnapshot ? calcUsedPercentFromSnapshot(chatSnapshot) : null;
+  const snapshotPremiumUsed =
+    premiumSnapshot ? calcUsedPercentFromSnapshot(premiumSnapshot) : null;
 
-  const remainingCompletions = getLimitedQuota(account, 'completions');
-  const remainingChat = getLimitedQuota(account, 'chat');
+  const inlineIncluded = isIncludedFromSnapshot(completionsSnapshot);
+  const chatIncluded = isIncludedFromSnapshot(chatSnapshot);
+  const premiumIncluded = isIncludedFromSnapshot(premiumSnapshot);
 
-  const totalCompletions = getNumber(tokenMap['cq']) ?? (remainingCompletions ?? null);
+  const remainingCompletionsFromSnapshot = completionsSnapshot
+    ? calcRemainingFromSnapshot(completionsSnapshot)
+    : null;
+  const remainingChatFromSnapshot = chatSnapshot
+    ? calcRemainingFromSnapshot(chatSnapshot)
+    : null;
+  const remainingPremiumFromSnapshot = premiumSnapshot
+    ? calcRemainingFromSnapshot(premiumSnapshot)
+    : null;
+
+  const remainingCompletions = remainingCompletionsFromSnapshot ?? getLimitedQuota(account, 'completions');
+  const remainingChat = remainingChatFromSnapshot ?? getLimitedQuota(account, 'chat');
+  const remainingPremium = remainingPremiumFromSnapshot;
+
+  const totalCompletions =
+    (completionsSnapshot ? getNumber(completionsSnapshot['entitlement']) : null) ??
+    getNumber(tokenMap['cq']) ??
+    (remainingCompletions ?? null);
+
+  let totalChat =
+    (chatSnapshot ? getNumber(chatSnapshot['entitlement']) : null) ??
+    getNumber(tokenMap['tq']);
   // VS Code Copilot Free Usage 的 chat 口径：
   // free_limited 账号一般按 500 总额度计算已用百分比。
-  let totalChat = getNumber(tokenMap['tq']);
   if (totalChat == null) {
     if (freeLimited && remainingChat != null) {
       totalChat = 500;
@@ -261,10 +284,24 @@ export function getGitHubCopilotUsage(account: GitHubCopilotAccount): GitHubCopi
       totalChat = remainingChat ?? null;
     }
   }
+  const totalPremium =
+    (premiumSnapshot ? getNumber(premiumSnapshot['entitlement']) : null) ??
+    (remainingPremium ?? null);
+
+  const inlineUsedPercent =
+    snapshotInlineUsed ?? calcUsedPercent(totalCompletions, remainingCompletions);
+  const chatUsedPercent =
+    snapshotChatUsed ?? calcUsedPercent(totalChat, remainingChat);
+  const premiumUsedPercent =
+    snapshotPremiumUsed ?? calcUsedPercent(totalPremium, remainingPremium);
 
   return {
-    inlineSuggestionsUsedPercent: calcUsedPercent(totalCompletions, remainingCompletions),
-    chatMessagesUsedPercent: calcUsedPercent(totalChat, remainingChat),
+    inlineSuggestionsUsedPercent: inlineUsedPercent,
+    chatMessagesUsedPercent: chatUsedPercent,
+    premiumRequestsUsedPercent: premiumUsedPercent,
+    inlineIncluded,
+    chatIncluded,
+    premiumIncluded,
     allowanceResetAt: pickAllowanceResetAt(account),
     remainingCompletions,
     remainingChat,

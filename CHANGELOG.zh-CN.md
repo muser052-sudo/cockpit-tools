@@ -7,6 +7,21 @@
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
 ---
+## [0.9.0] - 2026-02-27
+
+### 新增
+- **独立账号验证工作台**：新增 Antigravity「账号验证」页面，支持按模型批量验证账号、实时进度、验证历史落库、批次详情查看，以及 `全部/成功/需要验证/失败` 状态筛选。
+- **官方对齐的唤醒/验证链路**：新增 `本地网关 + 官方 Language Server 协议` 通道，按 `StartCascade` / `SendUserCascadeMessage` / `GetCascadeTrajectory` / `DeleteCascadeTrajectory` 执行，用于对话唤醒与账号验证调用。
+- **403 验证快捷操作**：在“需要验证”结果中提供验证地址展示与快捷操作（`立即验证`、复制验证地址、复制调试信息），便于用户自助完成验证。
+
+### 变更
+- **模型列表规则统一**：唤醒任务模型选择、账号验证模型选择、配额相关模型展示统一按官方 `agentModelSorts[].groups[].modelIds` 生成；官方列表不可用时回退固定 6 个推荐模型。
+- **Antigravity 分组展示收敛为 3 组**：默认分组调整为 `Claude / Gemini Pro / Gemini Flash`，移除 `Gemini Image` 分组并兼容清理旧映射，避免重复分组展示。
+- **账号验证页交互与隐私展示对齐**：支持批量勾选/删除验证记录、可手动关闭结果提示，并与账号总览隐私开关联动（邮箱脱敏展示一致）。
+- **GitHub Copilot（VS Code 口径）展示对齐**：套餐映射中 `individual` 统一归并为 `PRO`；用量展示改为按 `quota_snapshots.completions/chat/premium_interactions` 解析，卡片与表格新增 `Premium requests` 维度并支持 `Included` 展示。
+- **唤醒任务自定义时间交互优化**：自定义时间保持“时间选择器 + 快速输入”交互；空值不再展示默认时间；输入但未点击“添加”的自定义时间也会参与“下次触发预览”和任务保存。
+
+---
 ## [0.8.13] - 2026-02-24
 
 ### 新增

@@ -615,6 +615,21 @@
     "historyEmpty": "Sem histórico",
     "historyClear": "Limpar histórico",
     "historyPromptLabel": "Palavra de despertar: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Verificação necessária",
+      "quotaTitle": "Limite de cota",
+      "temporaryTitle": "Erro temporário",
+      "genericTitle": "Erro de execução",
+      "validationUrlLabel": "URL de verificação (copiável)",
+      "completeVerification": "Concluir verificação",
+      "copyValidationUrl": "Copiar URL de verificação",
+      "copyDebugInfo": "Copiar informações de depuração",
+      "errorCode": "Código de erro: {{code}}",
+      "trajectoryId": "ID da trajetória: {{id}}",
+      "copySuccess": "Copiado",
+      "copyFailed": "Falha ao copiar",
+      "openFailed": "Falha ao abrir o link. Foi feita uma tentativa de abrir no navegador."
+    },
     "format": {
       "noReply": "(Sem resposta)",
       "durationMs": "{{ms}}ms",
@@ -685,13 +700,12 @@
       "nextRun": "Próxima {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Ativar despertar",
-      "enableDesc": "Ativar o despertar irá desativar o despertar no plugin. Continuar?",
       "deleteConfirm": "Excluir a tarefa \"{{name}}\"?",
       "testTitle": "Testar agora",
       "historyTitle": "Histórico de disparos",
       "taskTitleEdit": "Editar tarefa de despertar",
-      "taskTitleNew": "Nova tarefa de despertar"
+      "taskTitleNew": "Nova tarefa de despertar",
+      "riskWarning": "⚠️ Aviso de risco\nDevido ao recente endurecimento do controle de risco do Google, usar o recurso de wakeup pode aumentar a chance de acionar controles de risco na conta (incluindo, mas não se limitando a, verificação adicional ou limitações temporárias).\nUse com cautela de acordo com a situação da sua conta e avalie o risco por conta própria.\n\nContinuar?"
     },
     "form": {
       "taskName": "Nome da tarefa",
@@ -748,6 +762,27 @@
       "accountsHint": "Selecione várias contas para testar.",
       "start": "Iniciar teste",
       "testing": "Testando..."
+    },
+    "verification": {
+      "title": "Verificação necessária",
+      "columns": {
+        "verifiedAt": "Horário de verificação"
+      },
+      "filters": {
+        "all": "Todos"
+      },
+      "actions": {
+        "selectAllAccounts": "Selecionar tudo",
+        "clearSelectedAccounts": "Limpar seleção"
+      },
+      "deleteConfirm": "Confirmar exclusão?",
+      "runHint": {
+        "title": "Notas de verificação",
+        "line1": "“Verificar agora” envia uma solicitação mínima de chat simulando o cliente Antigravity por meio de gateway local e do protocolo oficial Language Server.",
+        "line2": "Esse processo consome uma pequena quantidade de tokens (normalmente um diálogo curto). O consumo real depende do modelo e da política da conta.",
+        "line3": "Essa ação não altera a configuração das tarefas de despertar. Ela apenas verifica a disponibilidade da conta e grava o histórico de verificação.",
+        "line4": "Se retornar 403, você precisa concluir primeiro a verificação da conta. O resultado incluirá URL de verificação e ações rápidas."
+      }
     }
   },
   "update_notification": {
@@ -914,11 +949,13 @@
       "weekly": "Por uso de mensagens de chat",
       "hourly": "Por uso de sugestões inline",
       "weeklyReset": "Por horário de redefinição de mensagens de chat",
-      "hourlyReset": "Por horário de redefinição de sugestões inline"
+      "hourlyReset": "Por horário de redefinição de sugestões inline",
+      "premium": "Por uso de solicitações premium"
     },
     "columns": {
       "hourly": "Sugestões inline",
-      "weekly": "Mensagens de chat"
+      "weekly": "Mensagens de chat",
+      "premium": "Solicitações premium"
     },
     "flowNotice": {
       "title": "Guia de contas do GitHub Copilot (clique para expandir/recolher)",
@@ -929,7 +966,10 @@
     },
     "injectToVSCode": "Alternar para VS Code",
     "injectSuccess": "O token foi injetado no VS Code com sucesso. O VS Code está sendo iniciado.",
-    "injectRequireClose": "Feche o VS Code antes de injetar."
+    "injectRequireClose": "Feche o VS Code antes de injetar.",
+    "usage": {
+      "included": "Incluído"
+    }
   },
   "dashboard": {
     "title": "Painel de contas",

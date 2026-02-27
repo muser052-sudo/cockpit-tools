@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlarmClock, Fingerprint, Layers } from 'lucide-react';
+import { AlarmClock, Fingerprint, Layers, ShieldCheck } from 'lucide-react';
 import { Page } from '../types/navigation';
 import { RobotIcon } from './icons/RobotIcon';
 
@@ -44,6 +44,11 @@ export function OverviewTabsHeader({
       key: 'wakeup',
       label: t('wakeup.title'),
       icon: <AlarmClock className="tab-icon" />,
+    },
+    {
+      key: 'verification',
+      label: t('wakeup.verification.title'),
+      icon: <ShieldCheck className="tab-icon" />,
     },
   ];
 

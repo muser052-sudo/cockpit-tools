@@ -1,4 +1,5 @@
 const PRIVACY_MODE_STORAGE_KEY = 'agtools.privacy_mode_enabled'
+export const PRIVACY_MODE_CHANGED_EVENT = 'agtools:privacy-mode-changed'
 
 function maskSegment(value: string, keepStart = 2, keepEnd = 2): string {
   const raw = value.trim()
@@ -45,6 +46,7 @@ export function isPrivacyModeEnabledByDefault(): boolean {
 export function persistPrivacyModeEnabled(enabled: boolean): void {
   try {
     localStorage.setItem(PRIVACY_MODE_STORAGE_KEY, enabled ? '1' : '0')
+    window.dispatchEvent(new CustomEvent(PRIVACY_MODE_CHANGED_EVENT, { detail: enabled }))
   } catch {
     // ignore localStorage write failures
   }
@@ -56,4 +58,3 @@ export function maskSensitiveValue(value: string | null | undefined, enabled: bo
   if (raw.includes('@')) return maskEmail(raw)
   return maskGeneric(raw)
 }
-

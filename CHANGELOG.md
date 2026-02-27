@@ -7,6 +7,21 @@ All notable changes to Cockpit Tools will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
+## [0.9.0] - 2026-02-27
+
+### Added
+- **Dedicated Antigravity account verification workspace**: added model-based batch account verification with live progress, persisted verification history, per-batch detail view, and status filters (`All` / `Success` / `Verification required` / `Failed`).
+- **Official-aligned wakeup/verification transport**: added a `local gateway + official Language Server protocol` flow using `StartCascade` / `SendUserCascadeMessage` / `GetCascadeTrajectory` / `DeleteCascadeTrajectory` for wakeup conversations and account verification runs.
+- **403 verification quick actions**: verification-required results now expose validation URL and actions (`Verify now`, copy validation URL, copy debug info) for self-service verification.
+
+### Changed
+- **Unified model-list rule across wakeup surfaces**: wakeup task model picker, verification picker, and quota-related model display now all derive from official `agentModelSorts[].groups[].modelIds`; when unavailable, fallback is limited to the fixed 6 recommended models.
+- **Antigravity model grouping reduced to 3 groups**: default display groups are now `Claude / Gemini Pro / Gemini Flash`; `Gemini Image` group and legacy mapping are removed to avoid duplicate group rendering.
+- **Verification-page UX and privacy alignment**: added batch selection/deletion flow, closable notices, and privacy-toggle-linked email masking consistent with the Accounts page.
+- **GitHub Copilot (VS Code semantics) display alignment**: `individual` plans are now normalized to `PRO`; usage is derived from `quota_snapshots.completions/chat/premium_interactions`; cards and tables now include a `Premium requests` dimension with `Included` display support.
+- **Wakeup custom-time interaction refinement**: custom time keeps a `time picker + quick input` interaction; empty state no longer shows a default time value; custom time input is now applied to next-run preview and task save even if `Add` is not clicked.
+
+---
 ## [0.8.13] - 2026-02-24
 
 ### Added

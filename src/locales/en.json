@@ -816,6 +816,27 @@
   "wakeup": {
     "title": "Wakeup Tasks",
     "subtitle": "Manage wakeup tasks with per-task control and a global switch.",
+    "verification": {
+      "title": "Account Verification",
+      "columns": {
+        "verifiedAt": "Verification time"
+      },
+      "filters": {
+        "all": "All"
+      },
+      "actions": {
+        "selectAllAccounts": "Select all",
+        "clearSelectedAccounts": "Clear selection"
+      },
+      "runHint": {
+        "title": "Verification notes",
+        "line1": "Verify now sends a minimal chat request by simulating Antigravity with a local gateway and the official Language Server protocol.",
+        "line2": "This consumes a small amount of tokens (usually one short dialogue). Actual usage depends on model and account policy.",
+        "line3": "This operation does not modify wakeup task settings. It only checks account availability and writes verification records.",
+        "line4": "If a 403 is returned, account verification is required first. The result will include the validation URL and quick actions."
+      },
+      "deleteConfirm": "Are you sure you want to delete?"
+    },
     "globalToggle": "Global Wakeup Switch",
     "newTask": "New Task",
     "runTest": "Run Test",
@@ -833,6 +854,21 @@
     "historyEmpty": "No history yet",
     "historyClear": "Clear history",
     "historyPromptLabel": "Prompt: {{prompt}}",
+    "errorUi": {
+      "verificationRequiredTitle": "Verification required",
+      "quotaTitle": "Quota limit",
+      "temporaryTitle": "Temporary error",
+      "genericTitle": "Execution error",
+      "validationUrlLabel": "Validation URL (copyable)",
+      "completeVerification": "Verify now",
+      "copyValidationUrl": "Copy validation URL",
+      "copyDebugInfo": "Copy debug info",
+      "errorCode": "Error code: {{code}}",
+      "trajectoryId": "Trajectory ID: {{id}}",
+      "copySuccess": "Copied",
+      "copyFailed": "Copy failed",
+      "openFailed": "Failed to open link. Tried opening in browser."
+    },
     "format": {
       "noReply": "(No reply)",
       "durationMs": "{{ms}}ms",
@@ -903,13 +939,12 @@
       "nextRun": "Next {{time}}"
     },
     "dialogs": {
-      "enableTitle": "Enable wakeup",
-      "enableDesc": "Enabling wakeup will disable the plugin wakeup feature. Continue?",
       "deleteConfirm": "Delete task \"{{name}}\"?",
       "testTitle": "Run Test",
       "historyTitle": "Trigger History",
       "taskTitleEdit": "Edit Wakeup Task",
-      "taskTitleNew": "New Wakeup Task"
+      "taskTitleNew": "New Wakeup Task",
+      "riskWarning": "⚠️ Risk warning\nDue to recent Google risk-control tightening, using the wakeup feature may increase the chance of triggering account risk controls (including but not limited to additional verification or temporary limits).\nPlease use it with caution based on your account status and evaluate the risk yourself.\n\nContinue?"
     },
     "form": {
       "taskName": "Task name",
@@ -1131,12 +1166,17 @@
     "sort": {
       "weekly": "By Chat messages usage",
       "hourly": "By Inline Suggestions usage",
+      "premium": "By Premium requests usage",
       "weeklyReset": "By Chat messages reset time",
       "hourlyReset": "By Inline Suggestions reset time"
     },
     "columns": {
       "hourly": "Inline Suggestions",
-      "weekly": "Chat messages"
+      "weekly": "Chat messages",
+      "premium": "Premium requests"
+    },
+    "usage": {
+      "included": "Included"
     },
     "injectToVSCode": "Switch to VS Code",
     "injectSuccess": "Token injected to VS Code successfully. VS Code is launching.",

@@ -10,6 +10,7 @@
 @import './pages/accounts.css';
 @import './pages/accounts-aurora.css';
 @import './pages/wakeup.css';
+@import './pages/wakeup-verification.css';
 @import './pages/codex.css';
 @import './pages/github-copilot.css';
 @import './pages/instances.css';

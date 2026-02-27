@@ -206,7 +206,12 @@ pub fn run() {
             commands::wakeup::fetch_available_models,
             commands::wakeup::wakeup_sync_state,
             commands::wakeup::wakeup_load_history,
+            commands::wakeup::wakeup_add_history,
             commands::wakeup::wakeup_clear_history,
+            commands::wakeup::wakeup_verification_load_state,
+            commands::wakeup::wakeup_verification_load_history,
+            commands::wakeup::wakeup_verification_delete_history,
+            commands::wakeup::wakeup_verification_run_batch,
             // Update Commands
             commands::update::check_for_updates,
             commands::update::should_check_updates,

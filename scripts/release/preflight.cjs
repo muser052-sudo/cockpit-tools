@@ -81,6 +81,15 @@ if (!hasFlag('--skip-cargo')) {
   });
 }
 
+if (!hasFlag('--skip-cargo-test')) {
+  steps.push({
+    name: 'Rust cargo test (lib)',
+    command: 'cargo',
+    args: ['test', '--lib'],
+    cwd: path.join(process.cwd(), 'src-tauri'),
+  });
+}
+
 if (steps.length === 0) {
   console.log('No steps enabled. Use without --skip-* flags to run checks.');
   process.exit(0);

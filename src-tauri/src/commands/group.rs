@@ -71,11 +71,11 @@ pub fn update_group_order(order: Vec<String>) -> Result<(), String> {
     group_settings::update_group_settings(settings)
 }
 
-/// 获取排序后的分组列表（最多4个，用于桌面端显示）
+/// 获取排序后的分组列表（最多3个，用于桌面端显示）
 #[tauri::command]
 pub fn get_display_groups() -> Result<Vec<DisplayGroup>, String> {
     let settings = group_settings::load_group_settings();
-    let group_ids = settings.get_ordered_groups(Some(4));
+    let group_ids = settings.get_ordered_groups(Some(3));
 
     let groups: Vec<DisplayGroup> = group_ids
         .iter()
