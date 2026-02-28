@@ -1037,6 +1037,132 @@
     transform: translateY(0);
   }
 }
+/* ============================================
+   Pagination Controls
+   ============================================ */
+.codex-accounts-page .pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-top: 10px;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+[data-theme="dark"] .codex-accounts-page .pagination-container {
+  background: rgba(8, 11, 19, 0.98);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.codex-accounts-page .pagination-info {
+  font-weight: 500;
+}
+
+.codex-accounts-page .pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.codex-accounts-page .page-size-select {
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.codex-accounts-page .pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.codex-accounts-page .pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.codex-accounts-page .pagination-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.codex-accounts-page .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: var(--border-light);
+}
+
+.codex-accounts-page .pagination-current {
+  padding: 0 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Sticky Toolbar & Back to Top
+   ============================================ */
+.codex-accounts-page .toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-surface);
+  margin: 0 -2px;
+  padding: 10px 2px;
+}
+
+[data-theme="dark"] .codex-accounts-page .toolbar {
+  background: var(--bg-main);
+}
+
+.back-to-top-btn {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  border: none;
+  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeUp 0.3s ease;
+}
+
+.back-to-top-btn:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(29, 78, 216, 0.5);
+}
+
+.back-to-top-btn:active {
+  transform: translateY(0) scale(0.95);
+}
 
 /* Dark Mode Table Overrides */
 

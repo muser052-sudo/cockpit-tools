@@ -299,7 +299,8 @@ pub fn upsert_account(tokens: CodexTokens) -> Result<CodexAccount, String> {
     upsert_account_with_hints(tokens, None, None)
 }
 
-fn upsert_account_with_hints(
+fn upsert_account_internal(
+    index: &mut CodexAccountIndex,
     tokens: CodexTokens,
     account_id_hint: Option<String>,
     organization_id_hint: Option<String>,
@@ -317,13 +318,12 @@ fn upsert_account_with_hints(
             .or(organization_id_hint),
     );
 
-    let mut index = load_account_index();
     let generated_id =
         build_account_storage_id(&email, account_id.as_deref(), organization_id.as_deref());
 
     // 优先按 email + account_id + organization_id 匹配已有账号；兼容旧数据时回退到 email-only 记录
     let existing_id = find_existing_account_id(
-        &index,
+        index,
         &email,
         account_id.as_deref(),
         organization_id.as_deref(),
@@ -380,13 +380,22 @@ fn upsert_account_with_hints(
         });
     }
 
-    save_account_index(&index)?;
-
     logger::log_info(&format!(
         "Codex 账号已保存: email={}, account_id={:?}, organization_id={:?}",
         email, account_id, organization_id
     ));
 
+    Ok(account)
+}
+
+fn upsert_account_with_hints(
+    tokens: CodexTokens,
+    account_id_hint: Option<String>,
+    organization_id_hint: Option<String>,
+) -> Result<CodexAccount, String> {
+    let mut index = load_account_index();
+    let account = upsert_account_internal(&mut index, tokens, account_id_hint, organization_id_hint)?;
+    save_account_index(&index)?;
     Ok(account)
 }
 
@@ -572,8 +581,7 @@ pub fn import_from_local() -> Result<CodexAccount, String> {
     upsert_account_with_hints(tokens, account_id_hint, None)
 }
 
-/// 从 JSON 字符串导入账号
-pub fn import_from_json(json_content: &str) -> Result<Vec<CodexAccount>, String> {
+fn import_from_json_internal(index: &mut CodexAccountIndex, json_content: &str) -> Result<Vec<CodexAccount>, String> {
     // 尝试解析为 auth.json 格式
     if let Ok(auth_file) = serde_json::from_str::<CodexAuthFile>(json_content) {
         let account_id_hint = auth_file.tokens.account_id.clone();
@@ -582,7 +590,7 @@ pub fn import_from_json(json_content: &str) -> Result<Vec<CodexAccount>, String>
             access_token: auth_file.tokens.access_token,
             refresh_token: auth_file.tokens.refresh_token,
         };
-        let account = upsert_account_with_hints(tokens, account_id_hint, None)?;
+        let account = upsert_account_internal(index, tokens, account_id_hint, None)?;
         return Ok(vec![account]);
     }
 
@@ -590,13 +598,74 @@ pub fn import_from_json(json_content: &str) -> Result<Vec<CodexAccount>, String>
     if let Ok(accounts) = serde_json::from_str::<Vec<CodexAccount>>(json_content) {
         let mut result = Vec::new();
         for acc in accounts {
-            let imported = upsert_account(acc.tokens)?;
+            let imported = upsert_account_internal(index, acc.tokens, None, None)?;
             result.push(imported);
         }
         return Ok(result);
     }
 
+    // 尝试解析为扁平的单账号对象（例如导出的单条记录或仅包含 tokens 的对象）
+    if let Ok(flat_token) = serde_json::from_str::<serde_json::Value>(json_content) {
+        if let (Some(id_token), Some(access_token)) = (
+            flat_token.get("id_token").and_then(|v| v.as_str()),
+            flat_token.get("access_token").and_then(|v| v.as_str()),
+        ) {
+            let refresh_token = flat_token
+                .get("refresh_token")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let account_id = flat_token
+                .get("account_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let tokens = CodexTokens {
+                id_token: id_token.to_string(),
+                access_token: access_token.to_string(),
+                refresh_token,
+            };
+            let account = upsert_account_internal(index, tokens, account_id, None)?;
+            return Ok(vec![account]);
+        }
+    }
+
     Err("无法解析 JSON 内容".to_string())
+}
+
+/// 从 JSON 字符串导入账号
+pub fn import_from_json(json_content: &str) -> Result<Vec<CodexAccount>, String> {
+    let mut index = load_account_index();
+    let result = import_from_json_internal(&mut index, json_content)?;
+    save_account_index(&index)?;
+    Ok(result)
+}
+
+/// 从目录批量导入 JSON 文件
+pub fn import_codex_from_dir(dir_path: &str) -> Result<Vec<CodexAccount>, String> {
+    let path = Path::new(dir_path);
+    if !path.exists() || !path.is_dir() {
+        return Err(format!("目录不存在或不是一个目录: {}", dir_path));
+    }
+
+    let mut imported_accounts = Vec::new();
+    let entries = fs::read_dir(path).map_err(|e| format!("无法读取目录: {}", e))?;
+    let mut index = load_account_index();
+
+    for entry in entries.flatten() {
+        let file_path = entry.path();
+        if file_path.is_file() && file_path.extension().map_or(false, |ext| ext == "json") {
+            if let Ok(content) = fs::read_to_string(&file_path) {
+                // 忽略解析失败的文件
+                if let Ok(mut accounts) = import_from_json_internal(&mut index, &content) {
+                    imported_accounts.append(&mut accounts);
+                }
+            }
+        }
+    }
+    
+    // 导入完后一次性保存
+    let _ = save_account_index(&index);
+
+    Ok(imported_accounts)
 }
 
 /// 导出账号为 JSON

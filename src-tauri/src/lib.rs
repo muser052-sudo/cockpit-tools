@@ -249,6 +249,7 @@ pub fn run() {
             commands::codex::delete_codex_accounts,
             commands::codex::import_codex_from_local,
             commands::codex::import_codex_from_json,
+            commands::codex::import_codex_from_dir,
             commands::codex::export_codex_accounts,
             commands::codex::refresh_codex_quota,
             commands::codex::refresh_all_codex_quotas,

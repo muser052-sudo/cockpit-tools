@@ -30,7 +30,12 @@ import {
   GripVertical,
   Eye,
   EyeOff,
-  Tag
+  Tag,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ArrowUp
 } from 'lucide-react'
 import { useTranslation, Trans } from 'react-i18next'
 import { useAccountStore } from '../stores/useAccountStore'
@@ -144,6 +149,10 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
   const [groupByTag, setGroupByTag] = useState(false)
   const [showTagFilter, setShowTagFilter] = useState(false)
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(50)
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showAddModal, setShowAddModal] = useState(false)
   const [addTab, setAddTab] = useState<'oauth' | 'token' | 'import'>('oauth')
@@ -235,6 +244,51 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
     oauthUrlRef.current = oauthUrl
     addStatusRef.current = addStatus
   }, [showAddModal, addTab, oauthUrl, addStatus])
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, filterType, tagFilter, sortBy, sortDirection, pageSize])
+
+  // Scroll listener for back to top button
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement | Document
+      const scrollTop =
+        target === document ? window.scrollY : (target as HTMLElement).scrollTop
+      setShowScrollTop(scrollTop > 200)
+    }
+
+    const scrollContainers = [
+      window,
+      document.querySelector('.layout-content'),
+      document.querySelector('.app-main'),
+      document.querySelector('.main-content')
+    ].filter(Boolean) as EventTarget[]
+
+    scrollContainers.forEach((container) =>
+      container.addEventListener('scroll', handleScroll, { passive: true })
+    )
+    return () =>
+      scrollContainers.forEach((container) =>
+        container.removeEventListener('scroll', handleScroll)
+      )
+  }, [])
+
+  const scrollToTop = () => {
+    const scrollContainers = [
+      document.querySelector('.layout-content'),
+      document.querySelector('.app-main'),
+      document.querySelector('.main-content'),
+      window
+    ].filter(Boolean) as (HTMLElement | Window)[]
+
+    for (const container of scrollContainers) {
+      if ('scrollTo' in container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' })
+      }
+    }
+  }
 
   // 获取账号的配额数据 (modelId -> percentage)
   const getAccountQuotas = (account: Account): Record<string, number> => {
@@ -392,7 +446,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
   const availableTags = useMemo(() => {
     const set = new Set<string>()
     accounts.forEach((account) => {
-      ;(account.tags || []).forEach((tag) => {
+      ; (account.tags || []).forEach((tag) => {
         const normalized = normalizeTag(tag)
         if (normalized) set.add(normalized)
       })
@@ -506,12 +560,19 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
     displayGroups
   ])
 
+  const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / pageSize))
+
+  const paginatedAccounts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredAccounts.slice(start, start + pageSize)
+  }, [filteredAccounts, currentPage, pageSize])
+
   const groupedAccounts = useMemo(() => {
-    if (!groupByTag) return [] as Array<[string, typeof filteredAccounts]>
-    const groups = new Map<string, typeof filteredAccounts>()
+    if (!groupByTag) return [] as Array<[string, typeof paginatedAccounts]>
+    const groups = new Map<string, typeof paginatedAccounts>()
     const selectedTags = new Set(tagFilter.map(normalizeTag))
 
-    filteredAccounts.forEach((account) => {
+    paginatedAccounts.forEach((account) => {
       const tags = (account.tags || []).map(normalizeTag).filter(Boolean)
       const matchedTags =
         selectedTags.size > 0
@@ -535,7 +596,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
       if (bKey === untaggedKey) return -1
       return aKey.localeCompare(bKey)
     })
-  }, [filteredAccounts, groupByTag, tagFilter, untaggedKey])
+  }, [paginatedAccounts, groupByTag, tagFilter, untaggedKey])
 
   // 统计数量
   const tierCounts = useMemo(() => {
@@ -834,7 +895,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
   useEffect(() => {
     if (showAddModal && addTab === 'oauth') return
     if (!oauthUrl) return
-    accountService.cancelOAuthLogin().catch(() => {})
+    accountService.cancelOAuthLogin().catch(() => { })
     setOauthUrl('')
     setOauthUrlCopied(false)
   }, [showAddModal, addTab, oauthUrl])
@@ -930,7 +991,7 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
   const closeAddModal = () => {
     // 允许用户随时关闭弹窗，取消正在进行的 OAuth 流程
     if (addStatus === 'loading') {
-      accountService.cancelOAuthLogin().catch(() => {})
+      accountService.cancelOAuthLogin().catch(() => { })
     }
     setShowAddModal(false)
     resetAddModalState()
@@ -1699,56 +1760,56 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
 
     const renderCompactCards = (items: Account[]) =>
       items.map((account) => {
-          const isCurrent = currentAccount?.id === account.id
-          const tier = getSubscriptionTier(account.quota)
-          const quotas = getAccountQuotas(account)
-          const overallQuota = calculateOverallQuota(quotas)
-          const isSelected = selected.has(account.id)
-          const isDisabled = account.disabled
-          const isForbidden = Boolean(account.quota?.is_forbidden)
-          const warning = refreshWarnings[account.email]
-          const warningLabel =
-            warning?.kind === 'auth'
-              ? t('accounts.status.authInvalid')
-              : t('accounts.status.refreshFailed')
-          const warningTitle = warning?.message || ''
-          const forbiddenTitle = t('accounts.status.forbidden_tooltip')
-          const disabledTitle = isDisabled
-            ? `${t('accounts.status.disabled')}${account.disabled_reason ? `: ${account.disabled_reason}` : ''}`
-            : ''
-          const statusHints = []
-          if (warning) statusHints.push(warningTitle || warningLabel)
-          if (isDisabled) statusHints.push(disabledTitle || t('accounts.status.disabled'))
-          if (isForbidden) statusHints.push(forbiddenTitle)
-          const statusTitle = statusHints.join(' / ')
+        const isCurrent = currentAccount?.id === account.id
+        const tier = getSubscriptionTier(account.quota)
+        const quotas = getAccountQuotas(account)
+        const overallQuota = calculateOverallQuota(quotas)
+        const isSelected = selected.has(account.id)
+        const isDisabled = account.disabled
+        const isForbidden = Boolean(account.quota?.is_forbidden)
+        const warning = refreshWarnings[account.email]
+        const warningLabel =
+          warning?.kind === 'auth'
+            ? t('accounts.status.authInvalid')
+            : t('accounts.status.refreshFailed')
+        const warningTitle = warning?.message || ''
+        const forbiddenTitle = t('accounts.status.forbidden_tooltip')
+        const disabledTitle = isDisabled
+          ? `${t('accounts.status.disabled')}${account.disabled_reason ? `: ${account.disabled_reason}` : ''}`
+          : ''
+        const statusHints = []
+        if (warning) statusHints.push(warningTitle || warningLabel)
+        if (isDisabled) statusHints.push(disabledTitle || t('accounts.status.disabled'))
+        if (isForbidden) statusHints.push(forbiddenTitle)
+        const statusTitle = statusHints.join(' / ')
 
-          // 获取可见分组的配额（按排序后的顺序，排除隐藏的和无配额数据的）
-          const groupQuotas = visibleGroups
-            .map((group) => {
-              const colorIdx = getGroupColorIndex(
-                group.id,
-                orderedGroups.findIndex((g) => g.id === group.id) % 8
-              )
-              const percentage = calculateGroupQuota(
-                group.id,
-                quotas,
-                groupSettings
-              )
-              return {
-                id: group.id,
-                name: group.name,
-                percentage,
-                color: colorOptions[colorIdx]?.color || colorOptions[0].color
-              }
-            })
-            .filter((gq) => gq.percentage !== null) as Array<{
+        // 获取可见分组的配额（按排序后的顺序，排除隐藏的和无配额数据的）
+        const groupQuotas = visibleGroups
+          .map((group) => {
+            const colorIdx = getGroupColorIndex(
+              group.id,
+              orderedGroups.findIndex((g) => g.id === group.id) % 8
+            )
+            const percentage = calculateGroupQuota(
+              group.id,
+              quotas,
+              groupSettings
+            )
+            return {
+              id: group.id,
+              name: group.name,
+              percentage,
+              color: colorOptions[colorIdx]?.color || colorOptions[0].color
+            }
+          })
+          .filter((gq) => gq.percentage !== null) as Array<{
             id: string
             name: string
             percentage: number
             color: string
           }>
 
-          const isSwitching = switching === account.id
+        const isSwitching = switching === account.id
 
         return (
           <div
@@ -1832,127 +1893,127 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
     return (
       <>
         <div className={styles.container}>
-        {/* 图例 - 支持拖拽排序、颜色选择、显示/隐藏 */}
-        {orderedGroups.length > 0 && (
-          <div
-            className={styles.legend}
-            onMouseUp={handleDragEnd}
-            onMouseLeave={handleDragEnd}
-          >
-            {orderedGroups.map((group, index) => {
-              const colorIdx = getGroupColorIndex(group.id, index % 8)
-              const isHidden = hiddenGroups.has(group.id)
-              const isPickerOpen = showColorPicker === group.id
+          {/* 图例 - 支持拖拽排序、颜色选择、显示/隐藏 */}
+          {orderedGroups.length > 0 && (
+            <div
+              className={styles.legend}
+              onMouseUp={handleDragEnd}
+              onMouseLeave={handleDragEnd}
+            >
+              {orderedGroups.map((group, index) => {
+                const colorIdx = getGroupColorIndex(group.id, index % 8)
+                const isHidden = hiddenGroups.has(group.id)
+                const isPickerOpen = showColorPicker === group.id
 
-              return (
-                <span
-                  key={group.id}
-                  className={`${styles.legendItem} ${draggedGroupId === group.id ? styles.legendItemDragging : ''} ${draggedGroupId && draggedGroupId !== group.id ? styles.legendItemDropTarget : ''} ${isHidden ? styles.legendItemHidden : ''}`}
-                  onMouseEnter={() => handleDragMove(group.id)}
-                >
-                  {/* 拖拽手柄 - 只有这里触发拖拽 */}
-                  <GripVertical
-                    size={12}
-                    className={styles.gripIcon}
-                    onMouseDown={(e) => handleDragStart(e, group.id)}
-                  />
-
-                  {/* 颜色点 - 点击打开颜色选择器 */}
+                return (
                   <span
-                    className={styles.legendDotWrapper}
-                    onClick={(e) => openColorPicker(e, group.id, isPickerOpen)}
+                    key={group.id}
+                    className={`${styles.legendItem} ${draggedGroupId === group.id ? styles.legendItemDragging : ''} ${draggedGroupId && draggedGroupId !== group.id ? styles.legendItemDropTarget : ''} ${isHidden ? styles.legendItemHidden : ''}`}
+                    onMouseEnter={() => handleDragMove(group.id)}
                   >
-                    <span
-                      className={styles.legendDot}
-                      style={{
-                        background:
-                          colorOptions[colorIdx]?.color || colorOptions[0].color
-                      }}
+                    {/* 拖拽手柄 - 只有这里触发拖拽 */}
+                    <GripVertical
+                      size={12}
+                      className={styles.gripIcon}
+                      onMouseDown={(e) => handleDragStart(e, group.id)}
                     />
-                  </span>
 
-                  <span className={styles.legendName}>{group.name}</span>
+                    {/* 颜色点 - 点击打开颜色选择器 */}
+                    <span
+                      className={styles.legendDotWrapper}
+                      onClick={(e) => openColorPicker(e, group.id, isPickerOpen)}
+                    >
+                      <span
+                        className={styles.legendDot}
+                        style={{
+                          background:
+                            colorOptions[colorIdx]?.color || colorOptions[0].color
+                        }}
+                      />
+                    </span>
 
-                  {/* 显示/隐藏切换 */}
-                  <button
-                    className={styles.visibilityBtn}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleGroupVisibility(group.id)
-                    }}
-                    title={
-                      isHidden
-                        ? t('accounts.compact.show', '显示')
-                        : t('accounts.compact.hide', '隐藏')
-                    }
-                  >
-                    {isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
-                  </button>
-                </span>
-              )
-            })}
-          </div>
-        )}
+                    <span className={styles.legendName}>{group.name}</span>
 
-        {/* 账号列表 */}
-        {groupByTag ? (
-          <div className="tag-group-list">
-            {groupedAccounts.map(([groupKey, groupAccounts]) => (
-              <div key={groupKey} className="tag-group-section">
-                <div className="tag-group-header">
-                  <span className="tag-group-title">
-                    {resolveGroupLabel(groupKey)}
+                    {/* 显示/隐藏切换 */}
+                    <button
+                      className={styles.visibilityBtn}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleGroupVisibility(group.id)
+                      }}
+                      title={
+                        isHidden
+                          ? t('accounts.compact.show', '显示')
+                          : t('accounts.compact.hide', '隐藏')
+                      }
+                    >
+                      {isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </button>
                   </span>
-                  <span className="tag-group-count">
-                    {groupAccounts.length}
-                  </span>
+                )
+              })}
+            </div>
+          )}
+
+          {/* 账号列表 */}
+          {groupByTag ? (
+            <div className="tag-group-list">
+              {groupedAccounts.map(([groupKey, groupAccounts]) => (
+                <div key={groupKey} className="tag-group-section">
+                  <div className="tag-group-header">
+                    <span className="tag-group-title">
+                      {resolveGroupLabel(groupKey)}
+                    </span>
+                    <span className="tag-group-count">
+                      {groupAccounts.length}
+                    </span>
+                  </div>
+                  <div className={`tag-group-grid ${styles.grid}`}>
+                    {renderCompactCards(groupAccounts)}
+                  </div>
                 </div>
-                <div className={`tag-group-grid ${styles.grid}`}>
-                  {renderCompactCards(groupAccounts)}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className={styles.grid}>{renderCompactCards(filteredAccounts)}</div>
-        )}
-      </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.grid}>{renderCompactCards(paginatedAccounts)}</div>
+          )}
+        </div>
 
-      {/* Color Picker Portal - rendered to body */}
-      {showColorPicker &&
-        colorPickerPos &&
-        createPortal(
-          <div
-            ref={colorPickerRef}
-            className={styles.colorPickerPortal}
-            style={{
-              position: 'fixed',
-              top: colorPickerPos.top,
-              left: colorPickerPos.left,
-              transform: 'translateX(-50%)',
-              zIndex: 9999
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {colorOptions.map((opt) => {
-              const groupId = showColorPicker
-              const currentColorIdx = getGroupColorIndex(
-                groupId,
-                orderedGroups.findIndex((g) => g.id === groupId) % 8
-              )
-              return (
-                <span
-                  key={opt.index}
-                  className={`${styles.colorOption} ${currentColorIdx === opt.index ? styles.colorOptionActive : ''}`}
-                  style={{ background: opt.color }}
-                  onClick={() => setGroupColor(groupId, opt.index)}
-                  title={opt.name}
-                />
-              )
-            })}
-          </div>,
-          document.body
-        )}
+        {/* Color Picker Portal - rendered to body */}
+        {showColorPicker &&
+          colorPickerPos &&
+          createPortal(
+            <div
+              ref={colorPickerRef}
+              className={styles.colorPickerPortal}
+              style={{
+                position: 'fixed',
+                top: colorPickerPos.top,
+                left: colorPickerPos.left,
+                transform: 'translateX(-50%)',
+                zIndex: 9999
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {colorOptions.map((opt) => {
+                const groupId = showColorPicker
+                const currentColorIdx = getGroupColorIndex(
+                  groupId,
+                  orderedGroups.findIndex((g) => g.id === groupId) % 8
+                )
+                return (
+                  <span
+                    key={opt.index}
+                    className={`${styles.colorOption} ${currentColorIdx === opt.index ? styles.colorOptionActive : ''}`}
+                    style={{ background: opt.color }}
+                    onClick={() => setGroupColor(groupId, opt.index)}
+                    title={opt.name}
+                  />
+                )
+              })}
+            </div>,
+            document.body
+          )}
       </>
     )
   }
@@ -2172,21 +2233,21 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
         <tbody>
           {groupByTag
             ? groupedAccounts.map(([groupKey, groupAccounts]) => (
-                <Fragment key={groupKey}>
-                  <tr className="tag-group-row">
-                    <td colSpan={5}>
-                      <div className="tag-group-header">
-                        <span className="tag-group-title">
-                          {resolveGroupLabel(groupKey)}
-                        </span>
-                        <span className="tag-group-count">{groupAccounts.length}</span>
-                      </div>
-                    </td>
-                  </tr>
-                  {renderListRows(groupAccounts, groupKey)}
-                </Fragment>
-              ))
-            : renderListRows(filteredAccounts)}
+              <Fragment key={groupKey}>
+                <tr className="tag-group-row">
+                  <td colSpan={5}>
+                    <div className="tag-group-header">
+                      <span className="tag-group-title">
+                        {resolveGroupLabel(groupKey)}
+                      </span>
+                      <span className="tag-group-count">{groupAccounts.length}</span>
+                    </div>
+                  </td>
+                </tr>
+                {renderListRows(groupAccounts, groupKey)}
+              </Fragment>
+            ))
+            : renderListRows(paginatedAccounts)}
         </tbody>
       </table>
     </div>
@@ -2499,14 +2560,96 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
             <h3>{t('accounts.noMatch.title')}</h3>
             <p>{t('accounts.noMatch.desc')}</p>
           </div>
-        ) : viewMode === 'grid' ? (
-          renderGridView()
-        ) : viewMode === 'list' ? (
-          renderListView()
         ) : (
-          renderCompactView()
+          <>
+            {viewMode === 'grid' ? (
+              renderGridView()
+            ) : viewMode === 'list' ? (
+              renderListView()
+            ) : (
+              renderCompactView()
+            )}
+
+            {/* Pagination Controls */}
+            {filteredAccounts.length > 0 && (
+              <div className="pagination-container">
+                <div className="pagination-info">
+                  {t('common.shared.pagination.total', '共 {{count}} 条', {
+                    count: filteredAccounts.length
+                  })}
+                </div>
+                <div className="pagination-controls">
+                  <select
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                    className="page-size-select"
+                  >
+                    {[20, 50, 100, 200, 500].map((size) => (
+                      <option key={size} value={size}>
+                        {size} {t('common.shared.pagination.perPage', '条/页')}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="pagination-buttons">
+                    <button
+                      className="pagination-btn"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(1)}
+                      title={t('common.shared.pagination.first', '首页')}
+                    >
+                      <ChevronsLeft size={16} />
+                    </button>
+                    <button
+                      className="pagination-btn"
+                      disabled={currentPage === 1}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(1, prev - 1))
+                      }
+                      title={t('common.shared.pagination.prev', '上一页')}
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="pagination-current">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <button
+                      className="pagination-btn"
+                      disabled={currentPage === totalPages}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                      }
+                      title={t('common.shared.pagination.next', '下一页')}
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                    <button
+                      className="pagination-btn"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(totalPages)}
+                      title={t('common.shared.pagination.last', '尾页')}
+                    >
+                      <ChevronsRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </main>
+
+      {/* 回到顶部按钮 */}
+      {showScrollTop && (
+        <button
+          className="back-to-top-btn"
+          onClick={scrollToTop}
+          title={t('common.shared.backToTop', '回到顶部')}
+          aria-label={t('common.shared.backToTop', '回到顶部')}
+        >
+          <ArrowUp size={24} />
+        </button>
+      )}
 
       {/* Add Account Modal */}
       {showAddModal && (
@@ -2919,34 +3062,34 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                       )
                     }
                     return (
-                    <div className="quota-list">
-                      {quotaDisplayItems.map((item) => (
-                        <div key={item.key} className="quota-card">
-                          <h4>{item.label}</h4>
-                          <div className="quota-value-row">
-                            <span
-                              className={`quota-value ${getQuotaClass(item.percentage)}`}
-                            >
-                              {item.percentage}%
-                            </span>
+                      <div className="quota-list">
+                        {quotaDisplayItems.map((item) => (
+                          <div key={item.key} className="quota-card">
+                            <h4>{item.label}</h4>
+                            <div className="quota-value-row">
+                              <span
+                                className={`quota-value ${getQuotaClass(item.percentage)}`}
+                              >
+                                {item.percentage}%
+                              </span>
+                            </div>
+                            <div className="quota-bar">
+                              <div
+                                className={`quota-fill ${getQuotaClass(item.percentage)}`}
+                                style={{
+                                  width: `${Math.min(100, item.percentage)}%`
+                                }}
+                              ></div>
+                            </div>
+                            <div className="quota-reset-info">
+                              <p>
+                                <strong>{t('modals.quota.resetTime')}:</strong>{' '}
+                                {formatResetTimeDisplay(item.resetTime, t)}
+                              </p>
+                            </div>
                           </div>
-                          <div className="quota-bar">
-                            <div
-                              className={`quota-fill ${getQuotaClass(item.percentage)}`}
-                              style={{
-                                width: `${Math.min(100, item.percentage)}%`
-                              }}
-                            ></div>
-                          </div>
-                          <div className="quota-reset-info">
-                            <p>
-                              <strong>{t('modals.quota.resetTime')}:</strong>{' '}
-                              {formatResetTimeDisplay(item.resetTime, t)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
                     )
                   })()}
 

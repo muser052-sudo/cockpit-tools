@@ -1105,6 +1105,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -1328,6 +1329,7 @@
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1339,10 +1341,147 @@
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ============================================
+   Pagination Controls
+   ============================================ */
+.ghcp-accounts-page .pagination-container,
+.windsurf-accounts-page .pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-top: 10px;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+[data-theme="dark"] .ghcp-accounts-page .pagination-container,
+[data-theme="dark"] .windsurf-accounts-page .pagination-container {
+  background: rgba(8, 11, 19, 0.98);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.ghcp-accounts-page .pagination-info,
+.windsurf-accounts-page .pagination-info {
+  font-weight: 500;
+}
+
+.ghcp-accounts-page .pagination-controls,
+.windsurf-accounts-page .pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ghcp-accounts-page .page-size-select,
+.windsurf-accounts-page .page-size-select {
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.ghcp-accounts-page .pagination-buttons,
+.windsurf-accounts-page .pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ghcp-accounts-page .pagination-btn,
+.windsurf-accounts-page .pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ghcp-accounts-page .pagination-btn:hover:not(:disabled),
+.windsurf-accounts-page .pagination-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.ghcp-accounts-page .pagination-btn:disabled,
+.windsurf-accounts-page .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: var(--border-light);
+}
+
+.ghcp-accounts-page .pagination-current,
+.windsurf-accounts-page .pagination-current {
+  padding: 0 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Sticky Toolbar & Back to Top
+   ============================================ */
+.ghcp-accounts-page .toolbar,
+.windsurf-accounts-page .toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-surface);
+  margin: 0 -24px;
+  padding: 10px 24px;
+}
+
+[data-theme="dark"] .ghcp-accounts-page .toolbar,
+[data-theme="dark"] .windsurf-accounts-page .toolbar {
+  background: var(--bg-main);
+}
+
+/* 重新使用已有的 back-to-top 样式（如果需要自定义可见度逻辑，可以加相关状态类） */
+.back-to-top-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 100;
+}
+
+.back-to-top-btn.visible {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* Dark Mode Table Overrides */

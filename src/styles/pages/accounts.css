@@ -39,7 +39,8 @@
 /* Accounts Grid - Compact Futurist Card View */
 .accounts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 缩小宽度以支持一排3-4个 */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  /* 缩小宽度以支持一排3-4个 */
   gap: 16px;
   padding-bottom: 40px;
   animation: fadeUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -48,24 +49,27 @@
 .account-card {
   position: relative;
   background: #ffffff;
-  border-radius: 12px; /* 稍微减小圆角 */
-  padding: 14px; /* 减小内边距 */
+  border-radius: 12px;
+  /* 稍微减小圆角 */
+  padding: 14px;
+  /* 减小内边距 */
   display: flex;
   flex-direction: column;
   gap: 12px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  box-shadow: 
-    0 1px 2px rgba(0, 0, 0, 0.02), 
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.02),
     0 4px 16px rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(0, 0, 0, 0.04);
-  overflow: visible; /* 允许悬停效果稍微溢出 */
+  overflow: visible;
+  /* 允许悬停效果稍微溢出 */
 }
 
 /* Hover Effect */
 .account-card:hover {
   transform: translateY(-2px);
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.06), 
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.06),
     0 12px 24px rgba(0, 0, 0, 0.04);
   border-color: rgba(0, 0, 0, 0.08);
 }
@@ -73,12 +77,14 @@
 /* Current Account */
 .account-card.current {
   background: #ffffff;
-  border: 1px solid var(--primary); /* 简化选中样式，用细边框 */
+  border: 1px solid var(--primary);
+  /* 简化选中样式，用细边框 */
   box-shadow: 0 4px 12px rgba(29, 78, 216, 0.08);
 }
 
 .account-card.current::before {
-  display: none; /* 移除原来的左侧粗线条，太占空间 */
+  display: none;
+  /* 移除原来的左侧粗线条，太占空间 */
 }
 
 /* Card Top Row */
@@ -92,8 +98,10 @@
 .account-card .account-email {
   font-size: 13px;
   padding: 2px 6px;
-  background: transparent; /* 移除背景让视觉更轻 */
-  margin-left: -4px; /* 微调对齐 */
+  background: transparent;
+  /* 移除背景让视觉更轻 */
+  margin-left: -4px;
+  /* 微调对齐 */
 }
 
 .accounts-page .card-tags {
@@ -123,10 +131,11 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 12px;
-  background: #f8fafc; /* 非常淡的背景 */
+  background: #f8fafc;
+  /* 非常淡的背景 */
   border-radius: 8px;
   padding: 10px;
-  border: 1px solid rgba(0,0,0,0.03);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 .card-quota-grid .quota-forbidden {
@@ -153,7 +162,8 @@
 
 /* Neon Glow Progress Bars */
 .quota-compact-bar-track {
-  height: 5px; /* 稍微变细 */
+  height: 5px;
+  /* 稍微变细 */
 }
 
 /* Card Footer - Compact & Clean */
@@ -178,7 +188,8 @@
   display: flex;
   align-items: center;
   gap: 1px;
-  background: transparent; /* 移除背景 */
+  background: transparent;
+  /* 移除背景 */
   padding: 0;
   border: none;
   box-shadow: none;
@@ -188,15 +199,18 @@
   width: 24px;
   height: 24px;
   border-radius: 4px;
-  color: var(--text-muted); /* 默认灰色 */
+  color: var(--text-muted);
+  /* 默认灰色 */
   transition: all 0.2s;
   background: transparent;
 }
 
 .card-action-btn:hover:not(:disabled) {
-  background: rgba(0,0,0,0.04); /* 只有悬停时才有淡淡的背景 */
+  background: rgba(0, 0, 0, 0.04);
+  /* 只有悬停时才有淡淡的背景 */
   color: var(--text-primary);
-  transform: none; /* 移除放大效果，保持稳重 */
+  transform: none;
+  /* 移除放大效果，保持稳重 */
   box-shadow: none;
 }
 
@@ -223,42 +237,47 @@
 .tier-badge::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
   z-index: -1;
 }
 
 .tier-badge.pro {
-  background: #2563eb; /* Royal Blue */
+  background: #2563eb;
+  /* Royal Blue */
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tier-badge.ultra {
-  background: #7c3aed; /* Violet */
+  background: #7c3aed;
+  /* Violet */
   background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tier-badge.individual {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tier-badge.business {
   background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tier-badge.enterprise {
   background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #2b2111;
 }
 
 .tier-badge.free {
   background: rgba(148, 163, 184, 0.18);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .tier-badge.unknown {
@@ -270,8 +289,8 @@
 /* Dark Mode Overrides */
 [data-theme="dark"] .accounts-grid .account-card {
   background: #1e293b;
-  border-color: rgba(255,255,255,0.05);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  border-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 [data-theme="dark"] .account-card .account-email {
@@ -280,12 +299,12 @@
 }
 
 [data-theme="dark"] .card-quota-grid {
-  background: rgba(0,0,0,0.2);
-  border-color: rgba(255,255,255,0.05);
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="dark"] .quota-compact-bar-track {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .view-btn.active {
@@ -295,10 +314,108 @@
 
 [data-theme="dark"] .card-actions {
   background: #1e293b;
-  border-color: rgba(255,255,255,0.05);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="dark"] .card-date {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   color: #94a3b8;
+}
+
+/* ============================================
+   Pagination Controls
+   ============================================ */
+.accounts-page .pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-top: 10px;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+[data-theme="dark"] .accounts-page .pagination-container {
+  background: rgba(8, 11, 19, 0.98);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+
+.accounts-page .pagination-info {
+  font-weight: 500;
+}
+
+.accounts-page .pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.accounts-page .page-size-select {
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.accounts-page .pagination-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.accounts-page .pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.accounts-page .pagination-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.accounts-page .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: var(--border-light);
+}
+
+.accounts-page .pagination-current {
+  padding: 0 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+/* ============================================
+   Sticky Toolbar & Back to Top
+   ============================================ */
+.accounts-page .toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-surface);
+  margin: 0 -2px;
+  padding: 10px 2px;
+}
+
+[data-theme="dark"] .accounts-page .toolbar {
+  background: var(--bg-main);
 }

@@ -307,7 +307,7 @@ pub fn save_general_config(
         Some(_) | None => current.minimize_behavior.clone(),
     };
     let hide_dock_icon_value = hide_dock_icon.unwrap_or(current.hide_dock_icon);
-    let hide_dock_icon_changed = current.hide_dock_icon != hide_dock_icon_value;
+    let _hide_dock_icon_changed = current.hide_dock_icon != hide_dock_icon_value;
 
     let new_config = UserConfig {
         // 保留网络设置不变
@@ -360,7 +360,7 @@ pub fn save_general_config(
     config::save_user_config(&new_config)?;
 
     #[cfg(target_os = "macos")]
-    if hide_dock_icon_changed {
+    if _hide_dock_icon_changed {
         crate::apply_macos_activation_policy(&app);
     }
 

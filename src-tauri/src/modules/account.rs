@@ -776,6 +776,7 @@ fn build_quota_alert_notification_text(payload: &QuotaAlertPayload) -> (String, 
     (title, body)
 }
 
+#[allow(dead_code)]
 fn focus_main_window_and_emit_quota_alert(
     app_handle: &tauri::AppHandle,
     payload: &QuotaAlertPayload,

@@ -24,6 +24,11 @@ import {
   Play,
   Eye,
   EyeOff,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ArrowUp,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
@@ -103,6 +108,11 @@ export function GitHubCopilotAccountsPage() {
   const [deleting, setDeleting] = useState(false);
   const [tagDeleteConfirm, setTagDeleteConfirm] = useState<{ tag: string; count: number } | null>(null);
   const [deletingTag, setDeletingTag] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Grouping state
   const [isFlowNoticeCollapsed, setIsFlowNoticeCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(GHCP_FLOW_NOTICE_COLLAPSED_KEY) === '1';
@@ -147,6 +157,43 @@ export function GitHubCopilotAccountsPage() {
     addTabRef.current = addTab;
     addStatusRef.current = addStatus;
   }, [showAddModal, addTab, addStatus]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, tagFilter, sortBy, sortDirection, pageSize]);
+
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement | Document;
+      const scrollTop = target === document ? window.scrollY : (target as HTMLElement).scrollTop;
+      setShowScrollTop(scrollTop > 200);
+    };
+
+    const scrollContainers = [
+      window,
+      document.querySelector('.layout-content'),
+      document.querySelector('.app-main'),
+      document.querySelector('.main-content'),
+    ].filter(Boolean) as EventTarget[];
+
+    scrollContainers.forEach(container => container.addEventListener('scroll', handleScroll, { passive: true }));
+    return () => scrollContainers.forEach(container => container.removeEventListener('scroll', handleScroll));
+  }, []);
+
+  const scrollToTop = () => {
+    const scrollContainers = [
+      document.querySelector('.layout-content'),
+      document.querySelector('.app-main'),
+      document.querySelector('.main-content'),
+      window
+    ].filter(Boolean) as (HTMLElement | Window)[];
+
+    for (const container of scrollContainers) {
+      if ('scrollTo' in container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  };
 
   useEffect(() => {
     if (!showTagFilter) return;
@@ -292,7 +339,7 @@ export function GitHubCopilotAccountsPage() {
     const loginId = oauthLoginIdRef.current ?? undefined;
     if (!loginId) return;
     oauthLog('弹框关闭或切换标签，准备取消授权流程', { loginId });
-    githubCopilotService.cancelGitHubCopilotOAuthLogin(loginId).catch(() => {});
+    githubCopilotService.cancelGitHubCopilotOAuthLogin(loginId).catch(() => { });
     oauthActiveRef.current = false;
     oauthLoginIdRef.current = null;
     oauthCompletingRef.current = false;
@@ -546,7 +593,7 @@ export function GitHubCopilotAccountsPage() {
       await openUrl(oauthUrl);
     } catch (e) {
       console.error('打开浏览器失败:', e);
-      await navigator.clipboard.writeText(oauthUrl).catch(() => {});
+      await navigator.clipboard.writeText(oauthUrl).catch(() => { });
       setOauthUrlCopied(true);
       setTimeout(() => setOauthUrlCopied(false), 1200);
     }
@@ -760,12 +807,19 @@ export function GitHubCopilotAccountsPage() {
     return result;
   }, [accounts, filterType, searchQuery, sortBy, sortDirection, tagFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / pageSize));
+
+  const paginatedAccounts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAccounts.slice(start, start + pageSize);
+  }, [filteredAccounts, currentPage, pageSize]);
+
   const groupedAccounts = useMemo(() => {
-    if (!groupByTag) return [] as Array<[string, typeof filteredAccounts]>;
-    const groups = new Map<string, typeof filteredAccounts>();
+    if (!groupByTag) return [] as Array<[string, typeof paginatedAccounts]>;
+    const groups = new Map<string, typeof paginatedAccounts>();
     const selectedTags = new Set(tagFilter.map(normalizeTag));
 
-    filteredAccounts.forEach((account) => {
+    paginatedAccounts.forEach((account) => {
       const tags = (account.tags || []).map(normalizeTag).filter(Boolean);
       const matchedTags = selectedTags.size > 0
         ? tags.filter((tag) => selectedTags.has(tag))
@@ -788,7 +842,7 @@ export function GitHubCopilotAccountsPage() {
       if (bKey === untaggedKey) return -1;
       return aKey.localeCompare(bKey);
     });
-  }, [filteredAccounts, groupByTag, tagFilter, untaggedKey]);
+  }, [paginatedAccounts, groupByTag, tagFilter, untaggedKey]);
 
   const toggleTagFilterValue = (tag: string) => {
     setTagFilter((prev) => {
@@ -1186,551 +1240,621 @@ export function GitHubCopilotAccountsPage() {
       {activeTab === 'overview' && (
         <>
 
-      {message && (
-        <div className={`message-bar ${message.tone === 'error' ? 'error' : 'success'}`}>
-          {message.text}
-          <button onClick={() => setMessage(null)}>
-            <X size={14} />
-          </button>
-        </div>
-      )}
+          {message && (
+            <div className={`message-bar ${message.tone === 'error' ? 'error' : 'success'}`}>
+              {message.text}
+              <button onClick={() => setMessage(null)}>
+                <X size={14} />
+              </button>
+            </div>
+          )}
 
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <div className="search-box">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder={t('common.shared.search', '搜索账号...')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <div className="toolbar">
+            <div className="toolbar-left">
+              <div className="search-box">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder={t('common.shared.search', '搜索账号...')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
 
-          <div className="view-switcher">
-            <button
-              className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-              title={t('common.shared.view.list', '列表视图')}
-            >
-              <List size={16} />
-            </button>
-            <button
-              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title={t('common.shared.view.grid', '卡片视图')}
-            >
-              <LayoutGrid size={16} />
-            </button>
-          </div>
+              <div className="view-switcher">
+                <button
+                  className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => setViewMode('list')}
+                  title={t('common.shared.view.list', '列表视图')}
+                >
+                  <List size={16} />
+                </button>
+                <button
+                  className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setViewMode('grid')}
+                  title={t('common.shared.view.grid', '卡片视图')}
+                >
+                  <LayoutGrid size={16} />
+                </button>
+              </div>
 
-          <div className="filter-select">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-              aria-label={t('common.shared.filterLabel', '筛选')}
-            >
-              <option value="all">{t('common.shared.filter.all', { count: tierCounts.all })}</option>
-              <option value="FREE">{`FREE (${tierCounts.FREE})`}</option>
-              <option value="PRO">{`PRO (${tierCounts.PRO})`}</option>
-              <option value="BUSINESS">{`BUSINESS (${tierCounts.BUSINESS})`}</option>
-              <option value="ENTERPRISE">{`ENTERPRISE (${tierCounts.ENTERPRISE})`}</option>
-            </select>
-          </div>
+              <div className="filter-select">
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+                  aria-label={t('common.shared.filterLabel', '筛选')}
+                >
+                  <option value="all">{t('common.shared.filter.all', { count: tierCounts.all })}</option>
+                  <option value="FREE">{`FREE (${tierCounts.FREE})`}</option>
+                  <option value="PRO">{`PRO (${tierCounts.PRO})`}</option>
+                  <option value="BUSINESS">{`BUSINESS (${tierCounts.BUSINESS})`}</option>
+                  <option value="ENTERPRISE">{`ENTERPRISE (${tierCounts.ENTERPRISE})`}</option>
+                </select>
+              </div>
 
-          <div className="tag-filter" ref={tagFilterRef}>
-            <button
-              type="button"
-              className={`tag-filter-btn ${tagFilter.length > 0 ? 'active' : ''}`}
-              onClick={() => setShowTagFilter((prev) => !prev)}
-              aria-label={t('accounts.filterTags', '标签筛选')}
-            >
-              <Tag size={14} />
-              {tagFilter.length > 0 ? `${t('accounts.filterTagsCount', '标签')}(${tagFilter.length})` : t('accounts.filterTags', '标签筛选')}
-            </button>
-            {showTagFilter && (
-              <div className="tag-filter-panel">
-                {availableTags.length === 0 ? (
-                  <div className="tag-filter-empty">{t('accounts.noAvailableTags', '暂无可用标签')}</div>
-                ) : (
-                  <div className="tag-filter-options">
-                    {availableTags.map((tag) => (
-                      <label key={tag} className={`tag-filter-option ${tagFilter.includes(tag) ? 'selected' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={tagFilter.includes(tag)}
-                          onChange={() => toggleTagFilterValue(tag)}
-                        />
-                        <span className="tag-filter-name">{tag}</span>
-                        <button
-                          type="button"
-                          className="tag-filter-delete"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            requestDeleteTag(tag);
-                          }}
-                          aria-label={t('accounts.deleteTagAria', {
-                            tag,
-                            defaultValue: '删除标签 {{tag}}',
-                          })}
-                        >
-                          <X size={12} />
-                        </button>
-                      </label>
-                    ))}
+              <div className="tag-filter" ref={tagFilterRef}>
+                <button
+                  type="button"
+                  className={`tag-filter-btn ${tagFilter.length > 0 ? 'active' : ''}`}
+                  onClick={() => setShowTagFilter((prev) => !prev)}
+                  aria-label={t('accounts.filterTags', '标签筛选')}
+                >
+                  <Tag size={14} />
+                  {tagFilter.length > 0 ? `${t('accounts.filterTagsCount', '标签')}(${tagFilter.length})` : t('accounts.filterTags', '标签筛选')}
+                </button>
+                {showTagFilter && (
+                  <div className="tag-filter-panel">
+                    {availableTags.length === 0 ? (
+                      <div className="tag-filter-empty">{t('accounts.noAvailableTags', '暂无可用标签')}</div>
+                    ) : (
+                      <div className="tag-filter-options">
+                        {availableTags.map((tag) => (
+                          <label key={tag} className={`tag-filter-option ${tagFilter.includes(tag) ? 'selected' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={tagFilter.includes(tag)}
+                              onChange={() => toggleTagFilterValue(tag)}
+                            />
+                            <span className="tag-filter-name">{tag}</span>
+                            <button
+                              type="button"
+                              className="tag-filter-delete"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                requestDeleteTag(tag);
+                              }}
+                              aria-label={t('accounts.deleteTagAria', {
+                                tag,
+                                defaultValue: '删除标签 {{tag}}',
+                              })}
+                            >
+                              <X size={12} />
+                            </button>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    <div className="tag-filter-divider" />
+                    <label className="tag-filter-group-toggle">
+                      <input
+                        type="checkbox"
+                        checked={groupByTag}
+                        onChange={(e) => setGroupByTag(e.target.checked)}
+                      />
+                      <span>{t('accounts.groupByTag', '按标签分组展示')}</span>
+                    </label>
+                    {tagFilter.length > 0 && (
+                      <button type="button" className="tag-filter-clear" onClick={clearTagFilter}>
+                        {t('accounts.clearFilter', '清空筛选')}
+                      </button>
+                    )}
                   </div>
                 )}
-                <div className="tag-filter-divider" />
-                <label className="tag-filter-group-toggle">
-                  <input
-                    type="checkbox"
-                    checked={groupByTag}
-                    onChange={(e) => setGroupByTag(e.target.checked)}
-                  />
-                  <span>{t('accounts.groupByTag', '按标签分组展示')}</span>
-                </label>
-                {tagFilter.length > 0 && (
-                  <button type="button" className="tag-filter-clear" onClick={clearTagFilter}>
-                    {t('accounts.clearFilter', '清空筛选')}
-                  </button>
-                )}
               </div>
-            )}
+
+              <div className="sort-select">
+                <ArrowDownWideNarrow size={14} className="sort-icon" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  aria-label={t('common.shared.sortLabel', '排序')}
+                >
+                  <option value="created_at">{t('common.shared.sort.createdAt', '按创建时间')}</option>
+                  <option value="weekly">{t('githubCopilot.sort.weekly', '按 Chat messages 使用量')}</option>
+                  <option value="hourly">{t('githubCopilot.sort.hourly', '按 Inline Suggestions 使用量')}</option>
+                  <option value="premium">{t('githubCopilot.sort.premium', '按 Premium requests 使用量')}</option>
+                  <option value="weekly_reset">{t('githubCopilot.sort.weeklyReset', '按 Chat messages 重置时间')}</option>
+                  <option value="hourly_reset">{t('githubCopilot.sort.hourlyReset', '按 Inline Suggestions 重置时间')}</option>
+                </select>
+              </div>
+
+              <button
+                className="sort-direction-btn"
+                onClick={() => setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                title={
+                  sortDirection === 'desc'
+                    ? t('common.shared.sort.descTooltip', '当前：降序，点击切换为升序')
+                    : t('common.shared.sort.ascTooltip', '当前：升序，点击切换为降序')
+                }
+                aria-label={t('common.shared.sort.toggleDirection', '切换排序方向')}
+              >
+                {sortDirection === 'desc' ? '⬇' : '⬆'}
+              </button>
+            </div>
+            <div className="toolbar-right">
+              <button
+                className="btn btn-primary icon-only"
+                onClick={() => openAddModal('oauth')}
+                title={t('common.shared.addAccount', '添加账号')}
+                aria-label={t('common.shared.addAccount', '添加账号')}
+              >
+                <Plus size={14} />
+              </button>
+              <button
+                className="btn btn-secondary icon-only"
+                onClick={handleRefreshAll}
+                disabled={refreshingAll || accounts.length === 0}
+                title={t('common.shared.refreshAll', '刷新全部')}
+                aria-label={t('common.shared.refreshAll', '刷新全部')}
+              >
+                <RefreshCw size={14} className={refreshingAll ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="btn btn-secondary icon-only"
+                onClick={togglePrivacyMode}
+                title={
+                  privacyModeEnabled
+                    ? t('privacy.showSensitive', '显示邮箱')
+                    : t('privacy.hideSensitive', '隐藏邮箱')
+                }
+                aria-label={
+                  privacyModeEnabled
+                    ? t('privacy.showSensitive', '显示邮箱')
+                    : t('privacy.hideSensitive', '隐藏邮箱')
+                }
+              >
+                {privacyModeEnabled ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+              <button
+                className="btn btn-secondary icon-only"
+                onClick={() => openAddModal('token')}
+                disabled={importing}
+                title={t('common.shared.import.label', '导入')}
+                aria-label={t('common.shared.import.label', '导入')}
+              >
+                <Download size={14} />
+              </button>
+              <button
+                className="btn btn-secondary export-btn icon-only"
+                onClick={handleExport}
+                disabled={exporting}
+                title={selected.size > 0 ? `${t('common.shared.export', '导出')} (${selected.size})` : t('common.shared.export', '导出')}
+                aria-label={selected.size > 0 ? `${t('common.shared.export', '导出')} (${selected.size})` : t('common.shared.export', '导出')}
+              >
+                <Upload size={14} />
+              </button>
+              {selected.size > 0 && (
+                <button
+                  className="btn btn-danger icon-only"
+                  onClick={handleBatchDelete}
+                  title={`${t('common.delete', '删除')} (${selected.size})`}
+                  aria-label={`${t('common.delete', '删除')} (${selected.size})`}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+              <QuickSettingsPopover type="github_copilot" />
+            </div>
           </div>
 
-          <div className="sort-select">
-            <ArrowDownWideNarrow size={14} className="sort-icon" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              aria-label={t('common.shared.sortLabel', '排序')}
-            >
-              <option value="created_at">{t('common.shared.sort.createdAt', '按创建时间')}</option>
-              <option value="weekly">{t('githubCopilot.sort.weekly', '按 Chat messages 使用量')}</option>
-              <option value="hourly">{t('githubCopilot.sort.hourly', '按 Inline Suggestions 使用量')}</option>
-              <option value="premium">{t('githubCopilot.sort.premium', '按 Premium requests 使用量')}</option>
-              <option value="weekly_reset">{t('githubCopilot.sort.weeklyReset', '按 Chat messages 重置时间')}</option>
-              <option value="hourly_reset">{t('githubCopilot.sort.hourlyReset', '按 Inline Suggestions 重置时间')}</option>
-            </select>
-          </div>
+          {loading && accounts.length === 0 ? (
+            <div className="loading-container">
+              <RefreshCw size={24} className="loading-spinner" />
+              <p>{t('common.loading', '加载中...')}</p>
+            </div>
+          ) : accounts.length === 0 ? (
+            <div className="empty-state">
+              <Globe size={48} />
+              <h3>{t('common.shared.empty.title', '暂无账号')}</h3>
+              <p>{t('githubCopilot.empty.description', '点击"添加账号"开始管理您的 GitHub Copilot 账号')}</p>
+              <button className="btn btn-primary" onClick={() => openAddModal('oauth')}>
+                <Plus size={16} />
+                {t('common.shared.addAccount', '添加账号')}
+              </button>
+            </div>
+          ) : filteredAccounts.length === 0 ? (
+            <div className="empty-state">
+              <h3>{t('common.shared.noMatch.title', '没有匹配的账号')}</h3>
+              <p>{t('common.shared.noMatch.desc', '请尝试调整搜索或筛选条件')}</p>
+            </div>
+          ) : viewMode === 'grid' ? (
+            groupByTag ? (
+              <div className="tag-group-list">
+                {groupedAccounts.map(([groupKey, groupAccounts]) => (
+                  <div key={groupKey} className="tag-group-section">
+                    <div className="tag-group-header">
+                      <span className="tag-group-title">{resolveGroupLabel(groupKey)}</span>
+                      <span className="tag-group-count">{groupAccounts.length}</span>
+                    </div>
+                    <div className="tag-group-grid ghcp-accounts-grid">
+                      {renderGridCards(groupAccounts, groupKey)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="ghcp-accounts-grid">
+                {renderGridCards(paginatedAccounts)}
+              </div>
+            )
+          ) : groupByTag ? (
+            <div className="account-table-container grouped">
+              <table className="account-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={selected.size === filteredAccounts.length && filteredAccounts.length > 0}
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th style={{ width: 260 }}>{t('common.shared.columns.email', '账号')}</th>
+                    <th style={{ width: 140 }}>{t('common.shared.columns.plan', '订阅')}</th>
+                    <th>{t('githubCopilot.columns.hourly', 'Inline Suggestions')}</th>
+                    <th>{t('githubCopilot.columns.weekly', 'Chat messages')}</th>
+                    <th>{t('githubCopilot.columns.premium', 'Premium requests')}</th>
+                    <th className="sticky-action-header table-action-header">{t('common.shared.columns.actions', '操作')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupedAccounts.map(([groupKey, groupAccounts]) => (
+                    <Fragment key={groupKey}>
+                      <tr className="tag-group-row">
+                        <td colSpan={7}>
+                          <div className="tag-group-header">
+                            <span className="tag-group-title">{resolveGroupLabel(groupKey)}</span>
+                            <span className="tag-group-count">{groupAccounts.length}</span>
+                          </div>
+                        </td>
+                      </tr>
+                      {renderTableRows(groupAccounts, groupKey)}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="account-table-container">
+              <table className="account-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={selected.size === filteredAccounts.length && filteredAccounts.length > 0}
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th style={{ width: 260 }}>{t('common.shared.columns.email', '账号')}</th>
+                    <th style={{ width: 140 }}>{t('common.shared.columns.plan', '订阅')}</th>
+                    <th>{t('githubCopilot.columns.hourly', 'Inline Suggestions')}</th>
+                    <th>{t('githubCopilot.columns.weekly', 'Chat messages')}</th>
+                    <th>{t('githubCopilot.columns.premium', 'Premium requests')}</th>
+                    <th className="sticky-action-header table-action-header">{t('common.shared.columns.actions', '操作')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {renderTableRows(paginatedAccounts)}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          <button
-            className="sort-direction-btn"
-            onClick={() => setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-            title={
-              sortDirection === 'desc'
-                ? t('common.shared.sort.descTooltip', '当前：降序，点击切换为升序')
-                : t('common.shared.sort.ascTooltip', '当前：升序，点击切换为降序')
-            }
-            aria-label={t('common.shared.sort.toggleDirection', '切换排序方向')}
-          >
-            {sortDirection === 'desc' ? '⬇' : '⬆'}
-          </button>
-        </div>
-        <div className="toolbar-right">
-          <button
-            className="btn btn-primary icon-only"
-            onClick={() => openAddModal('oauth')}
-            title={t('common.shared.addAccount', '添加账号')}
-            aria-label={t('common.shared.addAccount', '添加账号')}
-          >
-            <Plus size={14} />
-          </button>
-          <button
-            className="btn btn-secondary icon-only"
-            onClick={handleRefreshAll}
-            disabled={refreshingAll || accounts.length === 0}
-            title={t('common.shared.refreshAll', '刷新全部')}
-            aria-label={t('common.shared.refreshAll', '刷新全部')}
-          >
-            <RefreshCw size={14} className={refreshingAll ? 'loading-spinner' : ''} />
-          </button>
-          <button
-            className="btn btn-secondary icon-only"
-            onClick={togglePrivacyMode}
-            title={
-              privacyModeEnabled
-                ? t('privacy.showSensitive', '显示邮箱')
-                : t('privacy.hideSensitive', '隐藏邮箱')
-            }
-            aria-label={
-              privacyModeEnabled
-                ? t('privacy.showSensitive', '显示邮箱')
-                : t('privacy.hideSensitive', '隐藏邮箱')
-            }
-          >
-            {privacyModeEnabled ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
-          <button
-            className="btn btn-secondary icon-only"
-            onClick={() => openAddModal('token')}
-            disabled={importing}
-            title={t('common.shared.import.label', '导入')}
-            aria-label={t('common.shared.import.label', '导入')}
-          >
-            <Download size={14} />
-          </button>
-          <button
-            className="btn btn-secondary export-btn icon-only"
-            onClick={handleExport}
-            disabled={exporting}
-            title={selected.size > 0 ? `${t('common.shared.export', '导出')} (${selected.size})` : t('common.shared.export', '导出')}
-            aria-label={selected.size > 0 ? `${t('common.shared.export', '导出')} (${selected.size})` : t('common.shared.export', '导出')}
-          >
-            <Upload size={14} />
-          </button>
-          {selected.size > 0 && (
+          {/* 分页组件 */}
+          {filteredAccounts.length > 0 && (
+            <div className="pagination-container">
+              <div className="pagination-info">
+                {t('common.shared.pagination.total', '共 {{count}} 条', { count: filteredAccounts.length })}
+              </div>
+              <div className="pagination-controls">
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="page-size-select"
+                >
+                  {[20, 50, 100, 200, 500].map(size => (
+                    <option key={size} value={size}>{size} {t('common.shared.pagination.perPage', '条/页')}</option>
+                  ))}
+                </select>
+
+                <div className="pagination-buttons">
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(1)}
+                    title={t('common.shared.pagination.first', '首页')}
+                  >
+                    <ChevronsLeft size={16} />
+                  </button>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    title={t('common.shared.pagination.prev', '上一页')}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="pagination-current">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    title={t('common.shared.pagination.next', '下一页')}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(totalPages)}
+                    title={t('common.shared.pagination.last', '尾页')}
+                  >
+                    <ChevronsRight size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 回到顶部按钮 */}
+          {showScrollTop && (
             <button
-              className="btn btn-danger icon-only"
-              onClick={handleBatchDelete}
-              title={`${t('common.delete', '删除')} (${selected.size})`}
-              aria-label={`${t('common.delete', '删除')} (${selected.size})`}
+              className="back-to-top-btn"
+              onClick={scrollToTop}
+              title={t('common.shared.backToTop', '回到顶部')}
+              aria-label={t('common.shared.backToTop', '回到顶部')}
             >
-              <Trash2 size={14} />
+              <ArrowUp size={24} />
             </button>
           )}
-            <QuickSettingsPopover type="github_copilot" />
-        </div>
-      </div>
 
-      {loading && accounts.length === 0 ? (
-        <div className="loading-container">
-          <RefreshCw size={24} className="loading-spinner" />
-          <p>{t('common.loading', '加载中...')}</p>
-        </div>
-      ) : accounts.length === 0 ? (
-        <div className="empty-state">
-          <Globe size={48} />
-          <h3>{t('common.shared.empty.title', '暂无账号')}</h3>
-          <p>{t('githubCopilot.empty.description', '点击"添加账号"开始管理您的 GitHub Copilot 账号')}</p>
-          <button className="btn btn-primary" onClick={() => openAddModal('oauth')}>
-            <Plus size={16} />
-            {t('common.shared.addAccount', '添加账号')}
-          </button>
-        </div>
-      ) : filteredAccounts.length === 0 ? (
-        <div className="empty-state">
-          <h3>{t('common.shared.noMatch.title', '没有匹配的账号')}</h3>
-          <p>{t('common.shared.noMatch.desc', '请尝试调整搜索或筛选条件')}</p>
-        </div>
-      ) : viewMode === 'grid' ? (
-        groupByTag ? (
-          <div className="tag-group-list">
-            {groupedAccounts.map(([groupKey, groupAccounts]) => (
-              <div key={groupKey} className="tag-group-section">
-                <div className="tag-group-header">
-                  <span className="tag-group-title">{resolveGroupLabel(groupKey)}</span>
-                  <span className="tag-group-count">{groupAccounts.length}</span>
+          {showAddModal && (
+            <div className="modal-overlay" onClick={closeAddModal}>
+              <div className="modal-content ghcp-add-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{t('githubCopilot.addModal.title', '添加 GitHub Copilot 账号')}</h2>
+                  <button className="modal-close" onClick={closeAddModal} aria-label={t('common.close', '关闭')}>
+                    <X />
+                  </button>
                 </div>
-                <div className="tag-group-grid ghcp-accounts-grid">
-                  {renderGridCards(groupAccounts, groupKey)}
+
+                <div className="modal-tabs">
+                  <button
+                    className={`modal-tab ${addTab === 'oauth' ? 'active' : ''}`}
+                    onClick={() => openAddModal('oauth')}
+                  >
+                    <Globe size={14} />
+                    {t('common.shared.addModal.oauth', 'OAuth')}
+                  </button>
+                  <button
+                    className={`modal-tab ${addTab === 'token' ? 'active' : ''}`}
+                    onClick={() => openAddModal('token')}
+                  >
+                    <KeyRound size={14} />
+                    {t('common.shared.addModal.token', 'Token / JSON')}
+                  </button>
+                  <button
+                    className={`modal-tab ${addTab === 'import' ? 'active' : ''}`}
+                    onClick={() => openAddModal('import')}
+                  >
+                    <Database size={14} />
+                    {t('common.shared.addModal.import', '本地导入')}
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="ghcp-accounts-grid">
-            {renderGridCards(filteredAccounts)}
-          </div>
-        )
-      ) : groupByTag ? (
-        <div className="account-table-container grouped">
-          <table className="account-table">
-            <thead>
-              <tr>
-                <th style={{ width: 40 }}>
-                  <input
-                    type="checkbox"
-                    checked={selected.size === filteredAccounts.length && filteredAccounts.length > 0}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th style={{ width: 260 }}>{t('common.shared.columns.email', '账号')}</th>
-                <th style={{ width: 140 }}>{t('common.shared.columns.plan', '订阅')}</th>
-                <th>{t('githubCopilot.columns.hourly', 'Inline Suggestions')}</th>
-                <th>{t('githubCopilot.columns.weekly', 'Chat messages')}</th>
-                <th>{t('githubCopilot.columns.premium', 'Premium requests')}</th>
-                <th className="sticky-action-header table-action-header">{t('common.shared.columns.actions', '操作')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedAccounts.map(([groupKey, groupAccounts]) => (
-                <Fragment key={groupKey}>
-                  <tr className="tag-group-row">
-                    <td colSpan={7}>
-                      <div className="tag-group-header">
-                        <span className="tag-group-title">{resolveGroupLabel(groupKey)}</span>
-                        <span className="tag-group-count">{groupAccounts.length}</span>
-                      </div>
-                    </td>
-                  </tr>
-                  {renderTableRows(groupAccounts, groupKey)}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="account-table-container">
-          <table className="account-table">
-            <thead>
-              <tr>
-                <th style={{ width: 40 }}>
-                  <input
-                    type="checkbox"
-                    checked={selected.size === filteredAccounts.length && filteredAccounts.length > 0}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th style={{ width: 260 }}>{t('common.shared.columns.email', '账号')}</th>
-                <th style={{ width: 140 }}>{t('common.shared.columns.plan', '订阅')}</th>
-                <th>{t('githubCopilot.columns.hourly', 'Inline Suggestions')}</th>
-                <th>{t('githubCopilot.columns.weekly', 'Chat messages')}</th>
-                <th>{t('githubCopilot.columns.premium', 'Premium requests')}</th>
-                <th className="sticky-action-header table-action-header">{t('common.shared.columns.actions', '操作')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renderTableRows(filteredAccounts)}
-            </tbody>
-          </table>
-        </div>
-      )}
 
-      {showAddModal && (
-        <div className="modal-overlay" onClick={closeAddModal}>
-          <div className="modal-content ghcp-add-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{t('githubCopilot.addModal.title', '添加 GitHub Copilot 账号')}</h2>
-              <button className="modal-close" onClick={closeAddModal} aria-label={t('common.close', '关闭')}>
-                <X />
-              </button>
-            </div>
+                <div className="modal-body">
+                  {addTab === 'oauth' && (
+                    <div className="add-section">
+                      <p className="section-desc">
+                        {t('githubCopilot.oauth.desc', '点击下方按钮，在浏览器中完成 GitHub Copilot 授权登录。')}
+                      </p>
 
-            <div className="modal-tabs">
-              <button
-                className={`modal-tab ${addTab === 'oauth' ? 'active' : ''}`}
-                onClick={() => openAddModal('oauth')}
-              >
-                <Globe size={14} />
-                {t('common.shared.addModal.oauth', 'OAuth')}
-              </button>
-              <button
-                className={`modal-tab ${addTab === 'token' ? 'active' : ''}`}
-                onClick={() => openAddModal('token')}
-              >
-                <KeyRound size={14} />
-                {t('common.shared.addModal.token', 'Token / JSON')}
-              </button>
-              <button
-                className={`modal-tab ${addTab === 'import' ? 'active' : ''}`}
-                onClick={() => openAddModal('import')}
-              >
-                <Database size={14} />
-                {t('common.shared.addModal.import', '本地导入')}
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {addTab === 'oauth' && (
-                <div className="add-section">
-                  <p className="section-desc">
-                    {t('githubCopilot.oauth.desc', '点击下方按钮，在浏览器中完成 GitHub Copilot 授权登录。')}
-                  </p>
-
-                  {oauthPrepareError ? (
-                    <div className="add-status error">
-                      <CircleAlert size={16} />
-                      <span>{oauthPrepareError}</span>
-                      <button className="btn btn-sm btn-outline" onClick={handleRetryOauth}>
-                        {t('common.shared.oauth.retry', '重新生成授权信息')}
-                      </button>
-                    </div>
-                  ) : oauthUrl ? (
-                    <div className="oauth-url-section">
-                      <div className="oauth-url-box">
-                        <input type="text" value={oauthUrl} readOnly />
-                        <button onClick={handleCopyOauthUrl}>
-                          {oauthUrlCopied ? <Check size={16} /> : <Copy size={16} />}
-                        </button>
-                      </div>
-                      {!oauthUrl.includes('user_code=') && oauthUserCode && (
-                        <div className="oauth-url-box">
-                          <input type="text" value={oauthUserCode} readOnly />
-                          <button onClick={handleCopyOauthUserCode}>
-                            {oauthUserCodeCopied ? <Check size={16} /> : <Copy size={16} />}
-                          </button>
-                        </div>
-                      )}
-                      {oauthMeta && (
-                        <p className="oauth-hint">
-                          {t('common.shared.oauth.meta', '授权有效期：{{expires}}s；轮询间隔：{{interval}}s', {
-                            expires: oauthMeta.expiresIn,
-                            interval: oauthMeta.intervalSeconds,
-                          })}
-                        </p>
-                      )}
-                      <button
-                        className="btn btn-primary btn-full"
-                        onClick={handleOpenOauthUrl}
-                      >
-                        <Globe size={16} />
-                        {t('common.shared.oauth.openBrowser', '在浏览器中打开')}
-                      </button>
-                      {oauthPolling && (
-                        <div className="add-status loading">
-                          <RefreshCw size={16} className="loading-spinner" />
-                          <span>{t('common.shared.oauth.waiting', '等待授权完成...')}</span>
-                        </div>
-                      )}
-                      {oauthCompleteError && (
+                      {oauthPrepareError ? (
                         <div className="add-status error">
                           <CircleAlert size={16} />
-                          <span>{oauthCompleteError}</span>
-                          {oauthTimedOut && (
-                            <button className="btn btn-sm btn-outline" onClick={handleRetryOauth}>
-                              {t('common.shared.oauth.timeoutRetry', '刷新授权链接')}
+                          <span>{oauthPrepareError}</span>
+                          <button className="btn btn-sm btn-outline" onClick={handleRetryOauth}>
+                            {t('common.shared.oauth.retry', '重新生成授权信息')}
+                          </button>
+                        </div>
+                      ) : oauthUrl ? (
+                        <div className="oauth-url-section">
+                          <div className="oauth-url-box">
+                            <input type="text" value={oauthUrl} readOnly />
+                            <button onClick={handleCopyOauthUrl}>
+                              {oauthUrlCopied ? <Check size={16} /> : <Copy size={16} />}
                             </button>
+                          </div>
+                          {!oauthUrl.includes('user_code=') && oauthUserCode && (
+                            <div className="oauth-url-box">
+                              <input type="text" value={oauthUserCode} readOnly />
+                              <button onClick={handleCopyOauthUserCode}>
+                                {oauthUserCodeCopied ? <Check size={16} /> : <Copy size={16} />}
+                              </button>
+                            </div>
                           )}
+                          {oauthMeta && (
+                            <p className="oauth-hint">
+                              {t('common.shared.oauth.meta', '授权有效期：{{expires}}s；轮询间隔：{{interval}}s', {
+                                expires: oauthMeta.expiresIn,
+                                interval: oauthMeta.intervalSeconds,
+                              })}
+                            </p>
+                          )}
+                          <button
+                            className="btn btn-primary btn-full"
+                            onClick={handleOpenOauthUrl}
+                          >
+                            <Globe size={16} />
+                            {t('common.shared.oauth.openBrowser', '在浏览器中打开')}
+                          </button>
+                          {oauthPolling && (
+                            <div className="add-status loading">
+                              <RefreshCw size={16} className="loading-spinner" />
+                              <span>{t('common.shared.oauth.waiting', '等待授权完成...')}</span>
+                            </div>
+                          )}
+                          {oauthCompleteError && (
+                            <div className="add-status error">
+                              <CircleAlert size={16} />
+                              <span>{oauthCompleteError}</span>
+                              {oauthTimedOut && (
+                                <button className="btn btn-sm btn-outline" onClick={handleRetryOauth}>
+                                  {t('common.shared.oauth.timeoutRetry', '刷新授权链接')}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          <p className="oauth-hint">
+                            {t('common.shared.oauth.hint', 'Once authorized, this window will update automatically')}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="oauth-loading">
+                          <RefreshCw size={24} className="loading-spinner" />
+                          <span>{t('common.shared.oauth.preparing', '正在准备授权信息...')}</span>
                         </div>
                       )}
-                      <p className="oauth-hint">
-                        {t('common.shared.oauth.hint', 'Once authorized, this window will update automatically')}
-                      </p>
                     </div>
-                  ) : (
-                    <div className="oauth-loading">
-                      <RefreshCw size={24} className="loading-spinner" />
-                      <span>{t('common.shared.oauth.preparing', '正在准备授权信息...')}</span>
+                  )}
+
+                  {addTab === 'token' && (
+                    <div className="add-section">
+                      <p className="section-desc">
+                        {t('githubCopilot.token.desc', '粘贴您的 GitHub Copilot Access Token 或导出的 JSON 数据。')}
+                      </p>
+                      <textarea
+                        className="token-input"
+                        value={tokenInput}
+                        onChange={(e) => setTokenInput(e.target.value)}
+                        placeholder={t('common.shared.token.placeholder', '粘贴 Token 或 JSON...')}
+                      />
+                      <button
+                        className="btn btn-primary btn-full"
+                        onClick={handleTokenImport}
+                        disabled={importing || !tokenInput.trim()}
+                      >
+                        {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Download size={16} />}
+                        {t('common.shared.token.import', 'Import')}
+                      </button>
+                    </div>
+                  )}
+
+                  {addTab === 'import' && (
+                    <div className="add-section">
+                      <p className="section-desc">
+                        {t('githubCopilot.import.localDesc', '从 JSON 文件导入 GitHub Copilot 账号数据。')}
+                      </p>
+                      <input
+                        ref={importFileInputRef}
+                        type="file"
+                        accept="application/json"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          // reset immediately so selecting the same file will trigger change again
+                          e.target.value = '';
+                          if (!file) return;
+                          void handleImportJsonFile(file);
+                        }}
+                      />
+                      <button className="btn btn-primary btn-full" onClick={handlePickImportFile} disabled={importing}>
+                        {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Database size={16} />}
+                        {t('common.shared.import.pickFile', '选择 JSON 文件导入')}
+                      </button>
+                    </div>
+                  )}
+
+                  {addStatus !== 'idle' && addStatus !== 'loading' && (
+                    <div className={`add-status ${addStatus}`}>
+                      {addStatus === 'success' ? <Check size={16} /> : <CircleAlert size={16} />}
+                      <span>{addMessage}</span>
                     </div>
                   )}
                 </div>
-              )}
+              </div>
+            </div>
+          )}
 
-              {addTab === 'token' && (
-                <div className="add-section">
-                  <p className="section-desc">
-                    {t('githubCopilot.token.desc', '粘贴您的 GitHub Copilot Access Token 或导出的 JSON 数据。')}
-                  </p>
-                  <textarea
-                    className="token-input"
-                    value={tokenInput}
-                    onChange={(e) => setTokenInput(e.target.value)}
-                    placeholder={t('common.shared.token.placeholder', '粘贴 Token 或 JSON...')}
-                  />
+          {deleteConfirm && (
+            <div className="modal-overlay" onClick={() => !deleting && setDeleteConfirm(null)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{t('common.confirm')}</h2>
                   <button
-                    className="btn btn-primary btn-full"
-                    onClick={handleTokenImport}
-                    disabled={importing || !tokenInput.trim()}
+                    className="modal-close"
+                    onClick={() => !deleting && setDeleteConfirm(null)}
+                    aria-label={t('common.close', '关闭')}
                   >
-                    {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Download size={16} />}
-                    {t('common.shared.token.import', 'Import')}
+                    <X />
                   </button>
                 </div>
-              )}
+                <div className="modal-body">
+                  <p>{deleteConfirm.message}</p>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)} disabled={deleting}>
+                    {t('common.cancel')}
+                  </button>
+                  <button className="btn btn-danger" onClick={confirmDelete} disabled={deleting}>
+                    {t('common.confirm')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-              {addTab === 'import' && (
-                <div className="add-section">
-                  <p className="section-desc">
-                    {t('githubCopilot.import.localDesc', '从 JSON 文件导入 GitHub Copilot 账号数据。')}
+          {tagDeleteConfirm && (
+            <div className="modal-overlay" onClick={() => !deletingTag && setTagDeleteConfirm(null)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{t('common.confirm')}</h2>
+                  <button
+                    className="modal-close"
+                    onClick={() => !deletingTag && setTagDeleteConfirm(null)}
+                    aria-label={t('common.close', '关闭')}
+                  >
+                    <X />
+                  </button>
+                </div>
+                <div className="modal-body">
+                  <p>
+                    {t('accounts.confirmDeleteTag', 'Delete tag "{{tag}}"? This tag will be removed from {{count}} accounts.', { tag: tagDeleteConfirm.tag, count: tagDeleteConfirm.count })}
                   </p>
-                  <input
-                    ref={importFileInputRef}
-                    type="file"
-                    accept="application/json"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      // reset immediately so selecting the same file will trigger change again
-                      e.target.value = '';
-                      if (!file) return;
-                      void handleImportJsonFile(file);
-                    }}
-                  />
-                  <button className="btn btn-primary btn-full" onClick={handlePickImportFile} disabled={importing}>
-                    {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Database size={16} />}
-                    {t('common.shared.import.pickFile', '选择 JSON 文件导入')}
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setTagDeleteConfirm(null)} disabled={deletingTag}>
+                    {t('common.cancel')}
+                  </button>
+                  <button className="btn btn-danger" onClick={confirmDeleteTag} disabled={deletingTag}>
+                    {deletingTag ? t('common.processing', '处理中...') : t('common.confirm')}
                   </button>
                 </div>
-              )}
+              </div>
+            </div>
+          )}
 
-              {addStatus !== 'idle' && addStatus !== 'loading' && (
-                <div className={`add-status ${addStatus}`}>
-                  {addStatus === 'success' ? <Check size={16} /> : <CircleAlert size={16} />}
-                  <span>{addMessage}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteConfirm && (
-        <div className="modal-overlay" onClick={() => !deleting && setDeleteConfirm(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{t('common.confirm')}</h2>
-              <button
-                className="modal-close"
-                onClick={() => !deleting && setDeleteConfirm(null)}
-                aria-label={t('common.close', '关闭')}
-              >
-                <X />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>{deleteConfirm.message}</p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)} disabled={deleting}>
-                {t('common.cancel')}
-              </button>
-              <button className="btn btn-danger" onClick={confirmDelete} disabled={deleting}>
-                {t('common.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tagDeleteConfirm && (
-        <div className="modal-overlay" onClick={() => !deletingTag && setTagDeleteConfirm(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{t('common.confirm')}</h2>
-              <button
-                className="modal-close"
-                onClick={() => !deletingTag && setTagDeleteConfirm(null)}
-                aria-label={t('common.close', '关闭')}
-              >
-                <X />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>
-                {t('accounts.confirmDeleteTag', 'Delete tag "{{tag}}"? This tag will be removed from {{count}} accounts.', { tag: tagDeleteConfirm.tag, count: tagDeleteConfirm.count })}
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setTagDeleteConfirm(null)} disabled={deletingTag}>
-                {t('common.cancel')}
-              </button>
-              <button className="btn btn-danger" onClick={confirmDeleteTag} disabled={deletingTag}>
-                {deletingTag ? t('common.processing', '处理中...') : t('common.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <TagEditModal
-        isOpen={!!showTagModal}
-        initialTags={accounts.find((a) => a.id === showTagModal)?.tags || []}
-        availableTags={availableTags}
-        onClose={() => setShowTagModal(null)}
-        onSave={handleSaveTags}
-      />
+          <TagEditModal
+            isOpen={!!showTagModal}
+            initialTags={accounts.find((a) => a.id === showTagModal)?.tags || []}
+            availableTags={availableTags}
+            onClose={() => setShowTagModal(null)}
+            onSave={handleSaveTags}
+          />
         </>
       )}
 

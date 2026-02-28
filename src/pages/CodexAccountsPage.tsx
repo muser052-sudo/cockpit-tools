@@ -23,6 +23,11 @@ import {
   Tag,
   Eye,
   EyeOff,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ArrowUp,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCodexAccountStore } from '../stores/useCodexAccountStore';
@@ -37,7 +42,7 @@ import {
 } from '../types/codex';
 
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
-import { confirm as confirmDialog } from '@tauri-apps/plugin-dialog';
+import { confirm as confirmDialog, open as openDialog } from '@tauri-apps/plugin-dialog';
 import { save } from '@tauri-apps/plugin-dialog';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { invoke } from '@tauri-apps/api/core';
@@ -102,6 +107,9 @@ export function CodexAccountsPage() {
   const [deleting, setDeleting] = useState(false);
   const [tagDeleteConfirm, setTagDeleteConfirm] = useState<{ tag: string; count: number } | null>(null);
   const [deletingTag, setDeletingTag] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const showAddModalRef = useRef(showAddModal);
   const addTabRef = useRef(addTab);
@@ -132,6 +140,45 @@ export function CodexAccountsPage() {
     addTabRef.current = addTab;
     addStatusRef.current = addStatus;
   }, [showAddModal, addTab, addStatus]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, tagFilter, sortBy, sortDirection, pageSize]);
+
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement | Document;
+      const scrollTop = target === document ? window.scrollY : (target as HTMLElement).scrollTop;
+      setShowScrollTop(scrollTop > 200);
+    };
+
+    // Find the actual scrollable container. In many single-page dashboard apps, the body doesn't scroll, but a main wrapper does. 
+    // We attach to window and common scroll containers just in case.
+    const scrollContainers = [
+      window,
+      document.querySelector('.layout-content'),
+      document.querySelector('.app-main'),
+      document.querySelector('.main-content'),
+    ].filter(Boolean) as EventTarget[];
+
+    scrollContainers.forEach(container => container.addEventListener('scroll', handleScroll, { passive: true }));
+    return () => scrollContainers.forEach(container => container.removeEventListener('scroll', handleScroll));
+  }, []);
+
+  const scrollToTop = () => {
+    const scrollContainers = [
+      document.querySelector('.layout-content'),
+      document.querySelector('.app-main'),
+      document.querySelector('.main-content'),
+      window
+    ].filter(Boolean) as (HTMLElement | Window)[];
+
+    for (const container of scrollContainers) {
+      if ('scrollTo' in container) {
+        container.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  };
 
   useEffect(() => {
     if (!showTagFilter) return;
@@ -385,7 +432,7 @@ export function CodexAccountsPage() {
     if (!oauthActiveRef.current) return;
     const loginId = oauthLoginIdRef.current ?? undefined;
     oauthLog('弹框关闭或切换标签，准备取消授权流程', { loginId });
-    codexService.cancelCodexOAuthLogin(loginId).catch(() => {});
+    codexService.cancelCodexOAuthLogin(loginId).catch(() => { });
     oauthActiveRef.current = false;
     oauthLoginIdRef.current = null;
     setOauthUrl('');
@@ -516,14 +563,14 @@ export function CodexAccountsPage() {
     try {
       const account = await codexService.importCodexFromLocal();
       await fetchAccounts();
-      
+
       try {
         await refreshQuota(account.id);
         await fetchAccounts();
       } catch (quotaErr) {
         console.warn('配额刷新失败（可稍后重试）:', quotaErr);
       }
-      
+
       setAddStatus('success');
       setAddMessage(
         t('codex.import.successMsg', '导入成功: {{email}}').replace(
@@ -543,6 +590,50 @@ export function CodexAccountsPage() {
     setImporting(false);
   };
 
+  const handleBatchImportFromDir = async () => {
+    try {
+      const selected = await openDialog({
+        directory: true,
+        multiple: false,
+        title: t('codex.import.selectDir', '选择包含 JSON 文件的目录'),
+      });
+
+      if (!selected || typeof selected !== 'string') {
+        return; // 用户取消选择
+      }
+
+      setImporting(true);
+      setAddStatus('loading');
+      setAddMessage(t('codex.import.importingDir', '正在批量导入目录下的账号...'));
+
+      const accounts = await codexService.importCodexFromDir(selected);
+
+      if (accounts.length === 0) {
+        setAddStatus('error');
+        setAddMessage(t('codex.import.dirEmptyMsg', '未在目录下找到有效的账号文件'));
+      } else {
+        await fetchAccounts();
+        for (const acc of accounts) {
+          await refreshQuota(acc.id).catch(() => { });
+        }
+        await fetchAccounts();
+
+        setAddStatus('success');
+        setAddMessage(t('codex.import.dirSuccessMsg', '成功从目录导入 {{count}} 个账号').replace('{{count}}', String(accounts.length)));
+        setTimeout(() => {
+          setShowAddModal(false);
+          resetAddModalState();
+        }, 1200);
+      }
+    } catch (e) {
+      setAddStatus('error');
+      const errorMsg = String(e).replace(/^Error:\s*/, '');
+      setAddMessage(t('common.shared.import.failedMsg', '导入失败: {{error}}').replace('{{error}}', errorMsg));
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleTokenImport = async () => {
     const trimmed = tokenInput.trim();
     if (!trimmed) {
@@ -559,7 +650,7 @@ export function CodexAccountsPage() {
       const accounts = await codexService.importCodexFromJson(trimmed);
       await fetchAccounts();
       for (const acc of accounts) {
-        await refreshQuota(acc.id).catch(() => {});
+        await refreshQuota(acc.id).catch(() => { });
       }
       await fetchAccounts();
       setAddStatus('success');
@@ -642,7 +733,7 @@ export function CodexAccountsPage() {
       await openUrl(oauthUrl);
     } catch (e) {
       console.error('打开浏览器失败:', e);
-      await navigator.clipboard.writeText(oauthUrl).catch(() => {});
+      await navigator.clipboard.writeText(oauthUrl).catch(() => { });
       setOauthUrlCopied(true);
       setTimeout(() => setOauthUrlCopied(false), 1200);
     }
@@ -795,12 +886,19 @@ export function CodexAccountsPage() {
     return result;
   }, [accounts, filterType, searchQuery, sortBy, sortDirection, tagFilter]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredAccounts.length / pageSize));
+
+  const paginatedAccounts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAccounts.slice(start, start + pageSize);
+  }, [filteredAccounts, currentPage, pageSize]);
+
   const groupedAccounts = useMemo(() => {
-    if (!groupByTag) return [] as Array<[string, typeof filteredAccounts]>;
-    const groups = new Map<string, typeof filteredAccounts>();
+    if (!groupByTag) return [] as Array<[string, typeof paginatedAccounts]>;
+    const groups = new Map<string, typeof paginatedAccounts>();
     const selectedTags = new Set(tagFilter.map(normalizeTag));
 
-    filteredAccounts.forEach((account) => {
+    paginatedAccounts.forEach((account) => {
       const tags = (account.tags || []).map(normalizeTag).filter(Boolean);
       const matchedTags = selectedTags.size > 0
         ? tags.filter((tag) => selectedTags.has(tag))
@@ -823,7 +921,7 @@ export function CodexAccountsPage() {
       if (bKey === untaggedKey) return -1;
       return aKey.localeCompare(bKey);
     });
-  }, [filteredAccounts, groupByTag, tagFilter, untaggedKey]);
+  }, [paginatedAccounts, groupByTag, tagFilter, untaggedKey]);
 
   const quotaColumnLabels = useMemo(() => {
     const source = filteredAccounts.length > 0 ? filteredAccounts : accounts;
@@ -1175,518 +1273,598 @@ export function CodexAccountsPage() {
       {activeTab === 'overview' && (
         <>
 
-      {message && (
-        <div className={`message-bar ${message.tone === 'error' ? 'error' : 'success'}`}>
-          {message.text}
-          <button onClick={() => setMessage(null)}>
-            <X size={14} />
-          </button>
-        </div>
-      )}
+          {message && (
+            <div className={`message-bar ${message.tone === 'error' ? 'error' : 'success'}`}>
+              {message.text}
+              <button onClick={() => setMessage(null)}>
+                <X size={14} />
+              </button>
+            </div>
+          )}
 
-      <div className="toolbar">
-        <div className="toolbar-left">
-          <div className="search-box">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder={t('common.shared.search', '搜索账号...')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <div className="toolbar">
+            <div className="toolbar-left">
+              <div className="search-box">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder={t('common.shared.search', '搜索账号...')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
 
-          <div className="view-switcher">
-            <button
-              className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-              title={t('common.shared.view.list', '列表视图')}
-            >
-              <List size={16} />
-            </button>
-            <button
-              className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-              title={t('common.shared.view.grid', '卡片视图')}
-            >
-              <LayoutGrid size={16} />
-            </button>
-          </div>
+              <div className="view-switcher">
+                <button
+                  className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => setViewMode('list')}
+                  title={t('common.shared.view.list', '列表视图')}
+                >
+                  <List size={16} />
+                </button>
+                <button
+                  className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setViewMode('grid')}
+                  title={t('common.shared.view.grid', '卡片视图')}
+                >
+                  <LayoutGrid size={16} />
+                </button>
+              </div>
 
-          <div className="filter-select">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value as typeof filterType)}
-              aria-label={t('common.shared.filterLabel', '筛选')}
-            >
-              <option value="all">{t('common.shared.filter.all', { count: tierCounts.all })}</option>
-              <option value="FREE">{`FREE (${tierCounts.FREE})`}</option>
-              <option value="PLUS">{`PLUS (${tierCounts.PLUS})`}</option>
-              <option value="PRO">{`PRO (${tierCounts.PRO})`}</option>
-              <option value="TEAM">{`TEAM (${tierCounts.TEAM})`}</option>
-              <option value="ENTERPRISE">{`ENTERPRISE (${tierCounts.ENTERPRISE})`}</option>
-            </select>
-          </div>
+              <div className="filter-select">
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+                  aria-label={t('common.shared.filterLabel', '筛选')}
+                >
+                  <option value="all">{t('common.shared.filter.all', { count: tierCounts.all })}</option>
+                  <option value="FREE">{`FREE (${tierCounts.FREE})`}</option>
+                  <option value="PLUS">{`PLUS (${tierCounts.PLUS})`}</option>
+                  <option value="PRO">{`PRO (${tierCounts.PRO})`}</option>
+                  <option value="TEAM">{`TEAM (${tierCounts.TEAM})`}</option>
+                  <option value="ENTERPRISE">{`ENTERPRISE (${tierCounts.ENTERPRISE})`}</option>
+                </select>
+              </div>
 
-          <div className="tag-filter" ref={tagFilterRef}>
-            <button
-              type="button"
-              className={`tag-filter-btn ${tagFilter.length > 0 ? 'active' : ''}`}
-              onClick={() => setShowTagFilter((prev) => !prev)}
-              aria-label={t('accounts.filterTags', '标签筛选')}
-            >
-              <Tag size={14} />
-              {tagFilter.length > 0 ? `${t('accounts.filterTagsCount', '标签')}(${tagFilter.length})` : t('accounts.filterTags', '标签筛选')}
-            </button>
-            {showTagFilter && (
-              <div className="tag-filter-panel">
-                {availableTags.length === 0 ? (
-                  <div className="tag-filter-empty">{t('accounts.noAvailableTags', '暂无可用标签')}</div>
-                ) : (
-                  <div className="tag-filter-options">
-                    {availableTags.map((tag) => (
-                      <label key={tag} className={`tag-filter-option ${tagFilter.includes(tag) ? 'selected' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={tagFilter.includes(tag)}
-                          onChange={() => toggleTagFilterValue(tag)}
-                        />
-                        <span className="tag-filter-name">{tag}</span>
-                        <button
-                          type="button"
-                          className="tag-filter-delete"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            requestDeleteTag(tag);
-                          }}
-                          aria-label={t('accounts.deleteTagAria', {
-                            tag,
-                            defaultValue: '删除标签 {{tag}}',
-                          })}
-                        >
-                          <X size={12} />
-                        </button>
-                      </label>
-                    ))}
+              <div className="tag-filter" ref={tagFilterRef}>
+                <button
+                  type="button"
+                  className={`tag-filter-btn ${tagFilter.length > 0 ? 'active' : ''}`}
+                  onClick={() => setShowTagFilter((prev) => !prev)}
+                  aria-label={t('accounts.filterTags', '标签筛选')}
+                >
+                  <Tag size={14} />
+                  {tagFilter.length > 0 ? `${t('accounts.filterTagsCount', '标签')}(${tagFilter.length})` : t('accounts.filterTags', '标签筛选')}
+                </button>
+                {showTagFilter && (
+                  <div className="tag-filter-panel">
+                    {availableTags.length === 0 ? (
+                      <div className="tag-filter-empty">{t('accounts.noAvailableTags', '暂无可用标签')}</div>
+                    ) : (
+                      <div className="tag-filter-options">
+                        {availableTags.map((tag) => (
+                          <label key={tag} className={`tag-filter-option ${tagFilter.includes(tag) ? 'selected' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={tagFilter.includes(tag)}
+                              onChange={() => toggleTagFilterValue(tag)}
+                            />
+                            <span className="tag-filter-name">{tag}</span>
+                            <button
+                              type="button"
+                              className="tag-filter-delete"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                requestDeleteTag(tag);
+                              }}
+                              aria-label={t('accounts.deleteTagAria', {
+                                tag,
+                                defaultValue: '删除标签 {{tag}}',
+                              })}
+                            >
+                              <X size={12} />
+                            </button>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    <div className="tag-filter-divider" />
+                    <label className="tag-filter-group-toggle">
+                      <input
+                        type="checkbox"
+                        checked={groupByTag}
+                        onChange={(e) => setGroupByTag(e.target.checked)}
+                      />
+                      <span>{t('accounts.groupByTag', '按标签分组展示')}</span>
+                    </label>
+                    {tagFilter.length > 0 && (
+                      <button type="button" className="tag-filter-clear" onClick={clearTagFilter}>
+                        {t('accounts.clearFilter', '清空筛选')}
+                      </button>
+                    )}
                   </div>
                 )}
-                <div className="tag-filter-divider" />
-                <label className="tag-filter-group-toggle">
-                  <input
-                    type="checkbox"
-                    checked={groupByTag}
-                    onChange={(e) => setGroupByTag(e.target.checked)}
-                  />
-                  <span>{t('accounts.groupByTag', '按标签分组展示')}</span>
-                </label>
-                {tagFilter.length > 0 && (
-                  <button type="button" className="tag-filter-clear" onClick={clearTagFilter}>
-                    {t('accounts.clearFilter', '清空筛选')}
-                  </button>
-                )}
               </div>
-            )}
+
+              <div className="sort-select">
+                <ArrowDownWideNarrow size={14} className="sort-icon" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  aria-label={t('common.shared.sortLabel', '排序')}
+                >
+                  <option value="created_at">{t('common.shared.sort.createdAt', '按创建时间')}</option>
+                  <option value="weekly">{t('codex.sort.weekly', '按周配额')}</option>
+                  <option value="hourly">{t('codex.sort.hourly', '按5小时配额')}</option>
+                  <option value="weekly_reset">{t('codex.sort.weeklyReset', '按周配额重置时间')}</option>
+                  <option value="hourly_reset">{t('codex.sort.hourlyReset', '按5小时配额重置时间')}</option>
+                </select>
+              </div>
+
+              <button
+                className="sort-direction-btn"
+                onClick={() => setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
+                title={
+                  sortDirection === 'desc'
+                    ? t('common.shared.sort.descTooltip', '当前：降序，点击切换为升序')
+                    : t('common.shared.sort.ascTooltip', '当前：升序，点击切换为降序')
+                }
+                aria-label={t('common.shared.sort.toggleDirection', '切换排序方向')}
+              >
+                {sortDirection === 'desc' ? '⬇' : '⬆'}
+              </button>
+            </div>
+            <div className="toolbar-right">
+              <button
+                className="btn btn-primary icon-only"
+                onClick={() => openAddModal('oauth')}
+                title={t('common.shared.addAccount', '添加账号')}
+                aria-label={t('common.shared.addAccount', '添加账号')}
+              >
+                <Plus size={14} />
+              </button>
+              <button
+                className="btn btn-secondary icon-only"
+                onClick={handleRefreshAll}
+                disabled={refreshingAll || accounts.length === 0}
+                title={t('common.shared.refreshAll', '刷新全部')}
+                aria-label={t('common.shared.refreshAll', '刷新全部')}
+              >
+                <RefreshCw size={14} className={refreshingAll ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="btn btn-secondary icon-only"
+                onClick={togglePrivacyMode}
+                title={
+                  privacyModeEnabled
+                    ? t('privacy.showSensitive', '显示邮箱')
+                    : t('privacy.hideSensitive', '隐藏邮箱')
+                }
+                aria-label={
+                  privacyModeEnabled
+                    ? t('privacy.showSensitive', '显示邮箱')
+                    : t('privacy.hideSensitive', '隐藏邮箱')
+                }
+              >
+                {privacyModeEnabled ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+              <button
+                className="btn btn-secondary icon-only"
+                onClick={() => openAddModal('token')}
+                disabled={importing}
+                title={t('common.shared.import.label', '导入')}
+                aria-label={t('common.shared.import.label', '导入')}
+              >
+                <Download size={14} />
+              </button>
+              <button
+                className="btn btn-secondary export-btn icon-only"
+                onClick={handleExport}
+                disabled={exporting}
+                title={selected.size > 0 ? `${t('common.shared.export', '导出')} (${selected.size})` : t('common.shared.export', '导出')}
+                aria-label={selected.size > 0 ? `${t('common.shared.export', '导出')} (${selected.size})` : t('common.shared.export', '导出')}
+              >
+                <Upload size={14} />
+              </button>
+              {selected.size > 0 && (
+                <button
+                  className="btn btn-danger icon-only"
+                  onClick={handleBatchDelete}
+                  title={`${t('common.delete', '删除')} (${selected.size})`}
+                  aria-label={`${t('common.delete', '删除')} (${selected.size})`}
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
+              <QuickSettingsPopover type="codex" />
+            </div>
           </div>
 
-          <div className="sort-select">
-            <ArrowDownWideNarrow size={14} className="sort-icon" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-              aria-label={t('common.shared.sortLabel', '排序')}
-            >
-              <option value="created_at">{t('common.shared.sort.createdAt', '按创建时间')}</option>
-              <option value="weekly">{t('codex.sort.weekly', '按周配额')}</option>
-              <option value="hourly">{t('codex.sort.hourly', '按5小时配额')}</option>
-              <option value="weekly_reset">{t('codex.sort.weeklyReset', '按周配额重置时间')}</option>
-              <option value="hourly_reset">{t('codex.sort.hourlyReset', '按5小时配额重置时间')}</option>
-            </select>
-          </div>
+          {loading && accounts.length === 0 ? (
+            <div className="loading-container">
+              <RefreshCw size={24} className="loading-spinner" />
+              <p>{t('common.loading', '加载中...')}</p>
+            </div>
+          ) : accounts.length === 0 ? (
+            <div className="empty-state">
+              <Globe size={48} />
+              <h3>{t('common.shared.empty.title', '暂无账号')}</h3>
+              <p>{t('codex.empty.description', '点击"添加账号"开始管理您的 Codex 账号')}</p>
+              <button className="btn btn-primary" onClick={() => openAddModal('oauth')}>
+                <Plus size={16} />
+                {t('common.shared.addAccount', '添加账号')}
+              </button>
+            </div>
+          ) : filteredAccounts.length === 0 ? (
+            <div className="empty-state">
+              <h3>{t('common.shared.noMatch.title', '没有匹配的账号')}</h3>
+              <p>{t('common.shared.noMatch.desc', '请尝试调整搜索或筛选条件')}</p>
+            </div>
+          ) : viewMode === 'grid' ? (
+            groupByTag ? (
+              <div className="tag-group-list">
+                {groupedAccounts.map(([groupKey, groupAccounts]) => (
+                  <div key={groupKey} className="tag-group-section">
+                    <div className="tag-group-header">
+                      <span className="tag-group-title">{resolveGroupLabel(groupKey)}</span>
+                      <span className="tag-group-count">{groupAccounts.length}</span>
+                    </div>
+                    <div className="tag-group-grid codex-accounts-grid">
+                      {renderGridCards(groupAccounts, groupKey)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="codex-accounts-grid">
+                {renderGridCards(paginatedAccounts)}
+              </div>
+            )
+          ) : groupByTag ? (
+            <div className="account-table-container grouped">
+              <table className="account-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={selected.size === filteredAccounts.length && filteredAccounts.length > 0}
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th style={{ width: 260 }}>{t('common.shared.columns.email', '账号')}</th>
+                    <th style={{ width: 140 }}>{t('common.shared.columns.plan', '订阅')}</th>
+                    <th>{quotaColumnLabels.primary}</th>
+                    <th>{quotaColumnLabels.secondary}</th>
+                    <th className="sticky-action-header table-action-header">{t('common.shared.columns.actions', '操作')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupedAccounts.map(([groupKey, groupAccounts]) => (
+                    <Fragment key={groupKey}>
+                      <tr className="tag-group-row">
+                        <td colSpan={6}>
+                          <div className="tag-group-header">
+                            <span className="tag-group-title">{resolveGroupLabel(groupKey)}</span>
+                            <span className="tag-group-count">{groupAccounts.length}</span>
+                          </div>
+                        </td>
+                      </tr>
+                      {renderTableRows(groupAccounts, groupKey)}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="account-table-container">
+              <table className="account-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}>
+                      <input
+                        type="checkbox"
+                        checked={selected.size === filteredAccounts.length && filteredAccounts.length > 0}
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th style={{ width: 260 }}>{t('common.shared.columns.email', '账号')}</th>
+                    <th style={{ width: 140 }}>{t('common.shared.columns.plan', '订阅')}</th>
+                    <th>{quotaColumnLabels.primary}</th>
+                    <th>{quotaColumnLabels.secondary}</th>
+                    <th className="sticky-action-header table-action-header">{t('common.shared.columns.actions', '操作')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {renderTableRows(paginatedAccounts)}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-          <button
-            className="sort-direction-btn"
-            onClick={() => setSortDirection((prev) => (prev === 'desc' ? 'asc' : 'desc'))}
-            title={
-              sortDirection === 'desc'
-                ? t('common.shared.sort.descTooltip', '当前：降序，点击切换为升序')
-                : t('common.shared.sort.ascTooltip', '当前：升序，点击切换为降序')
-            }
-            aria-label={t('common.shared.sort.toggleDirection', '切换排序方向')}
-          >
-            {sortDirection === 'desc' ? '⬇' : '⬆'}
-          </button>
-        </div>
-        <div className="toolbar-right">
-          <button
-            className="btn btn-primary icon-only"
-            onClick={() => openAddModal('oauth')}
-            title={t('common.shared.addAccount', '添加账号')}
-            aria-label={t('common.shared.addAccount', '添加账号')}
-          >
-            <Plus size={14} />
-          </button>
-          <button
-            className="btn btn-secondary icon-only"
-            onClick={handleRefreshAll}
-            disabled={refreshingAll || accounts.length === 0}
-            title={t('common.shared.refreshAll', '刷新全部')}
-            aria-label={t('common.shared.refreshAll', '刷新全部')}
-          >
-            <RefreshCw size={14} className={refreshingAll ? 'loading-spinner' : ''} />
-          </button>
-          <button
-            className="btn btn-secondary icon-only"
-            onClick={togglePrivacyMode}
-            title={
-              privacyModeEnabled
-                ? t('privacy.showSensitive', '显示邮箱')
-                : t('privacy.hideSensitive', '隐藏邮箱')
-            }
-            aria-label={
-              privacyModeEnabled
-                ? t('privacy.showSensitive', '显示邮箱')
-                : t('privacy.hideSensitive', '隐藏邮箱')
-            }
-          >
-            {privacyModeEnabled ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
-          <button
-            className="btn btn-secondary icon-only"
-            onClick={() => openAddModal('token')}
-            disabled={importing}
-            title={t('common.shared.import.label', '导入')}
-            aria-label={t('common.shared.import.label', '导入')}
-          >
-            <Download size={14} />
-          </button>
-          <button
-            className="btn btn-secondary export-btn icon-only"
-            onClick={handleExport}
-            disabled={exporting}
-            title={selected.size > 0 ? `${t('common.shared.export', '导出')} (${selected.size})` : t('common.shared.export', '导出')}
-            aria-label={selected.size > 0 ? `${t('common.shared.export', '导出')} (${selected.size})` : t('common.shared.export', '导出')}
-          >
-            <Upload size={14} />
-          </button>
-          {selected.size > 0 && (
+          {/* 分页组件 */}
+          {filteredAccounts.length > 0 && (
+            <div className="pagination-container">
+              <div className="pagination-info">
+                {t('common.shared.pagination.total', '共 {{count}} 条', { count: filteredAccounts.length })}
+              </div>
+              <div className="pagination-controls">
+                <select
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                  className="page-size-select"
+                >
+                  {[20, 50, 100, 200, 500].map(size => (
+                    <option key={size} value={size}>{size} {t('common.shared.pagination.perPage', '条/页')}</option>
+                  ))}
+                </select>
+
+                <div className="pagination-buttons">
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(1)}
+                    title={t('common.shared.pagination.first', '首页')}
+                  >
+                    <ChevronsLeft size={16} />
+                  </button>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    title={t('common.shared.pagination.prev', '上一页')}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="pagination-current">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    title={t('common.shared.pagination.next', '下一页')}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                  <button
+                    className="pagination-btn"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(totalPages)}
+                    title={t('common.shared.pagination.last', '尾页')}
+                  >
+                    <ChevronsRight size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 回到顶部按钮 */}
+          {showScrollTop && (
             <button
-              className="btn btn-danger icon-only"
-              onClick={handleBatchDelete}
-              title={`${t('common.delete', '删除')} (${selected.size})`}
-              aria-label={`${t('common.delete', '删除')} (${selected.size})`}
+              className="back-to-top-btn"
+              onClick={scrollToTop}
+              title={t('common.shared.backToTop', '回到顶部')}
+              aria-label={t('common.shared.backToTop', '回到顶部')}
             >
-              <Trash2 size={14} />
+              <ArrowUp size={24} />
             </button>
           )}
-            <QuickSettingsPopover type="codex" />
-        </div>
-      </div>
 
-      {loading && accounts.length === 0 ? (
-        <div className="loading-container">
-          <RefreshCw size={24} className="loading-spinner" />
-          <p>{t('common.loading', '加载中...')}</p>
-        </div>
-      ) : accounts.length === 0 ? (
-        <div className="empty-state">
-          <Globe size={48} />
-          <h3>{t('common.shared.empty.title', '暂无账号')}</h3>
-          <p>{t('codex.empty.description', '点击"添加账号"开始管理您的 Codex 账号')}</p>
-          <button className="btn btn-primary" onClick={() => openAddModal('oauth')}>
-            <Plus size={16} />
-            {t('common.shared.addAccount', '添加账号')}
-          </button>
-        </div>
-      ) : filteredAccounts.length === 0 ? (
-        <div className="empty-state">
-          <h3>{t('common.shared.noMatch.title', '没有匹配的账号')}</h3>
-          <p>{t('common.shared.noMatch.desc', '请尝试调整搜索或筛选条件')}</p>
-        </div>
-      ) : viewMode === 'grid' ? (
-        groupByTag ? (
-          <div className="tag-group-list">
-            {groupedAccounts.map(([groupKey, groupAccounts]) => (
-              <div key={groupKey} className="tag-group-section">
-                <div className="tag-group-header">
-                  <span className="tag-group-title">{resolveGroupLabel(groupKey)}</span>
-                  <span className="tag-group-count">{groupAccounts.length}</span>
+          {showAddModal && (
+            <div className="modal-overlay" onClick={closeAddModal}>
+              <div className="modal-content codex-add-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{t('codex.addModal.title', '添加 Codex 账号')}</h2>
+                  <button className="modal-close" onClick={closeAddModal} aria-label={t('common.close', '关闭')}>
+                    <X />
+                  </button>
                 </div>
-                <div className="tag-group-grid codex-accounts-grid">
-                  {renderGridCards(groupAccounts, groupKey)}
+
+                <div className="modal-tabs">
+                  <button
+                    className={`modal-tab ${addTab === 'oauth' ? 'active' : ''}`}
+                    onClick={() => openAddModal('oauth')}
+                  >
+                    <Globe size={14} />
+                    OAuth
+                  </button>
+                  <button
+                    className={`modal-tab ${addTab === 'token' ? 'active' : ''}`}
+                    onClick={() => openAddModal('token')}
+                  >
+                    <KeyRound size={14} />
+                    Token / JSON
+                  </button>
+                  <button
+                    className={`modal-tab ${addTab === 'import' ? 'active' : ''}`}
+                    onClick={() => openAddModal('import')}
+                  >
+                    <Database size={14} />
+                    {t('accounts.tabs.import', '本地导入')}
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="codex-accounts-grid">
-            {renderGridCards(filteredAccounts)}
-          </div>
-        )
-      ) : groupByTag ? (
-        <div className="account-table-container grouped">
-          <table className="account-table">
-            <thead>
-              <tr>
-                <th style={{ width: 40 }}>
-                  <input
-                    type="checkbox"
-                    checked={selected.size === filteredAccounts.length && filteredAccounts.length > 0}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th style={{ width: 260 }}>{t('common.shared.columns.email', '账号')}</th>
-                <th style={{ width: 140 }}>{t('common.shared.columns.plan', '订阅')}</th>
-                <th>{quotaColumnLabels.primary}</th>
-                <th>{quotaColumnLabels.secondary}</th>
-                <th className="sticky-action-header table-action-header">{t('common.shared.columns.actions', '操作')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groupedAccounts.map(([groupKey, groupAccounts]) => (
-                <Fragment key={groupKey}>
-                  <tr className="tag-group-row">
-                    <td colSpan={6}>
-                      <div className="tag-group-header">
-                        <span className="tag-group-title">{resolveGroupLabel(groupKey)}</span>
-                        <span className="tag-group-count">{groupAccounts.length}</span>
-                      </div>
-                    </td>
-                  </tr>
-                  {renderTableRows(groupAccounts, groupKey)}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="account-table-container">
-          <table className="account-table">
-            <thead>
-              <tr>
-                <th style={{ width: 40 }}>
-                  <input
-                    type="checkbox"
-                    checked={selected.size === filteredAccounts.length && filteredAccounts.length > 0}
-                    onChange={toggleSelectAll}
-                  />
-                </th>
-                <th style={{ width: 260 }}>{t('common.shared.columns.email', '账号')}</th>
-                <th style={{ width: 140 }}>{t('common.shared.columns.plan', '订阅')}</th>
-                <th>{quotaColumnLabels.primary}</th>
-                <th>{quotaColumnLabels.secondary}</th>
-                <th className="sticky-action-header table-action-header">{t('common.shared.columns.actions', '操作')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renderTableRows(filteredAccounts)}
-            </tbody>
-          </table>
-        </div>
-      )}
 
-      {showAddModal && (
-        <div className="modal-overlay" onClick={closeAddModal}>
-          <div className="modal-content codex-add-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{t('codex.addModal.title', '添加 Codex 账号')}</h2>
-              <button className="modal-close" onClick={closeAddModal} aria-label={t('common.close', '关闭')}>
-                <X />
-              </button>
-            </div>
+                <div className="modal-body">
+                  {addTab === 'oauth' && (
+                    <div className="add-section">
+                      <p className="section-desc">
+                        {t('codex.oauth.desc', '通过 OpenAI 官方 OAuth 授权登录您的 Codex 账号。')}
+                      </p>
 
-            <div className="modal-tabs">
-              <button
-                className={`modal-tab ${addTab === 'oauth' ? 'active' : ''}`}
-                onClick={() => openAddModal('oauth')}
-              >
-                <Globe size={14} />
-                OAuth
-              </button>
-              <button
-                className={`modal-tab ${addTab === 'token' ? 'active' : ''}`}
-                onClick={() => openAddModal('token')}
-              >
-                <KeyRound size={14} />
-                Token / JSON
-              </button>
-              <button
-                className={`modal-tab ${addTab === 'import' ? 'active' : ''}`}
-                onClick={() => openAddModal('import')}
-              >
-                <Database size={14} />
-                {t('accounts.tabs.import', '本地导入')}
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {addTab === 'oauth' && (
-                <div className="add-section">
-                  <p className="section-desc">
-                    {t('codex.oauth.desc', '通过 OpenAI 官方 OAuth 授权登录您的 Codex 账号。')}
-                  </p>
-
-                  {oauthPrepareError ? (
-                    <div className="add-status error">
-                      <CircleAlert size={16} />
-                      <span>{oauthPrepareError}</span>
-                      {oauthPortInUse && (
-                        <button className="btn btn-sm btn-outline" onClick={handleReleaseOauthPort}>
-                          {t('codex.oauth.portInUseAction', 'Close port and retry')}
-                        </button>
-                      )}
-                      {!oauthPortInUse && oauthTimeoutInfo && (
-                        <button className="btn btn-sm btn-outline" onClick={handleRetryOauthAfterTimeout}>
-                          {t('codex.oauth.timeoutRetry', '刷新授权链接')}
-                        </button>
-                      )}
-                    </div>
-                  ) : oauthUrl ? (
-                    <div className="oauth-url-section">
-                      <div className="oauth-url-box">
-                        <input type="text" value={oauthUrl} readOnly />
-                        <button onClick={handleCopyOauthUrl}>
-                          {oauthUrlCopied ? <Check size={16} /> : <Copy size={16} />}
-                        </button>
-                      </div>
-                      <button
-                        className="btn btn-primary btn-full"
-                        onClick={isOauthTimeoutState ? handleRetryOauthAfterTimeout : handleOpenOauthUrl}
-                      >
-                        {isOauthTimeoutState ? <RefreshCw size={16} /> : <Globe size={16} />}
-                        {isOauthTimeoutState
-                          ? t('codex.oauth.timeoutRetry', '刷新授权链接')
-                          : t('common.shared.oauth.openBrowser', 'Open in Browser')}
-                      </button>
-                      {isOauthTimeoutState && (
+                      {oauthPrepareError ? (
                         <div className="add-status error">
                           <CircleAlert size={16} />
-                          <span>{t('codex.oauth.timeout', '授权超时，请点击“刷新授权链接”后重试。')}</span>
+                          <span>{oauthPrepareError}</span>
+                          {oauthPortInUse && (
+                            <button className="btn btn-sm btn-outline" onClick={handleReleaseOauthPort}>
+                              {t('codex.oauth.portInUseAction', 'Close port and retry')}
+                            </button>
+                          )}
+                          {!oauthPortInUse && oauthTimeoutInfo && (
+                            <button className="btn btn-sm btn-outline" onClick={handleRetryOauthAfterTimeout}>
+                              {t('codex.oauth.timeoutRetry', '刷新授权链接')}
+                            </button>
+                          )}
+                        </div>
+                      ) : oauthUrl ? (
+                        <div className="oauth-url-section">
+                          <div className="oauth-url-box">
+                            <input type="text" value={oauthUrl} readOnly />
+                            <button onClick={handleCopyOauthUrl}>
+                              {oauthUrlCopied ? <Check size={16} /> : <Copy size={16} />}
+                            </button>
+                          </div>
+                          <button
+                            className="btn btn-primary btn-full"
+                            onClick={isOauthTimeoutState ? handleRetryOauthAfterTimeout : handleOpenOauthUrl}
+                          >
+                            {isOauthTimeoutState ? <RefreshCw size={16} /> : <Globe size={16} />}
+                            {isOauthTimeoutState
+                              ? t('codex.oauth.timeoutRetry', '刷新授权链接')
+                              : t('common.shared.oauth.openBrowser', 'Open in Browser')}
+                          </button>
+                          {isOauthTimeoutState && (
+                            <div className="add-status error">
+                              <CircleAlert size={16} />
+                              <span>{t('codex.oauth.timeout', '授权超时，请点击“刷新授权链接”后重试。')}</span>
+                            </div>
+                          )}
+                          <p className="oauth-hint">
+                            {t('common.shared.oauth.hint', 'Once authorized, this window will update automatically')}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="oauth-loading">
+                          <RefreshCw size={24} className="loading-spinner" />
+                          <span>{t('codex.oauth.preparing', '正在准备授权链接...')}</span>
                         </div>
                       )}
-                      <p className="oauth-hint">
-                        {t('common.shared.oauth.hint', 'Once authorized, this window will update automatically')}
-                      </p>
                     </div>
-                  ) : (
-                    <div className="oauth-loading">
-                      <RefreshCw size={24} className="loading-spinner" />
-                      <span>{t('codex.oauth.preparing', '正在准备授权链接...')}</span>
+                  )}
+
+                  {addTab === 'token' && (
+                    <div className="add-section">
+                      <p className="section-desc">
+                        {t('codex.token.desc', '粘贴您的 Codex Access Token 或导出的 JSON 数据。')}
+                      </p>
+                      <textarea
+                        className="token-input"
+                        value={tokenInput}
+                        onChange={(e) => setTokenInput(e.target.value)}
+                        placeholder={t('codex.token.placeholder', '粘贴 Token 或 JSON...')}
+                      />
+                      <button
+                        className="btn btn-primary btn-full"
+                        onClick={handleTokenImport}
+                        disabled={importing || !tokenInput.trim()}
+                      >
+                        {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Download size={16} />}
+                        {t('common.shared.token.import', 'Import')}
+                      </button>
+                    </div>
+                  )}
+
+                  {addTab === 'import' && (
+                    <div className="add-section">
+                      <p className="section-desc">
+                        {t('codex.import.localDesc', '从本地已登录的会话中导入 Codex 账号。')}
+                      </p>
+                      <button className="btn btn-primary btn-full" onClick={handleImportFromLocal} disabled={importing}>
+                        {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Database size={16} />}
+                        {t('codex.local.import', 'Get Local Account')}
+                      </button>
+
+                      <div className="import-divider" style={{ margin: '16px 0', borderBottom: '1px solid var(--border-color)' }}></div>
+
+                      <p className="section-desc">
+                        {t('codex.import.dirDesc', '从本地文件夹批量导入 JSON 配置文件。')}
+                      </p>
+                      <button className="btn btn-secondary btn-full" onClick={handleBatchImportFromDir} disabled={importing}>
+                        {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Database size={16} />}
+                        {t('codex.import.fromDir', '批量导入目录')}
+                      </button>
+                    </div>
+                  )}
+
+                  {addStatus !== 'idle' && addStatus !== 'loading' && (
+                    <div className={`add-status ${addStatus}`}>
+                      {addStatus === 'success' ? <Check size={16} /> : <CircleAlert size={16} />}
+                      <span>{addMessage}</span>
                     </div>
                   )}
                 </div>
-              )}
+              </div>
+            </div>
+          )}
 
-              {addTab === 'token' && (
-                <div className="add-section">
-                  <p className="section-desc">
-                    {t('codex.token.desc', '粘贴您的 Codex Access Token 或导出的 JSON 数据。')}
-                  </p>
-                  <textarea
-                    className="token-input"
-                    value={tokenInput}
-                    onChange={(e) => setTokenInput(e.target.value)}
-                    placeholder={t('codex.token.placeholder', '粘贴 Token 或 JSON...')}
-                  />
+          {deleteConfirm && (
+            <div className="modal-overlay" onClick={() => !deleting && setDeleteConfirm(null)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{t('common.confirm')}</h2>
                   <button
-                    className="btn btn-primary btn-full"
-                    onClick={handleTokenImport}
-                    disabled={importing || !tokenInput.trim()}
+                    className="modal-close"
+                    onClick={() => !deleting && setDeleteConfirm(null)}
+                    aria-label={t('common.close', '关闭')}
                   >
-                    {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Download size={16} />}
-                    {t('common.shared.token.import', 'Import')}
+                    <X />
                   </button>
                 </div>
-              )}
+                <div className="modal-body">
+                  <p>{deleteConfirm.message}</p>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)} disabled={deleting}>
+                    {t('common.cancel')}
+                  </button>
+                  <button className="btn btn-danger" onClick={confirmDelete} disabled={deleting}>
+                    {t('common.confirm')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
-              {addTab === 'import' && (
-                <div className="add-section">
-                  <p className="section-desc">
-                    {t('codex.import.localDesc', '从本地已登录的会话中导入 Codex 账号。')}
+          {tagDeleteConfirm && (
+            <div className="modal-overlay" onClick={() => !deletingTag && setTagDeleteConfirm(null)}>
+              <div className="modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{t('common.confirm')}</h2>
+                  <button
+                    className="modal-close"
+                    onClick={() => !deletingTag && setTagDeleteConfirm(null)}
+                    aria-label={t('common.close', '关闭')}
+                  >
+                    <X />
+                  </button>
+                </div>
+                <div className="modal-body">
+                  <p>
+                    {t('accounts.confirmDeleteTag', 'Delete tag "{{tag}}"? This tag will be removed from {{count}} accounts.', { tag: tagDeleteConfirm.tag, count: tagDeleteConfirm.count })}
                   </p>
-                  <button className="btn btn-primary btn-full" onClick={handleImportFromLocal} disabled={importing}>
-                    {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Database size={16} />}
-                    {t('codex.local.import', 'Get Local Account')}
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setTagDeleteConfirm(null)} disabled={deletingTag}>
+                    {t('common.cancel')}
+                  </button>
+                  <button className="btn btn-danger" onClick={confirmDeleteTag} disabled={deletingTag}>
+                    {deletingTag ? t('common.processing', '处理中...') : t('common.confirm')}
                   </button>
                 </div>
-              )}
+              </div>
+            </div>
+          )}
 
-              {addStatus !== 'idle' && addStatus !== 'loading' && (
-                <div className={`add-status ${addStatus}`}>
-                  {addStatus === 'success' ? <Check size={16} /> : <CircleAlert size={16} />}
-                  <span>{addMessage}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {deleteConfirm && (
-        <div className="modal-overlay" onClick={() => !deleting && setDeleteConfirm(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{t('common.confirm')}</h2>
-              <button
-                className="modal-close"
-                onClick={() => !deleting && setDeleteConfirm(null)}
-                aria-label={t('common.close', '关闭')}
-              >
-                <X />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>{deleteConfirm.message}</p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setDeleteConfirm(null)} disabled={deleting}>
-                {t('common.cancel')}
-              </button>
-              <button className="btn btn-danger" onClick={confirmDelete} disabled={deleting}>
-                {t('common.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {tagDeleteConfirm && (
-        <div className="modal-overlay" onClick={() => !deletingTag && setTagDeleteConfirm(null)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{t('common.confirm')}</h2>
-              <button
-                className="modal-close"
-                onClick={() => !deletingTag && setTagDeleteConfirm(null)}
-                aria-label={t('common.close', '关闭')}
-              >
-                <X />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>
-                {t('accounts.confirmDeleteTag', 'Delete tag "{{tag}}"? This tag will be removed from {{count}} accounts.', { tag: tagDeleteConfirm.tag, count: tagDeleteConfirm.count })}
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setTagDeleteConfirm(null)} disabled={deletingTag}>
-                {t('common.cancel')}
-              </button>
-              <button className="btn btn-danger" onClick={confirmDeleteTag} disabled={deletingTag}>
-                {deletingTag ? t('common.processing', '处理中...') : t('common.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <TagEditModal
-        isOpen={!!showTagModal}
-        initialTags={accounts.find((a) => a.id === showTagModal)?.tags || []}
-        availableTags={availableTags}
-        onClose={() => setShowTagModal(null)}
-        onSave={handleSaveTags}
-      />
+          <TagEditModal
+            isOpen={!!showTagModal}
+            initialTags={accounts.find((a) => a.id === showTagModal)?.tags || []}
+            availableTags={availableTags}
+            onClose={() => setShowTagModal(null)}
+            onSave={handleSaveTags}
+          />
         </>
       )}
 

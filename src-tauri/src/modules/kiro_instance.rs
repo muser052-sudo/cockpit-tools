@@ -410,6 +410,7 @@ fn extract_user_data_dir(args: &[OsString]) -> Option<String> {
     None
 }
 
+#[allow(dead_code)]
 fn split_command_tokens(command_line: &str) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut current = String::new();
@@ -446,6 +447,7 @@ fn split_command_tokens(command_line: &str) -> Vec<String> {
     tokens
 }
 
+#[allow(dead_code)]
 fn extract_user_data_dir_from_command_line(command_line: &str) -> Option<String> {
     let tokens = split_command_tokens(command_line);
     let mut index = 0;

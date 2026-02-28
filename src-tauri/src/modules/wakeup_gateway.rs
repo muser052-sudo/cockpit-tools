@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use base64::{engine::general_purpose, Engine as _};
 use chrono::{DateTime, Utc};
 use rcgen::generate_simple_self_signed;

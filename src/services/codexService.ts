@@ -41,6 +41,11 @@ export async function importCodexFromJson(jsonContent: string): Promise<CodexAcc
   return await invoke('import_codex_from_json', { jsonContent });
 }
 
+/** 从本地目录批量导入账号 */
+export async function importCodexFromDir(dirPath: string): Promise<CodexAccount[]> {
+  return await invoke('import_codex_from_dir', { dirPath });
+}
+
 /** 导出 Codex 账号 */
 export async function exportCodexAccounts(accountIds: string[]): Promise<string> {
   return await invoke('export_codex_accounts', { accountIds });

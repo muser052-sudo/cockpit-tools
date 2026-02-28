@@ -127,6 +127,12 @@ pub fn import_codex_from_json(json_content: String) -> Result<Vec<CodexAccount>,
     codex_account::import_from_json(&json_content)
 }
 
+/// 从目录批量导入账号
+#[tauri::command]
+pub fn import_codex_from_dir(dir_path: String) -> Result<Vec<CodexAccount>, String> {
+    codex_account::import_codex_from_dir(&dir_path)
+}
+
 /// 导出 Codex 账号
 #[tauri::command]
 pub fn export_codex_accounts(account_ids: Vec<String>) -> Result<String, String> {
