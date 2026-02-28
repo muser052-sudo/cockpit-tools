@@ -4440,7 +4440,9 @@ pub fn find_pids_by_port(port: u16) -> Result<Vec<u32>, String> {
 
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
         let output = Command::new("netstat")
+            .creation_flags(CREATE_NO_WINDOW)
             .args(["-ano", "-p", "tcp"])
             .output()
             .map_err(|e| format!("执行 netstat 失败: {}", e))?;

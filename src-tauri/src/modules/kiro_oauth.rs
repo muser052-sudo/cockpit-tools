@@ -339,7 +339,14 @@ fn is_mwinit_tool_available() -> bool {
     #[cfg(not(target_os = "windows"))]
     let checker = "which";
 
-    std::process::Command::new(checker)
+    let mut cmd = std::process::Command::new(checker);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000);
+    }
+
+    cmd
         .arg("mwinit")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
