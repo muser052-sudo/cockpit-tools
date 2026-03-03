@@ -112,23 +112,32 @@ pub fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), String> {
         }
     }
 
-    fs::create_dir_all(dst).map_err(|e| format!("创建目标目录失败: {}", e))?;
+    let result = (|| -> Result<(), String> {
+        fs::create_dir_all(dst).map_err(|e| format!("创建目标目录失败: {}", e))?;
 
-    for entry in fs::read_dir(src).map_err(|e| format!("读取源目录失败: {}", e))? {
-        let entry = entry.map_err(|e| format!("读取目录项失败: {}", e))?;
-        let path = entry.path();
-        let target = dst.join(entry.file_name());
+        for entry in fs::read_dir(src).map_err(|e| format!("读取源目录失败: {}", e))? {
+            let entry = entry.map_err(|e| format!("读取目录项失败: {}", e))?;
+            let path = entry.path();
+            let target = dst.join(entry.file_name());
 
-        let file_type = entry
-            .file_type()
-            .map_err(|e| format!("获取文件类型失败: {}", e))?;
+            let file_type = entry
+                .file_type()
+                .map_err(|e| format!("获取文件类型失败: {}", e))?;
 
-        if file_type.is_dir() {
-            copy_dir_recursive(&path, &target)?;
-        } else if file_type.is_file() {
-            fs::copy(&path, &target).map_err(|e| format!("复制文件失败: {}", e))?;
+            if file_type.is_dir() {
+                copy_dir_recursive(&path, &target)?;
+            } else if file_type.is_file() {
+                fs::copy(&path, &target).map_err(|e| format!("复制文件失败: {}", e))?;
+            }
+        }
+        Ok(())
+    })();
+
+    if result.is_err() {
+        if let Err(e) = fs::remove_dir_all(dst) {
+            crate::modules::logger::log_warn(&format!("清理失败的目标目录时发生错误: {}, 目录: {:?}", e, dst));
         }
     }
 
-    Ok(())
+    result
 }

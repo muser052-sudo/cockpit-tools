@@ -27,10 +27,12 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  ArrowUp
+  ArrowUp,
+  PlusSquare
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
+import { useWindsurfInstanceStore } from '../stores/useWindsurfInstanceStore';
 import * as windsurfService from '../services/windsurfService';
 import { TagEditModal } from '../components/TagEditModal';
 import {
@@ -157,6 +159,18 @@ export function WindsurfAccountsPage() {
     addTabRef.current = addTab;
     addStatusRef.current = addStatus;
   }, [showAddModal, addTab, addStatus]);
+
+  useEffect(() => {
+    const handleOpenCreateInstance = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail.appType === 'windsurf') {
+        useWindsurfInstanceStore.getState().setPendingCreateInstance({ accountId: detail.accountId });
+        setActiveTab('instances');
+      }
+    };
+    window.addEventListener('open-create-instance', handleOpenCreateInstance);
+    return () => window.removeEventListener('open-create-instance', handleOpenCreateInstance);
+  }, []);
 
   useEffect(() => {
     if (!showTagFilter) return;
@@ -1198,6 +1212,16 @@ export function WindsurfAccountsPage() {
                 />
               </button>
               <button
+                className="card-action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'windsurf' } }));
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
+              </button>
+              <button
                 className="card-action-btn danger"
                 onClick={() => handleDelete(account.id)}
                 title={t('common.delete', '删除')}
@@ -1310,6 +1334,16 @@ export function WindsurfAccountsPage() {
                 title={t('common.shared.refreshQuota', '刷新配额')}
               >
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'windsurf' } }));
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
               </button>
               <button
                 className="action-btn danger"

@@ -3,8 +3,6 @@ use crate::modules::{
     codex_account, codex_oauth, codex_quota, config, logger, opencode_auth, process,
 };
 use tauri::AppHandle;
-#[cfg(target_os = "macos")]
-use tauri::Emitter;
 
 /// 列出所有 Codex 账号
 #[tauri::command]
@@ -129,8 +127,8 @@ pub fn import_codex_from_json(json_content: String) -> Result<Vec<CodexAccount>,
 
 /// 从目录批量导入账号
 #[tauri::command]
-pub fn import_codex_from_dir(dir_path: String) -> Result<Vec<CodexAccount>, String> {
-    codex_account::import_codex_from_dir(&dir_path)
+pub async fn import_codex_from_dir(app: AppHandle, dir_path: String) -> Result<Vec<CodexAccount>, String> {
+    codex_account::import_codex_from_dir(&app, &dir_path).await
 }
 
 /// 导出 Codex 账号

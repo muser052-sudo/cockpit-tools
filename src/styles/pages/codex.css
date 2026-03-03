@@ -7,6 +7,8 @@
   flex-direction: column;
   gap: 20px;
   animation: fadeUp 0.5s ease;
+  flex: 1;
+  min-height: 0;
 }
 
 /* 使用通用的 page-header 样式，不再覆盖 */
@@ -16,6 +18,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+  /* Space for scrollbar */
 }
 
 /* Codex 账号卡片 */
@@ -30,7 +37,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-height: 260px;
+  min-height: 280px;
+  height: max-content;
 }
 
 .codex-account-card:hover {
@@ -273,7 +281,9 @@
 
 .codex-account-card .card-actions {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 .codex-account-card .card-action-btn {
@@ -500,7 +510,64 @@
 .codex-accounts-page .tag-filter-delete:hover {
   color: var(--danger);
   background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+/* ============================================
+   Import Progress UI
+   ============================================ */
+.import-progress-container {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(148, 163, 184, 0.05);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.import-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.import-progress-bar-bg {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.import-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #38bdf8);
+  border-radius: 3px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.import-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.import-progress-meta .file-name {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .import-progress-container {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .codex-accounts-page .tag-filter-option input[type="checkbox"] {
@@ -806,6 +873,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -1021,6 +1089,7 @@
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1032,11 +1101,13 @@
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+
 /* ============================================
    Pagination Controls
    ============================================ */

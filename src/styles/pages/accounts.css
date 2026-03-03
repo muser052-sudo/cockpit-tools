@@ -44,6 +44,11 @@
   gap: 16px;
   padding-bottom: 40px;
   animation: fadeUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+  /* Scrollable inner content layer */
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .account-card {
@@ -334,9 +339,15 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   margin-top: 10px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  /* Softer shadow for sticky effect */
   color: var(--text-secondary);
   font-size: 13px;
+
+  /* Make it sticky at the bottom */
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
 }
 
 [data-theme="dark"] .accounts-page .pagination-container {

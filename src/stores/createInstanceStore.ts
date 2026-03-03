@@ -29,6 +29,8 @@ export type InstanceStoreState = {
   stopInstance: (instanceId: string) => Promise<InstanceProfile>;
   closeAllInstances: () => Promise<void>;
   openInstanceWindow: (instanceId: string) => Promise<void>;
+  pendingCreateInstance: { accountId: string } | null;
+  setPendingCreateInstance: (payload: { accountId: string } | null) => void;
 };
 
 type InstanceService = {
@@ -81,6 +83,8 @@ export function createInstanceStore(service: InstanceService, cacheKey: string) 
     defaults: null,
     loading: false,
     error: null,
+    pendingCreateInstance: null,
+    setPendingCreateInstance: (payload) => set({ pendingCreateInstance: payload }),
 
     fetchInstances: async () => {
       set({ loading: true, error: null });

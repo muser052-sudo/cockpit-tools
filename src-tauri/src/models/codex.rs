@@ -98,6 +98,10 @@ pub struct CodexAccountIndex {
 pub struct CodexAccountSummary {
     pub id: String,
     pub email: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub organization_id: Option<String>,
     pub plan_type: Option<String>,
     pub created_at: i64,
     pub last_used: i64,

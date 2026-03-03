@@ -1150,6 +1150,19 @@ pub(crate) fn build_payload_from_snapshot(
         &[&["issuer_url"], &["issuerUrl"], &["issuer"]],
     );
     let client_id = pick_string(Some(&auth_token), &[&["client_id"], &["clientId"]]);
+    let client_id_hash = pick_string(Some(&auth_token), &[&["clientIdHash"], &["client_id_hash"]]);
+    
+    let mut client_secret = None;
+    if let Some(hash) = client_id_hash.as_ref() {
+        if let Ok(reg_path) = crate::modules::kiro_account::get_default_sso_cache_dir().map(|dir| dir.join(format!("{}.json", hash))) {
+            if let Ok(content) = std::fs::read_to_string(&reg_path) {
+                if let Ok(reg_json) = serde_json::from_str::<Value>(&content) {
+                    client_secret = pick_string(Some(&reg_json), &[&["clientSecret"], &["client_secret"]]);
+                }
+            }
+        }
+    }
+    
     let scopes = pick_string(Some(&auth_token), &[&["scopes"], &["scope"]]);
     let login_hint = pick_string(Some(&auth_token), &[&["login_hint"], &["loginHint"]])
         .or_else(|| normalize_non_empty(Some(email.as_str())));
@@ -1201,6 +1214,8 @@ pub(crate) fn build_payload_from_snapshot(
         idc_region,
         issuer_url,
         client_id,
+        client_id_hash,
+        client_secret,
         scopes,
         login_hint,
         plan_name,
@@ -1231,6 +1246,8 @@ pub fn payload_from_account(account: &KiroAccount) -> KiroOAuthCompletePayload {
         idc_region: account.idc_region.clone(),
         issuer_url: account.issuer_url.clone(),
         client_id: account.client_id.clone(),
+        client_id_hash: account.client_id_hash.clone(),
+        client_secret: account.client_secret.clone(),
         scopes: account.scopes.clone(),
         login_hint: account.login_hint.clone(),
         plan_name: account.plan_name.clone(),

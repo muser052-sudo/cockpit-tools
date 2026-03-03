@@ -7,6 +7,8 @@
   flex-direction: column;
   gap: 20px;
   animation: fadeUp 0.5s ease;
+  flex: 1;
+  min-height: 0;
 }
 
 /* 使用通用的 page-header 样式，不再覆盖 */
@@ -82,6 +84,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
 }
 
 /* GitHub Copilot 账号卡片 */
@@ -96,7 +102,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-height: 260px;
+  min-height: 280px;
+  height: max-content;
 }
 
 .ghcp-account-card:hover {
@@ -568,7 +575,9 @@
 
 .ghcp-account-card .card-actions {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
 .ghcp-account-card .card-action-btn {

@@ -27,10 +27,12 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  ArrowUp
+  ArrowUp,
+  PlusSquare
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useKiroAccountStore } from '../stores/useKiroAccountStore';
+import { useKiroInstanceStore } from '../stores/useKiroInstanceStore';
 import * as kiroService from '../services/kiroService';
 import { TagEditModal } from '../components/TagEditModal';
 import {
@@ -162,6 +164,18 @@ export function KiroAccountsPage() {
     addTabRef.current = addTab;
     addStatusRef.current = addStatus;
   }, [showAddModal, addTab, addStatus]);
+
+  useEffect(() => {
+    const handleOpenCreateInstance = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail.appType === 'kiro') {
+        useKiroInstanceStore.getState().setPendingCreateInstance({ accountId: detail.accountId });
+        setActiveTab('instances');
+      }
+    };
+    window.addEventListener('open-create-instance', handleOpenCreateInstance);
+    return () => window.removeEventListener('open-create-instance', handleOpenCreateInstance);
+  }, []);
 
   useEffect(() => {
     if (!showTagFilter) return;
@@ -1320,6 +1334,16 @@ export function KiroAccountsPage() {
                 />
               </button>
               <button
+                className="card-action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'kiro' } }));
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
+              </button>
+              <button
                 className="card-action-btn danger"
                 onClick={() => handleDelete(account.id)}
                 title={t('common.delete', '删除')}
@@ -1493,6 +1517,16 @@ export function KiroAccountsPage() {
                 title={t('common.shared.refreshQuota', '刷新配额')}
               >
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'kiro' } }));
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
               </button>
               <button
                 className="action-btn danger"

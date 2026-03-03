@@ -29,9 +29,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ArrowUp,
+  PlusSquare,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGitHubCopilotAccountStore } from '../stores/useGitHubCopilotAccountStore';
+import { useGitHubCopilotInstanceStore } from '../stores/useGitHubCopilotInstanceStore';
 import * as githubCopilotService from '../services/githubCopilotService';
 import { TagEditModal } from '../components/TagEditModal';
 import {
@@ -157,6 +159,18 @@ export function GitHubCopilotAccountsPage() {
     addTabRef.current = addTab;
     addStatusRef.current = addStatus;
   }, [showAddModal, addTab, addStatus]);
+
+  useEffect(() => {
+    const handleOpenCreateInstance = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail.appType === 'github-copilot') {
+        useGitHubCopilotInstanceStore.getState().setPendingCreateInstance({ accountId: detail.accountId });
+        setActiveTab('instances');
+      }
+    };
+    window.addEventListener('open-create-instance', handleOpenCreateInstance);
+    return () => window.removeEventListener('open-create-instance', handleOpenCreateInstance);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -1051,6 +1065,16 @@ export function GitHubCopilotAccountsPage() {
                 />
               </button>
               <button
+                className="card-action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'github-copilot' } }));
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
+              </button>
+              <button
                 className="card-action-btn danger"
                 onClick={() => handleDelete(account.id)}
                 title={t('common.delete', '删除')}
@@ -1181,6 +1205,16 @@ export function GitHubCopilotAccountsPage() {
                 title={t('common.shared.refreshQuota', '刷新配额')}
               >
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'github-copilot' } }));
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
               </button>
               <button
                 className="action-btn danger"

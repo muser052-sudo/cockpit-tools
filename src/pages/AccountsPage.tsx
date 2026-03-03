@@ -35,10 +35,12 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  ArrowUp
+  ArrowUp,
+  PlusSquare
 } from 'lucide-react'
 import { useTranslation, Trans } from 'react-i18next'
 import { useAccountStore } from '../stores/useAccountStore'
+import { useInstanceStore } from '../stores/useInstanceStore'
 import * as accountService from '../services/accountService'
 import { FingerprintWithStats, Account } from '../types/account'
 import { Page } from '../types/navigation'
@@ -152,6 +154,21 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(50)
   const [showScrollTop, setShowScrollTop] = useState(false)
+
+  // 监听新建实例快捷操作
+  useEffect(() => {
+    const handleOpenCreateInstance = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail.appType === 'antigravity') {
+        useInstanceStore.getState().setPendingCreateInstance({ accountId: detail.accountId })
+        if (onNavigate) {
+          onNavigate('instances')
+        }
+      }
+    }
+    window.addEventListener('open-create-instance', handleOpenCreateInstance)
+    return () => window.removeEventListener('open-create-instance', handleOpenCreateInstance)
+  }, [onNavigate])
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showAddModal, setShowAddModal] = useState(false)
@@ -1679,6 +1696,16 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                 />
               </button>
               <button
+                className="card-action-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'antigravity' } }))
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
+              </button>
+              <button
                 className="card-action-btn export-btn"
                 onClick={() => handleExportSingle(account)}
                 title={t('accounts.export')}
@@ -2192,6 +2219,16 @@ export function AccountsPage({ onNavigate }: AccountsPageProps) {
                   size={16}
                   className={refreshing === account.id ? 'loading-spinner' : ''}
                 />
+              </button>
+              <button
+                className="action-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'antigravity' } }))
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={16} />
               </button>
               <button
                 className="action-btn danger"

@@ -393,6 +393,8 @@ fn merge_duplicate_account(primary: &mut KiroAccount, duplicate: &KiroAccount) {
     fill_if_none(&mut primary.idc_region, &duplicate.idc_region);
     fill_if_none(&mut primary.issuer_url, &duplicate.issuer_url);
     fill_if_none(&mut primary.client_id, &duplicate.client_id);
+    fill_if_none(&mut primary.client_id_hash, &duplicate.client_id_hash);
+    fill_if_none(&mut primary.client_secret, &duplicate.client_secret);
     fill_if_none(&mut primary.scopes, &duplicate.scopes);
     fill_if_none(&mut primary.login_hint, &duplicate.login_hint);
     fill_if_none(&mut primary.plan_name, &duplicate.plan_name);
@@ -591,6 +593,8 @@ fn apply_payload(account: &mut KiroAccount, payload: KiroOAuthCompletePayload) {
     account.idc_region = payload.idc_region;
     account.issuer_url = payload.issuer_url;
     account.client_id = payload.client_id;
+    account.client_id_hash = payload.client_id_hash;
+    account.client_secret = payload.client_secret;
     account.scopes = payload.scopes;
     account.login_hint = payload.login_hint;
     account.plan_name = payload.plan_name;
@@ -669,6 +673,8 @@ pub fn upsert_account(payload: KiroOAuthCompletePayload) -> Result<KiroAccount, 
         idc_region: payload.idc_region.clone(),
         issuer_url: payload.issuer_url.clone(),
         client_id: payload.client_id.clone(),
+        client_id_hash: payload.client_id_hash.clone(),
+        client_secret: payload.client_secret.clone(),
         scopes: payload.scopes.clone(),
         login_hint: payload.login_hint.clone(),
         plan_name: payload.plan_name.clone(),
@@ -1240,13 +1246,13 @@ pub fn get_default_kiro_state_db_path() -> Result<PathBuf, String> {
         .join("state.vscdb"))
 }
 
-pub fn get_default_kiro_auth_token_path() -> Result<PathBuf, String> {
+pub fn get_default_sso_cache_dir() -> Result<PathBuf, String> {
     let home = dirs::home_dir().ok_or("无法获取用户主目录")?;
-    Ok(home
-        .join(".aws")
-        .join("sso")
-        .join("cache")
-        .join(LOCAL_AUTH_TOKEN_FILE_NAME))
+    Ok(home.join(".aws").join("sso").join("cache"))
+}
+
+pub fn get_default_kiro_auth_token_path() -> Result<PathBuf, String> {
+    Ok(get_default_sso_cache_dir()?.join(LOCAL_AUTH_TOKEN_FILE_NAME))
 }
 
 pub fn read_local_auth_token_json() -> Result<Option<Value>, String> {

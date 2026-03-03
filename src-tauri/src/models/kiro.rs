@@ -27,6 +27,10 @@ pub struct KiroAccount {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_id_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scopes: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub login_hint: Option<String>,
@@ -123,6 +127,8 @@ pub struct KiroOAuthCompletePayload {
     pub idc_region: Option<String>,
     pub issuer_url: Option<String>,
     pub client_id: Option<String>,
+    pub client_id_hash: Option<String>,
+    pub client_secret: Option<String>,
     pub scopes: Option<String>,
     pub login_hint: Option<String>,
 

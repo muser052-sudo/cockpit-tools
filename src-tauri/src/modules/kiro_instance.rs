@@ -1239,6 +1239,7 @@ fn write_local_auth_token_file(account: &KiroAccount) -> Result<(), String> {
     {
         obj.insert("idc_region".to_string(), Value::String(value.to_string()));
         obj.insert("idcRegion".to_string(), Value::String(value.to_string()));
+        obj.insert("region".to_string(), Value::String(value.to_string()));
     }
     if let Some(value) = account
         .issuer_url
@@ -1257,6 +1258,14 @@ fn write_local_auth_token_file(account: &KiroAccount) -> Result<(), String> {
     {
         obj.insert("client_id".to_string(), Value::String(value.to_string()));
         obj.insert("clientId".to_string(), Value::String(value.to_string()));
+    }
+    if let Some(value) = account
+        .client_id_hash
+        .as_ref()
+        .map(|v| v.trim())
+        .filter(|v| !v.is_empty())
+    {
+        obj.insert("clientIdHash".to_string(), Value::String(value.to_string()));
     }
     if let Some(value) = account
         .scopes
@@ -1405,12 +1414,45 @@ fn write_usage_snapshot_if_exists(profile_dir: &Path, account: &KiroAccount) -> 
     Ok(())
 }
 
+fn write_client_registration_file(account: &KiroAccount) -> Result<(), String> {
+    let hash = match account.client_id_hash.as_ref() {
+        Some(h) if !h.trim().is_empty() => h.trim(),
+        _ => return Ok(()),
+    };
+
+    let cache_dir = kiro_account::get_default_sso_cache_dir()?;
+    if !cache_dir.exists() {
+        fs::create_dir_all(&cache_dir)
+            .map_err(|e| format!("创建 client registration 缓存目录失败: {}", e))?;
+    }
+
+    let reg_path = cache_dir.join(format!("{}.json", hash));
+    
+    let mut reg_data = json!({});
+    if let Some(client_id) = account.client_id.as_ref() {
+        reg_data["clientId"] = Value::String(client_id.clone());
+    }
+    if let Some(client_secret) = account.client_secret.as_ref() {
+        reg_data["clientSecret"] = Value::String(client_secret.clone());
+    }
+    if let Some(expires_at) = account_expires_at_iso(account) {
+        reg_data["expiresAt"] = Value::String(expires_at);
+    }
+    
+    let content = serde_json::to_string_pretty(&reg_data)
+        .map_err(|e| format!("序列化 client registration 失败: {}", e))?;
+        
+    fs::write(&reg_path, content)
+        .map_err(|e| format!("写入 client registration 文件失败({}): {}", reg_path.display(), e))
+}
+
 pub fn inject_account_to_profile(profile_dir: &Path, account_id: &str) -> Result<(), String> {
     let account = kiro_account::load_account(account_id)
         .ok_or_else(|| format!("绑定账号不存在: {}", account_id))?;
 
     write_local_auth_token_file(&account)?;
     write_profile_file(profile_dir, &account)?;
+    write_client_registration_file(&account)?;
     let _ = write_usage_snapshot_if_exists(profile_dir, &account);
     Ok(())
 }

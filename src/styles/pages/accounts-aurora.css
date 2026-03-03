@@ -546,8 +546,10 @@
   box-shadow: var(--shadow-sm);
   backdrop-filter: blur(10px);
   transition: all 0.25s ease;
-  min-height: 260px;
-  overflow: hidden;
+  min-height: 280px;
+  height: max-content;
+  display: flex;
+  flex-direction: column;
   position: relative;
   transform: translateY(0);
   animation: cardIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -557,7 +559,7 @@
   display: none;
 }
 
-.accounts-page .accounts-grid .account-card > * {
+.accounts-page .accounts-grid .account-card>* {
   position: relative;
   z-index: 1;
 }
@@ -781,9 +783,17 @@
   font-family: var(--font-mono);
 }
 
-.accounts-page .model-pct.high { color: var(--success); }
-.accounts-page .model-pct.medium { color: var(--warning); }
-.accounts-page .model-pct.low { color: var(--danger); }
+.accounts-page .model-pct.high {
+  color: var(--success);
+}
+
+.accounts-page .model-pct.medium {
+  color: var(--warning);
+}
+
+.accounts-page .model-pct.low {
+  color: var(--danger);
+}
 
 .accounts-page .quota-compact-bar-track {
   height: 6px;
@@ -832,6 +842,10 @@
 .accounts-page .card-footer {
   padding-top: 10px;
   border-top: 1px dashed rgba(15, 23, 42, 0.12);
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .accounts-page .card-date {
@@ -847,8 +861,11 @@
 .accounts-page .card-actions {
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 999px;
+  border-radius: 12px;
   padding: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 2px;
 }
 
@@ -904,20 +921,44 @@
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-.accounts-page .accounts-grid .account-card:nth-child(1) { animation-delay: 40ms; }
-.accounts-page .accounts-grid .account-card:nth-child(2) { animation-delay: 80ms; }
-.accounts-page .accounts-grid .account-card:nth-child(3) { animation-delay: 120ms; }
-.accounts-page .accounts-grid .account-card:nth-child(4) { animation-delay: 160ms; }
-.accounts-page .accounts-grid .account-card:nth-child(5) { animation-delay: 200ms; }
-.accounts-page .accounts-grid .account-card:nth-child(6) { animation-delay: 240ms; }
-.accounts-page .accounts-grid .account-card:nth-child(7) { animation-delay: 280ms; }
-.accounts-page .accounts-grid .account-card:nth-child(8) { animation-delay: 320ms; }
+.accounts-page .accounts-grid .account-card:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.accounts-page .accounts-grid .account-card:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.accounts-page .accounts-grid .account-card:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.accounts-page .accounts-grid .account-card:nth-child(4) {
+  animation-delay: 160ms;
+}
+
+.accounts-page .accounts-grid .account-card:nth-child(5) {
+  animation-delay: 200ms;
+}
+
+.accounts-page .accounts-grid .account-card:nth-child(6) {
+  animation-delay: 240ms;
+}
+
+.accounts-page .accounts-grid .account-card:nth-child(7) {
+  animation-delay: 280ms;
+}
+
+.accounts-page .accounts-grid .account-card:nth-child(8) {
+  animation-delay: 320ms;
+}
 
 /* Dark mode - list/table view tuning */
 [data-theme="dark"] .accounts-page .account-table-container {

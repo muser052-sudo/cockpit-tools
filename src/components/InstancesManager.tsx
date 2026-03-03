@@ -96,6 +96,10 @@ export function InstancesManager<TAccount extends AccountLike>({
   const [restartingAll, setRestartingAll] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
+  // Read pending create state from store
+  const pendingCreateInstance = instanceStore.pendingCreateInstance;
+  const setPendingCreateInstance = instanceStore.setPendingCreateInstance;
+
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<InstanceProfile | null>(null);
   const [formName, setFormName] = useState('');
@@ -243,11 +247,26 @@ export function InstancesManager<TAccount extends AccountLike>({
     setPathAuto(true);
   };
 
-  const openCreateModal = () => {
+  const openCreateModal = (prefillAccountId?: string | React.MouseEvent | Event) => {
     resetForm(true);
     setEditing(null);
+    if (typeof prefillAccountId === 'string') {
+      setFormBindAccountId(prefillAccountId);
+      // Auto-generate name from account
+      const account = accounts.find(a => a.id === prefillAccountId);
+      if (account) {
+        setFormName(account.email.split('@')[0]);
+      }
+    }
     setShowModal(true);
   };
+
+  useEffect(() => {
+    if (pendingCreateInstance && !loading && !refreshing) {
+      openCreateModal(pendingCreateInstance.accountId);
+      setPendingCreateInstance(null);
+    }
+  }, [pendingCreateInstance, loading, refreshing, setPendingCreateInstance, accounts]);
 
   useEffect(() => {
     if (!showModal || editing) return;
@@ -419,10 +438,10 @@ export function InstancesManager<TAccount extends AccountLike>({
     const rawApp = message.slice('APP_PATH_NOT_FOUND:'.length);
     const app =
       rawApp === 'codex' ||
-      rawApp === 'antigravity' ||
-      rawApp === 'vscode' ||
-      rawApp === 'windsurf' ||
-      rawApp === 'kiro'
+        rawApp === 'antigravity' ||
+        rawApp === 'vscode' ||
+        rawApp === 'windsurf' ||
+        rawApp === 'kiro'
         ? rawApp
         : appType;
     const retry = instanceId
@@ -869,31 +888,31 @@ export function InstancesManager<TAccount extends AccountLike>({
         </button>
         {isOpen && !disabled && portalPos
           ? createPortal(
-              <div
-                className="instances-page account-select-portal-root"
-                style={{
-                  position: 'fixed',
-                  top: `${portalPos.top}px`,
-                  left: `${portalPos.left}px`,
-                  width: `${portalPos.width}px`,
-                  zIndex: 9999,
-                }}
-              >
-                <div ref={portalMenuRef} className="account-select-menu">
-                  {renderAccountMenuItems({
-                    value,
-                    isFollowingCurrent,
-                    allowFollowCurrent,
-                    allowUnbound,
-                    onFollowCurrent,
-                    onChange,
-                    onClose: () => onOpenChange?.(false),
-                    selectedAccount,
-                  })}
-                </div>
-              </div>,
-              document.body,
-            )
+            <div
+              className="instances-page account-select-portal-root"
+              style={{
+                position: 'fixed',
+                top: `${portalPos.top}px`,
+                left: `${portalPos.left}px`,
+                width: `${portalPos.width}px`,
+                zIndex: 9999,
+              }}
+            >
+              <div ref={portalMenuRef} className="account-select-menu">
+                {renderAccountMenuItems({
+                  value,
+                  isFollowingCurrent,
+                  allowFollowCurrent,
+                  allowUnbound,
+                  onFollowCurrent,
+                  onChange,
+                  onClose: () => onOpenChange?.(false),
+                  selectedAccount,
+                })}
+              </div>
+            </div>,
+            document.body,
+          )
           : null}
       </div>
     );
@@ -1279,17 +1298,16 @@ export function InstancesManager<TAccount extends AccountLike>({
 
                 <div className="instance-status-cell">
                   <span
-                    className={`instance-status ${
-                      restartingAll ? 'restarting' : isInstanceStarting ? 'starting' : instance.running ? 'running' : 'stopped'
-                    }`}
+                    className={`instance-status ${restartingAll ? 'restarting' : isInstanceStarting ? 'starting' : instance.running ? 'running' : 'stopped'
+                      }`}
                   >
                     {restartingAll
                       ? t('instances.status.restarting', '重启中')
                       : isInstanceStarting
                         ? t('instances.status.starting', '启动中')
                         : instance.running
-                        ? t('instances.status.running', '运行中')
-                        : t('instances.status.stopped', '未运行')}
+                          ? t('instances.status.running', '运行中')
+                          : t('instances.status.stopped', '未运行')}
                   </span>
                 </div>
 
@@ -1601,7 +1619,7 @@ export function InstancesManager<TAccount extends AccountLike>({
                     <>
                       <FormAccountSelect
                         value={null}
-                        onChange={() => {}}
+                        onChange={() => { }}
                         disabled
                         placeholder={t('instances.form.bindAfterInit', '初始化后可绑定')}
                       />
@@ -1623,7 +1641,7 @@ export function InstancesManager<TAccount extends AccountLike>({
                     <>
                       <FormAccountSelect
                         value={null}
-                        onChange={() => {}}
+                        onChange={() => { }}
                         disabled
                         placeholder={t('instances.form.bindAfterInit', '初始化后可绑定')}
                       />

@@ -7,7 +7,19 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Emitter};
+use futures::stream::{self, StreamExt};
+
+#[derive(Clone, serde::Serialize)]
+pub struct ImportProgressPayload {
+    pub total: usize,
+    pub current: usize,
+    pub success: usize,
+    pub failed: usize,
+    pub current_file: String,
+}
 
 static CODEX_QUOTA_ALERT_LAST_SENT: std::sync::LazyLock<Mutex<HashMap<String, i64>>> =
     std::sync::LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -155,12 +167,8 @@ fn find_existing_account_id(
             first_email_match = Some(summary.id.clone());
         }
 
-        let Some(account) = load_account(&summary.id) else {
-            continue;
-        };
-
-        let current_account_id = normalize_optional_ref(account.account_id.as_deref());
-        let current_org_id = normalize_optional_ref(account.organization_id.as_deref());
+        let current_account_id = normalize_optional_ref(summary.account_id.as_deref());
+        let current_org_id = normalize_optional_ref(summary.organization_id.as_deref());
 
         let is_exact_match =
             current_account_id == expected_account_id && current_org_id == expected_org_id;
@@ -355,6 +363,8 @@ fn upsert_account_internal(
         index.accounts.push(CodexAccountSummary {
             id: existing_id.clone(),
             email: email.clone(),
+            account_id: account_id.clone(),
+            organization_id: organization_id.clone(),
             plan_type: plan_type.clone(),
             created_at: acc.created_at,
             last_used: acc.last_used,
@@ -362,18 +372,19 @@ fn upsert_account_internal(
         acc
     };
 
-    // 保存账号详情
-    save_account(&account)?;
-
     // 更新索引中的摘要信息
     if let Some(summary) = index.accounts.iter_mut().find(|a| a.id == account.id) {
         summary.email = account.email.clone();
+        summary.account_id = account.account_id.clone();
+        summary.organization_id = account.organization_id.clone();
         summary.plan_type = account.plan_type.clone();
         summary.last_used = account.last_used;
     } else {
         index.accounts.push(CodexAccountSummary {
             id: account.id.clone(),
             email: account.email.clone(),
+            account_id: account.account_id.clone(),
+            organization_id: account.organization_id.clone(),
             plan_type: account.plan_type.clone(),
             created_at: account.created_at,
             last_used: account.last_used,
@@ -395,6 +406,7 @@ fn upsert_account_with_hints(
 ) -> Result<CodexAccount, String> {
     let mut index = load_account_index();
     let account = upsert_account_internal(&mut index, tokens, account_id_hint, organization_id_hint)?;
+    save_account(&account)?;
     save_account_index(&index)?;
     Ok(account)
 }
@@ -581,91 +593,191 @@ pub fn import_from_local() -> Result<CodexAccount, String> {
     upsert_account_with_hints(tokens, account_id_hint, None)
 }
 
-fn import_from_json_internal(index: &mut CodexAccountIndex, json_content: &str) -> Result<Vec<CodexAccount>, String> {
-    // 尝试解析为 auth.json 格式
+enum ParsedCodexData {
+    AuthFile(CodexAuthFile),
+    Accounts(Vec<CodexAccount>),
+    FlatToken(serde_json::Value),
+}
+
+fn parse_codex_json(json_content: &str) -> Result<ParsedCodexData, String> {
     if let Ok(auth_file) = serde_json::from_str::<CodexAuthFile>(json_content) {
-        let account_id_hint = auth_file.tokens.account_id.clone();
-        let tokens = CodexTokens {
-            id_token: auth_file.tokens.id_token,
-            access_token: auth_file.tokens.access_token,
-            refresh_token: auth_file.tokens.refresh_token,
-        };
-        let account = upsert_account_internal(index, tokens, account_id_hint, None)?;
-        return Ok(vec![account]);
+        return Ok(ParsedCodexData::AuthFile(auth_file));
     }
-
-    // 尝试解析为账号数组
     if let Ok(accounts) = serde_json::from_str::<Vec<CodexAccount>>(json_content) {
-        let mut result = Vec::new();
-        for acc in accounts {
-            let imported = upsert_account_internal(index, acc.tokens, None, None)?;
-            result.push(imported);
-        }
-        return Ok(result);
+        return Ok(ParsedCodexData::Accounts(accounts));
     }
-
-    // 尝试解析为扁平的单账号对象（例如导出的单条记录或仅包含 tokens 的对象）
     if let Ok(flat_token) = serde_json::from_str::<serde_json::Value>(json_content) {
-        if let (Some(id_token), Some(access_token)) = (
-            flat_token.get("id_token").and_then(|v| v.as_str()),
-            flat_token.get("access_token").and_then(|v| v.as_str()),
-        ) {
-            let refresh_token = flat_token
-                .get("refresh_token")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-            let account_id = flat_token
-                .get("account_id")
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+        return Ok(ParsedCodexData::FlatToken(flat_token));
+    }
+    Err("无法解析 JSON 内容".to_string())
+}
+
+fn apply_parsed_codex_data(index: &mut CodexAccountIndex, data: ParsedCodexData) -> Result<Vec<CodexAccount>, String> {
+    match data {
+        ParsedCodexData::AuthFile(auth_file) => {
+            let account_id_hint = auth_file.tokens.account_id.clone();
             let tokens = CodexTokens {
-                id_token: id_token.to_string(),
-                access_token: access_token.to_string(),
-                refresh_token,
+                id_token: auth_file.tokens.id_token,
+                access_token: auth_file.tokens.access_token,
+                refresh_token: auth_file.tokens.refresh_token,
             };
-            let account = upsert_account_internal(index, tokens, account_id, None)?;
-            return Ok(vec![account]);
+            let account = upsert_account_internal(index, tokens, account_id_hint, None)?;
+            Ok(vec![account])
+        },
+        ParsedCodexData::Accounts(accounts) => {
+            let mut result = Vec::with_capacity(accounts.len());
+            for acc in accounts {
+                let imported = upsert_account_internal(index, acc.tokens, None, None)?;
+                result.push(imported);
+            }
+            Ok(result)
+        },
+        ParsedCodexData::FlatToken(flat_token) => {
+            if let (Some(id_token), Some(access_token)) = (
+                flat_token.get("id_token").and_then(|v| v.as_str()),
+                flat_token.get("access_token").and_then(|v| v.as_str()),
+            ) {
+                let refresh_token = flat_token
+                    .get("refresh_token")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                let account_id = flat_token
+                    .get("account_id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                let tokens = CodexTokens {
+                    id_token: id_token.to_string(),
+                    access_token: access_token.to_string(),
+                    refresh_token,
+                };
+                let account = upsert_account_internal(index, tokens, account_id, None)?;
+                return Ok(vec![account]);
+            }
+            Err("无法解析 JSON 内容".to_string())
         }
     }
+}
 
-    Err("无法解析 JSON 内容".to_string())
+pub fn import_from_json_internal(index: &mut CodexAccountIndex, json_content: &str) -> Result<Vec<CodexAccount>, String> {
+    let data = parse_codex_json(json_content)?;
+    apply_parsed_codex_data(index, data)
 }
 
 /// 从 JSON 字符串导入账号
 pub fn import_from_json(json_content: &str) -> Result<Vec<CodexAccount>, String> {
     let mut index = load_account_index();
     let result = import_from_json_internal(&mut index, json_content)?;
+    for acc in &result {
+        let _ = save_account(acc);
+    }
     save_account_index(&index)?;
     Ok(result)
 }
 
 /// 从目录批量导入 JSON 文件
-pub fn import_codex_from_dir(dir_path: &str) -> Result<Vec<CodexAccount>, String> {
+pub async fn import_codex_from_dir(app: &AppHandle, dir_path: &str) -> Result<Vec<CodexAccount>, String> {
+    let app_clone = app.clone();
+    import_codex_from_dir_core(dir_path, move |payload| {
+        let _ = app_clone.emit("codex-import-progress", payload);
+    }).await
+}
+
+pub async fn import_codex_from_dir_core<F>(dir_path: &str, progress_callback: F) -> Result<Vec<CodexAccount>, String>
+where
+    F: Fn(ImportProgressPayload) + Send + Sync + 'static,
+{
     let path = Path::new(dir_path);
     if !path.exists() || !path.is_dir() {
         return Err(format!("目录不存在或不是一个目录: {}", dir_path));
     }
 
-    let mut imported_accounts = Vec::new();
+    let mut files = Vec::new();
     let entries = fs::read_dir(path).map_err(|e| format!("无法读取目录: {}", e))?;
-    let mut index = load_account_index();
-
+    
     for entry in entries.flatten() {
         let file_path = entry.path();
         if file_path.is_file() && file_path.extension().map_or(false, |ext| ext == "json") {
-            if let Ok(content) = fs::read_to_string(&file_path) {
-                // 忽略解析失败的文件
-                if let Ok(mut accounts) = import_from_json_internal(&mut index, &content) {
-                    imported_accounts.append(&mut accounts);
-                }
-            }
+            files.push(file_path);
         }
     }
-    
-    // 导入完后一次性保存
-    let _ = save_account_index(&index);
 
-    Ok(imported_accounts)
+    let total = files.len();
+    if total == 0 {
+        return Ok(Vec::new());
+    }
+
+    // 共享状态
+    let index = Arc::new(Mutex::new(load_account_index()));
+    let imported_accounts = Arc::new(Mutex::new(Vec::new()));
+    let current_count = Arc::new(AtomicUsize::new(0));
+    let success_count = Arc::new(AtomicUsize::new(0));
+    let failed_count = Arc::new(AtomicUsize::new(0));
+    let callback = Arc::new(progress_callback);
+
+    let mut stream = stream::iter(files).map(|file_path| {
+        let index_clone = index.clone();
+        let imported_accounts_clone = imported_accounts.clone();
+        let current_clone = current_count.clone();
+        let success_clone = success_count.clone();
+        let failed_clone = failed_count.clone();
+        let cb_clone = callback.clone();
+
+        tokio::task::spawn_blocking(move || {
+            let file_name = file_path.file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
+                
+            let mut parsed_accounts = Vec::new();
+
+            if let Ok(content) = fs::read_to_string(&file_path) {
+                if let Ok(parsed_data) = parse_codex_json(&content) {
+                    let mut idx_lock = index_clone.lock().unwrap();
+                    if let Ok(accounts) = apply_parsed_codex_data(&mut idx_lock, parsed_data) {
+                        parsed_accounts = accounts;
+                    }
+                }
+            }
+
+            let mut is_success = false;
+            if !parsed_accounts.is_empty() {
+                for acc in &parsed_accounts {
+                    let _ = save_account(acc);
+                }
+                imported_accounts_clone.lock().unwrap().extend(parsed_accounts);
+                is_success = true;
+            }
+
+            let curr = current_clone.fetch_add(1, Ordering::SeqCst) + 1;
+            let (succ, fail) = if is_success {
+                let s = success_clone.fetch_add(1, Ordering::SeqCst) + 1;
+                (s, failed_clone.load(Ordering::SeqCst))
+            } else {
+                let f = failed_clone.fetch_add(1, Ordering::SeqCst) + 1;
+                (success_clone.load(Ordering::SeqCst), f)
+            };
+
+            cb_clone(ImportProgressPayload {
+                total,
+                current: curr,
+                success: succ,
+                failed: fail,
+                current_file: file_name,
+            });
+        })
+    }).buffer_unordered(20);
+
+    while let Some(res) = stream.next().await {
+        if let Err(e) = res {
+            logger::log_error(&format!("Import task panicked: {}", e));
+        }
+    }
+
+    let final_index = index.lock().unwrap().clone();
+    let _ = save_account_index(&final_index);
+    let final_accounts = imported_accounts.lock().unwrap().clone();
+
+    Ok(final_accounts)
 }
 
 /// 导出账号为 JSON
@@ -888,4 +1000,48 @@ pub fn run_quota_alert_if_needed(
 
     crate::modules::account::dispatch_quota_alert(&payload);
     Ok(Some(payload))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Instant;
+
+    #[tokio::test]
+    async fn test_import_efficiency() {
+        // TDD test requested by user for: E:\蹬轮子1000\蹬轮子1000
+        let dir = "E:\\蹬轮子1000\\蹬轮子1000";
+        if !Path::new(dir).exists() {
+            println!("Test directory not found, skipping.");
+            return;
+        }
+
+        println!("Starting TDD Benchmark for Concurrent JSON Import: {}", dir);
+        let start = Instant::now();
+        
+        let final_success = Arc::new(AtomicUsize::new(0));
+        let final_failed = Arc::new(AtomicUsize::new(0));
+
+        let succ_clone = final_success.clone();
+        let fail_clone = final_failed.clone();
+
+        let result = import_codex_from_dir_core(dir, move |payload| {
+            succ_clone.store(payload.success, Ordering::SeqCst);
+            fail_clone.store(payload.failed, Ordering::SeqCst);
+        }).await;
+
+        let elapsed = start.elapsed();
+        let s = final_success.load(Ordering::SeqCst);
+        let f = final_failed.load(Ordering::SeqCst);
+        
+        match result {
+            Ok(accounts) => {
+                println!("Finished Import in {:.2?} | Success: {}, Failed: {} | ArrayLen: {}", 
+                    elapsed, s, f, accounts.len());
+            },
+            Err(e) => {
+                println!("Import failed after {:.2?}: {}", elapsed, e);
+            }
+        }
+    }
 }

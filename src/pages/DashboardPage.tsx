@@ -7,7 +7,7 @@ import { useWindsurfAccountStore } from '../stores/useWindsurfAccountStore';
 import { useKiroAccountStore } from '../stores/useKiroAccountStore';
 import { usePlatformLayoutStore } from '../stores/usePlatformLayoutStore';
 import { Page } from '../types/navigation';
-import { Users, CheckCircle2, Sparkles, RotateCw, Play, Github } from 'lucide-react';
+import { Users, CheckCircle2, Sparkles, RotateCw, Play, Github, Search, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { getSubscriptionTier, getDisplayModels, getModelShortName, formatResetTimeDisplay } from '../utils/account';
 import {
   getCodexPlanDisplayName,
@@ -139,10 +139,16 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     };
   }, []);
 
-  
+
+  // Add pagination and search state
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [filterPlatform, setFilterPlatform] = React.useState<string>('all');
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(6);
+
   // Antigravity Data
-  const { 
-    accounts: agAccounts, 
+  const {
+    accounts: agAccounts,
     currentAccount: agCurrent,
     switchAccount: switchAgAccount,
     fetchAccounts: fetchAgAccounts,
@@ -150,8 +156,8 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
   } = useAccountStore();
 
   // Codex Data
-  const { 
-    accounts: codexAccounts, 
+  const {
+    accounts: codexAccounts,
     currentAccount: codexCurrent,
     switchAccount: switchCodexAccount,
     fetchAccounts: fetchCodexAccounts,
@@ -470,7 +476,7 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
   // Antigravity Recommendation Logic
   const agRecommended = useMemo(() => {
     if (agAccounts.length <= 1) return null;
-    
+
     // Simple logic: find account with highest overall quota that isn't current
     const others = agAccounts.filter((a) => {
       if (a.id === agCurrentId) return false;
@@ -489,7 +495,7 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
         const total = acc.quota.models.reduce((sum, m) => sum + m.percentage, 0);
         return total / acc.quota.models.length;
       };
-      
+
       return getScore(curr) > getScore(prev) ? curr : prev;
     });
   }, [agAccounts, agCurrentId]);
@@ -665,14 +671,14 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     return (
       <div className="account-mini-card">
         <div className="account-mini-header">
-           <div className="account-info-row">
-             <span className="account-email" title={maskAccountText(account.email)}>
-               {maskAccountText(account.email)}
-             </span>
-             <span className={`tier-tag ${tier.toLowerCase()}`}>{tierLabel}</span>
-           </div>
+          <div className="account-info-row">
+            <span className="account-email" title={maskAccountText(account.email)}>
+              {maskAccountText(account.email)}
+            </span>
+            <span className={`tier-tag ${tier.toLowerCase()}`}>{tierLabel}</span>
+          </div>
         </div>
-        
+
         <div className="account-mini-quotas">
           {displayModels.map(model => (
             <div key={model.name} className="mini-quota-row-stacked">
@@ -681,7 +687,7 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
                 <span className={`model-pct ${getQuotaClass(model.percentage)}`}>{model.percentage}%</span>
               </div>
               <div className="mini-progress-track">
-                <div 
+                <div
                   className={`mini-progress-bar ${getQuotaClass(model.percentage)}`}
                   style={{ width: `${model.percentage}%` }}
                 />
@@ -697,21 +703,21 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
         </div>
 
         <div className="account-mini-actions icon-only-row">
-           <button 
-             className="mini-icon-btn" 
-             onClick={() => handleRefreshAg(account.id)}
-             title={t('common.refresh', '刷新')}
-             disabled={refreshing.has(account.id)}
-           >
-             <RotateCw size={14} className={refreshing.has(account.id) ? 'loading-spinner' : ''} />
-           </button>
-           <button 
-             className="mini-icon-btn"
-             onClick={() => switchAgAccount(account.id)}
-             title={t('dashboard.switch', '切换')}
-           >
-             <Play size={14} />
-           </button>
+          <button
+            className="mini-icon-btn"
+            onClick={() => handleRefreshAg(account.id)}
+            title={t('common.refresh', '刷新')}
+            disabled={refreshing.has(account.id)}
+          >
+            <RotateCw size={14} className={refreshing.has(account.id) ? 'loading-spinner' : ''} />
+          </button>
+          <button
+            className="mini-icon-btn"
+            onClick={() => switchAgAccount(account.id)}
+            title={t('dashboard.switch', '切换')}
+          >
+            <Play size={14} />
+          </button>
         </div>
       </div>
     );
@@ -723,18 +729,18 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     const planName = getCodexPlanDisplayName(account.plan_type);
     const planLabel = planName;
     const quotaWindows = getCodexQuotaWindows(account.quota);
-    
+
     return (
       <div className="account-mini-card">
         <div className="account-mini-header">
-           <div className="account-info-row">
-             <span className="account-email" title={maskAccountText(account.email)}>
-               {maskAccountText(account.email)}
-             </span>
-             <span className={`tier-tag ${planName.toLowerCase()}`}>{planLabel}</span>
-           </div>
+          <div className="account-info-row">
+            <span className="account-email" title={maskAccountText(account.email)}>
+              {maskAccountText(account.email)}
+            </span>
+            <span className={`tier-tag ${planName.toLowerCase()}`}>{planLabel}</span>
+          </div>
         </div>
-        
+
         <div className="account-mini-quotas">
           {quotaWindows.length === 0 && (
             <span className="no-data-text">{t('dashboard.noData', '暂无数据')}</span>
@@ -763,21 +769,21 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
         </div>
 
         <div className="account-mini-actions icon-only-row">
-           <button 
-             className="mini-icon-btn" 
-             onClick={() => handleRefreshCodex(account.id)}
-             title={t('common.refresh', '刷新')}
-             disabled={refreshing.has(account.id)}
-           >
-             <RotateCw size={14} className={refreshing.has(account.id) ? 'loading-spinner' : ''} />
-           </button>
-           <button 
-             className="mini-icon-btn"
-             onClick={() => switchCodexAccount(account.id)}
-             title={t('dashboard.switch', '切换')}
-           >
-             <Play size={14} />
-           </button>
+          <button
+            className="mini-icon-btn"
+            onClick={() => handleRefreshCodex(account.id)}
+            title={t('common.refresh', '刷新')}
+            disabled={refreshing.has(account.id)}
+          >
+            <RotateCw size={14} className={refreshing.has(account.id) ? 'loading-spinner' : ''} />
+          </button>
+          <button
+            className="mini-icon-btn"
+            onClick={() => switchCodexAccount(account.id)}
+            title={t('dashboard.switch', '切换')}
+          >
+            <Play size={14} />
+          </button>
         </div>
       </div>
     );
@@ -1043,9 +1049,9 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     const addOnExpiryValue =
       typeof credits.bonusExpireDays === 'number' && Number.isFinite(credits.bonusExpireDays)
         ? t('kiro.credits.expiryDays', {
-            days: Math.max(0, Math.round(credits.bonusExpireDays)),
-            defaultValue: '{{days}} days',
-          })
+          days: Math.max(0, Math.round(credits.bonusExpireDays)),
+          defaultValue: '{{days}} days',
+        })
         : t('kiro.credits.expiryUnknown', '—');
     const hasAddOnCredits =
       addOnMetrics.left > 0 ||
@@ -1174,16 +1180,6 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     windsurf: stats.windsurf,
     kiro: stats.kiro,
   };
-
-  const visibleCardPlatformIds = visiblePlatformOrder;
-  const isSinglePlatformMode = visibleCardPlatformIds.length === 1;
-  const cardRows = useMemo(() => {
-    const rows: PlatformId[][] = [];
-    for (let i = 0; i < visibleCardPlatformIds.length; i += 2) {
-      rows.push(visibleCardPlatformIds.slice(i, i + 2));
-    }
-    return rows;
-  }, [visibleCardPlatformIds]);
 
   const renderPlatformCard = (platformId: PlatformId) => {
     if (platformId === 'antigravity') {
@@ -1409,16 +1405,120 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     return null;
   };
 
+  const filteredPlatformIds = useMemo(() => {
+    let result = visiblePlatformOrder;
+
+    if (filterPlatform !== 'all') {
+      result = result.filter(id => id === filterPlatform);
+    }
+
+    if (searchQuery.trim()) {
+      const lowerQuery = searchQuery.trim().toLowerCase();
+      result = result.filter(id => {
+        // 1. Search by platform name
+        const label = getPlatformLabel(id as PlatformId, t).toLowerCase();
+        if (label.includes(lowerQuery) || id.toLowerCase().includes(lowerQuery)) {
+          return true;
+        }
+
+        // 2. Search by account email within the platform
+        const searchAccountsEmail = (accounts: Array<{ email?: string, [key: string]: any }>) => {
+          return accounts.some(acc => {
+            const email = String(acc.email || acc.github_email || acc.github_login || '').toLowerCase();
+            return email.includes(lowerQuery);
+          });
+        };
+
+        switch (id) {
+          case 'antigravity': return searchAccountsEmail(agAccounts);
+          case 'codex': return searchAccountsEmail(codexAccounts);
+          case 'github-copilot': return searchAccountsEmail(githubCopilotAccounts);
+          case 'windsurf': return searchAccountsEmail(windsurfAccounts);
+          case 'kiro': return searchAccountsEmail(kiroAccounts);
+          default: return false;
+        }
+      });
+    }
+
+    return result;
+  }, [
+    visiblePlatformOrder, filterPlatform, searchQuery, t,
+    agAccounts, codexAccounts, githubCopilotAccounts, windsurfAccounts, kiroAccounts
+  ]);
+
+  const totalFiltered = filteredPlatformIds.length;
+  const totalPages = Math.ceil(totalFiltered / pageSize) || 1;
+  const paginatedPlatformIds = filteredPlatformIds.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const isSinglePlatformMode = paginatedPlatformIds.length === 1;
+  const cardRows = useMemo(() => {
+    const rows: PlatformId[][] = [];
+    for (let i = 0; i < paginatedPlatformIds.length; i += 2) {
+      rows.push(paginatedPlatformIds.slice(i, i + 2));
+    }
+    return rows;
+  }, [paginatedPlatformIds]);
+
+  // Handle Page Change
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   return (
     <main className="main-content dashboard-page fade-in">
       <div className="page-tabs-row" style={{ minHeight: '60px' }}>
-         <div className="page-tabs-label">{t('nav.dashboard', '仪表盘')}</div>
-         <div className="dashboard-top-actions">
-           <button className="header-action-btn" onClick={onOpenPlatformLayout}>
-             <span>{t('platformLayout.title', '平台布局')}</span>
-           </button>
-           <AnnouncementCenter onNavigate={onNavigate} variant="inline" trigger="button" />
-         </div>
+        <div className="page-tabs-label">{t('nav.dashboard', '仪表盘')}</div>
+        <div className="toolbar" style={{ margin: 0, padding: 0, border: 'none', background: 'transparent' }}>
+          <div className="toolbar-left" style={{ margin: 0 }}>
+            <div className="search-box">
+              <Search size={14} className="search-icon" />
+              <input
+                type="text"
+                placeholder={t('dashboard.searchPlaceholder', '搜索平台或邮箱...')}
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{ minHeight: '32px' }}
+              />
+              {searchQuery && (
+                <button className="clear-search-btn" onClick={() => { setSearchQuery(''); setCurrentPage(1); }}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <div className="filter-select">
+              <select
+                value={filterPlatform}
+                onChange={(e) => {
+                  setFilterPlatform(e.target.value);
+                  setCurrentPage(1);
+                }}
+                aria-label={t('dashboard.filterPlatform', '筛选平台')}
+                style={{ height: '32px', fontSize: '13px', padding: '0 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+              >
+                <option value="all">{t('dashboard.allPlatforms', '所有平台')}</option>
+                {visiblePlatformOrder.map(id => (
+                  <option key={id} value={id}>{getPlatformLabel(id as PlatformId, t)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="toolbar-right">
+            <button className="header-action-btn" onClick={onOpenPlatformLayout}>
+              <span>{t('platformLayout.title', '平台布局')}</span>
+            </button>
+            <AnnouncementCenter onNavigate={onNavigate} variant="inline" trigger="button" />
+          </div>
+        </div>
       </div>
 
       {/* Top Stats */}
@@ -1436,12 +1536,12 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
             platformId === 'antigravity'
               ? 'success'
               : platformId === 'codex'
-              ? 'info'
-              : platformId === 'github-copilot'
-              ? 'github'
-              : platformId === 'kiro'
-                ? 'github'
-              : 'windsurf';
+                ? 'info'
+                : platformId === 'github-copilot'
+                  ? 'github'
+                  : platformId === 'kiro'
+                    ? 'github'
+                    : 'windsurf';
           return (
             <button
               className="stat-card stat-card-button"
@@ -1470,16 +1570,94 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
 
       {/* Main Comparison Section */}
       <div className="cards-section">
-        {cardRows.map((row, rowIndex) => (
-          <div
-            className={`cards-split-row${isSinglePlatformMode ? ' single-platform-row' : ''}`}
-            key={`row-${rowIndex}`}
-          >
-            {row.map((platformId) => renderPlatformCard(platformId))}
-            {!isSinglePlatformMode && row.length < 2 && <div className="main-card main-card-placeholder" />}
+        {cardRows.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">
+              <Search size={48} />
+            </div>
+            <h3>{t('dashboard.noPlatformsFound', '未找到平台')}</h3>
+            <p>{t('dashboard.noPlatformsFoundDesc', '尝试更改搜索词或在平台布局中启用更多平台。')}</p>
           </div>
-        ))}
+        ) : (
+          cardRows.map((row, rowIndex) => (
+            <div
+              className={`cards-split-row${isSinglePlatformMode ? ' single-platform-row' : ''}`}
+              key={`row-${rowIndex}`}
+            >
+              {row.map((platformId) => renderPlatformCard(platformId))}
+              {!isSinglePlatformMode && row.length < 2 && <div className="main-card main-card-placeholder" />}
+            </div>
+          ))
+        )}
       </div>
+
+      {/* Pagination Controls */}
+      {totalFiltered > 0 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            {t('common.pagination.showing', {
+              page: currentPage,
+              total: totalPages,
+              start: Math.min((currentPage - 1) * pageSize + 1, totalFiltered),
+              end: Math.min(currentPage * pageSize, totalFiltered),
+              totalFiltered: totalFiltered,
+              defaultValue: 'Page {{page}} of {{total}}',
+            })}
+          </div>
+          <div className="pagination-controls">
+            <select
+              className="page-size-select"
+              value={pageSize.toString()}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+            >
+              {[2, 4, 6, 8, 10].map((size) => (
+                <option key={size} value={size}>
+                  {size} {t('common.pagination.perPage', '条/页')}
+                </option>
+              ))}
+            </select>
+
+            <div className="pagination-buttons">
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+                title={t('common.pagination.first', '首页')}
+              >
+                <ChevronsLeft size={16} />
+              </button>
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                title={t('common.pagination.prev', '上一页')}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="pagination-current">{currentPage}</span>
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                title={t('common.pagination.next', '下一页')}
+              >
+                <ChevronRight size={16} />
+              </button>
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+                title={t('common.pagination.last', '尾页')}
+              >
+                <ChevronsRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </main>
   );

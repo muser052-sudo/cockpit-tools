@@ -28,9 +28,11 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ArrowUp,
+  PlusSquare,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCodexAccountStore } from '../stores/useCodexAccountStore';
+import { useCodexInstanceStore } from '../stores/useCodexInstanceStore';
 import * as codexService from '../services/codexService';
 import { TagEditModal } from '../components/TagEditModal';
 import {
@@ -54,6 +56,14 @@ import {
   maskSensitiveValue,
   persistPrivacyModeEnabled,
 } from '../utils/privacy';
+
+interface ImportProgressPayload {
+  total: number;
+  current: number;
+  success: number;
+  failed: number;
+  current_file: string;
+}
 
 export function CodexAccountsPage() {
   const { t, i18n } = useTranslation();
@@ -110,6 +120,7 @@ export function CodexAccountsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ startTime: number; payload: ImportProgressPayload } | null>(null);
 
   const showAddModalRef = useRef(showAddModal);
   const addTabRef = useRef(addTab);
@@ -140,6 +151,18 @@ export function CodexAccountsPage() {
     addTabRef.current = addTab;
     addStatusRef.current = addStatus;
   }, [showAddModal, addTab, addStatus]);
+
+  useEffect(() => {
+    const handleOpenCreateInstance = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail.appType === 'codex') {
+        useCodexInstanceStore.getState().setPendingCreateInstance({ accountId: detail.accountId });
+        setActiveTab('instances');
+      }
+    };
+    window.addEventListener('open-create-instance', handleOpenCreateInstance);
+    return () => window.removeEventListener('open-create-instance', handleOpenCreateInstance);
+  }, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -529,6 +552,7 @@ export function CodexAccountsPage() {
     setOauthPrepareError(null);
     setOauthPortInUse(null);
     setOauthTimeoutInfo(null);
+    setImportProgress(null);
     oauthLoginIdRef.current = null;
     oauthCompletingRef.current = false;
   };
@@ -604,9 +628,18 @@ export function CodexAccountsPage() {
 
       setImporting(true);
       setAddStatus('loading');
-      setAddMessage(t('codex.import.importingDir', '正在批量导入目录下的账号...'));
+      setAddMessage(t('codex.import.importingDir', '正在批量并发导入目录下的账号...'));
+      setImportProgress(null);
+
+      const unlisten = await listen<ImportProgressPayload>('codex-import-progress', (event) => {
+        setImportProgress(prev => ({
+          startTime: prev?.startTime || Date.now(),
+          payload: event.payload
+        }));
+      });
 
       const accounts = await codexService.importCodexFromDir(selected);
+      unlisten();
 
       if (accounts.length === 0) {
         setAddStatus('error');
@@ -1116,6 +1149,16 @@ export function CodexAccountsPage() {
                 />
               </button>
               <button
+                className="card-action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'codex' } }));
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
+              </button>
+              <button
                 className="card-action-btn danger"
                 onClick={() => handleDelete(account.id)}
                 title={t('common.delete', '删除')}
@@ -1252,6 +1295,16 @@ export function CodexAccountsPage() {
                 title={t('common.shared.refreshQuota', '刷新配额')}
               >
                 <RotateCw size={14} className={refreshing === account.id ? 'loading-spinner' : ''} />
+              </button>
+              <button
+                className="action-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.dispatchEvent(new CustomEvent('open-create-instance', { detail: { accountId: account.id, appType: 'codex' } }));
+                }}
+                title={t('instances.create', '创建实例')}
+              >
+                <PlusSquare size={14} />
               </button>
               <button
                 className="action-btn danger"
@@ -1767,32 +1820,75 @@ export function CodexAccountsPage() {
                     </div>
                   )}
 
+                  {/* Import Tab */}
                   {addTab === 'import' && (
-                    <div className="add-section">
-                      <p className="section-desc">
-                        {t('codex.import.localDesc', '从本地已登录的会话中导入 Codex 账号。')}
-                      </p>
-                      <button className="btn btn-primary btn-full" onClick={handleImportFromLocal} disabled={importing}>
-                        {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Database size={16} />}
-                        {t('codex.local.import', 'Get Local Account')}
-                      </button>
+                    <div className="add-modal-tab-content">
+                      <div className="import-section">
+                        <p className="import-desc">{t('codex.import.descLocal', '从本地已登录的会话中导入 Codex 账号。')}</p>
+                        <button
+                          className="import-btn"
+                          onClick={handleImportFromLocal}
+                          disabled={importing}
+                        >
+                          <RefreshCw size={16} className={importing && !importProgress ? 'animate-spin' : ''} />
+                          {t('codex.import.btnLocal', '获取本地账号')}
+                        </button>
+                      </div>
+                      <div className="import-divider" />
+                      <div className="import-section">
+                        <p className="import-desc">{t('codex.import.descDir', '从本地文件夹批量并发导入 JSON 配置文件。')}</p>
+                        <button
+                          className="import-btn ghost"
+                          onClick={handleBatchImportFromDir}
+                          disabled={importing}
+                        >
+                          <RefreshCw size={16} className={importing && importProgress ? 'animate-spin' : ''} />
+                          {t('codex.import.btnDir', '批量导入目录')}
+                        </button>
+                      </div>
 
-                      <div className="import-divider" style={{ margin: '16px 0', borderBottom: '1px solid var(--border-color)' }}></div>
+                      {importProgress && (
+                        <div className="import-progress-container">
+                          <div className="import-progress-info">
+                            <span>{t('codex.import.progress', '处理进度: ')}
+                              {importProgress.payload.current} / {importProgress.payload.total}
+                              ({Math.round((importProgress.payload.current / importProgress.payload.total) * 100)}%)
+                            </span>
+                            <span>
+                              {t('codex.import.success', '成功: ')}<span className="text-success">{importProgress.payload.success}</span>,
+                              {t('codex.import.failed', '失败: ')}<span className="text-danger">{importProgress.payload.failed}</span>
+                            </span>
+                          </div>
+                          <div className="import-progress-bar-bg">
+                            <div
+                              className="import-progress-bar-fill"
+                              style={{ width: `${(importProgress.payload.current / Math.max(1, importProgress.payload.total)) * 100}%` }}
+                            />
+                          </div>
+                          <div className="import-progress-meta">
+                            <span className="file-name" title={importProgress.payload.current_file}>
+                              {importProgress.payload.current_file}
+                            </span>
+                            <span>
+                              {(() => {
+                                const elapsed = (Date.now() - importProgress.startTime) / 1000;
+                                const rate = importProgress.payload.current / elapsed;
+                                const remaining = (importProgress.payload.total - importProgress.payload.current) / (rate || 1);
+                                return `已用: ${elapsed.toFixed(1)}s${remaining > 0 && importProgress.payload.current > 0 ? ` | ETA: ${remaining.toFixed(1)}s` : ''}`;
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+                      )}
 
-                      <p className="section-desc">
-                        {t('codex.import.dirDesc', '从本地文件夹批量导入 JSON 配置文件。')}
-                      </p>
-                      <button className="btn btn-secondary btn-full" onClick={handleBatchImportFromDir} disabled={importing}>
-                        {importing ? <RefreshCw size={16} className="loading-spinner" /> : <Database size={16} />}
-                        {t('codex.import.fromDir', '批量导入目录')}
-                      </button>
-                    </div>
-                  )}
-
-                  {addStatus !== 'idle' && addStatus !== 'loading' && (
-                    <div className={`add-status ${addStatus}`}>
-                      {addStatus === 'success' ? <Check size={16} /> : <CircleAlert size={16} />}
-                      <span>{addMessage}</span>
+                      {addMessage && !importProgress && (
+                        <div className={`status-message ${addStatus}`}>
+                          {addStatus === 'success' && <Check size={16} />}
+                          {addStatus === 'error' && <X size={16} />}
+                          {addStatus === 'loading' && <div className="loading-spinner" />}
+                          <span>{addMessage}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

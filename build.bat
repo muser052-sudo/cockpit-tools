@@ -227,8 +227,9 @@ goto :pause_menu
 :pause_menu
 echo.
 echo   -----------------------------------
-choice /c YN /n /m "  >> Back to menu? (Y/N): "
-if %errorlevel%==2 goto :exit
+set "back_menu=Y"
+set /p back_menu="  >> Back to menu? (Y/N) [Default: Y]: "
+if /I "!back_menu!"=="N" goto :exit
 goto :menu
 
 :exit
