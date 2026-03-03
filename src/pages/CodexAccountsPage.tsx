@@ -120,7 +120,7 @@ export function CodexAccountsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [importProgress, setImportProgress] = useState<{ startTime: number; payload: ImportProgressPayload } | null>(null);
+  const [importProgress, setImportProgress] = useState<{ startTime: number; endTime?: number; payload: ImportProgressPayload } | null>(null);
 
   const showAddModalRef = useRef(showAddModal);
   const addTabRef = useRef(addTab);
@@ -641,10 +641,13 @@ export function CodexAccountsPage() {
       const accounts = await codexService.importCodexFromDir(selected);
       unlisten();
 
+      setImportProgress(prev => prev ? { ...prev, endTime: Date.now() } : null);
+
       if (accounts.length === 0) {
         setAddStatus('error');
         setAddMessage(t('codex.import.dirEmptyMsg', '未在目录下找到有效的账号文件'));
       } else {
+        setAddMessage(t('codex.import.fetchingQuota', '正在获取账号配额信息...'));
         await fetchAccounts();
         for (const acc of accounts) {
           await refreshQuota(acc.id).catch(() => { });
@@ -1871,7 +1874,7 @@ export function CodexAccountsPage() {
                             </span>
                             <span>
                               {(() => {
-                                const elapsed = (Date.now() - importProgress.startTime) / 1000;
+                                const elapsed = ((importProgress.endTime || Date.now()) - importProgress.startTime) / 1000;
                                 const rate = importProgress.payload.current / elapsed;
                                 const remaining = (importProgress.payload.total - importProgress.payload.current) / (rate || 1);
                                 return `已用: ${elapsed.toFixed(1)}s${remaining > 0 && importProgress.payload.current > 0 ? ` | ETA: ${remaining.toFixed(1)}s` : ''}`;
