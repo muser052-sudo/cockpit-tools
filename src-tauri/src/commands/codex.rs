@@ -2,6 +2,8 @@ use crate::models::codex::{CodexAccount, CodexQuota, CodexTokens};
 use crate::modules::{
     codex_account, codex_oauth, codex_quota, config, logger, opencode_auth, process,
 };
+#[cfg(target_os = "macos")]
+use tauri::Emitter;
 use tauri::AppHandle;
 
 /// 列出所有 Codex 账号

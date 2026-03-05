@@ -40,7 +40,13 @@
 
 ---
 
-## 📝 说明
+## 加密货币 (USDT)
 
-- 赞助完全自愿，不影响您使用本项目的任何功能
-- 如有任何问题或建议，欢迎通过 [GitHub Issues](https://github.com/muser052-sudo/cockpit-tools/issues) 反馈
+![USTD1](images/ustd1.jpg)
+![USTD2](images/ustd2.jpg)
+
+## Telegram
+
+![Telegram](images/telegram.jpg)
+
+如果您在打赏过程中遇到任何问题，欢迎在 [GitHub Issues](https://github.com/muser052-sudo/cockpit-tools/issues) 中反馈。
