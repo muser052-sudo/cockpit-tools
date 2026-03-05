@@ -14,6 +14,7 @@ import {
   Github, User, Rocket, Save, FolderOpen,
   AlertCircle, RefreshCw, Heart, MessageSquare
 } from 'lucide-react';
+import qqImage from '../assets/qq.jpg';
 
 
 
@@ -2336,7 +2337,7 @@ export function SettingsPage() {
 
               <div className="credits-list">
                 <button className="credit-item" onClick={() => openLink('https://github.com/muser052-sudo')} style={{ height: 'auto', flexDirection: 'column', gap: '8px', padding: '16px' }}>
-                  <img src="/src/assets/qq.jpg" alt="QQ" style={{ width: '120px', borderRadius: '8px', marginBottom: '8px', objectFit: 'contain' }} />
+                  <img src={qqImage} alt="QQ" style={{ width: '120px', borderRadius: '8px', marginBottom: '8px', objectFit: 'contain' }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <User size={18} />
                     <span style={{ fontWeight: 600 }}>{t('settings.about.author')}</span>
