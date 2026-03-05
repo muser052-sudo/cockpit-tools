@@ -58,6 +58,9 @@ const SettingsPage = lazy(() =>
 const InstancesPage = lazy(() =>
   import('./pages/InstancesPage').then((module) => ({ default: module.InstancesPage })),
 );
+const ChatPage = lazy(() =>
+  import('./pages/ChatPage').then((module) => ({ default: module.ChatPage })),
+);
 const PlatformLayoutModal = lazy(() =>
   import('./components/PlatformLayoutModal').then((module) => ({
     default: module.PlatformLayoutModal,
@@ -217,10 +220,29 @@ function App() {
     windowMs: 8000,
     onTrigger: openBreakout,
   });
-  
+
   // 启用自动刷新 hook
   useAutoRefresh();
 
+  // 全局快捷键: Ctrl+Shift+C 跳转到 Chat 页面, Ctrl+/ 打开快捷键面板
+  useEffect(() => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        setPage('chat');
+      }
+      if (e.ctrlKey && e.key === '/') {
+        e.preventDefault();
+        setPage('chat');
+        // 延迟派发，等 ChatPage 挂载完成后再触发
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('toggle-shortcuts-panel'));
+        }, 300);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
+  }, []);
   const openQuickSettingsForPlatform = useCallback((platform: QuotaAlertPlatform) => {
     const targetPage = getQuotaAlertTargetPage(platform);
     const targetType = getQuotaAlertQuickSettingsType(platform);
@@ -480,50 +502,50 @@ function App() {
           },
           ...(hasRecommendation
             ? [{
-                id: 'quota-alert-switch',
-                label: t('quotaAlert.modal.switchNow', '快捷切号到 {{email}}', {
-                  email: payload.recommended_email as string,
-                }),
-                variant: 'primary' as const,
-                autoClose: false,
-                onClick: async () => {
-                  try {
-                    const targetAccountId = payload.recommended_account_id as string;
-                    if (platform === 'codex') {
-                      await useCodexAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('codex');
-                    } else if (platform === 'github_copilot') {
-                      await useGitHubCopilotAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('github-copilot');
-                    } else if (platform === 'windsurf') {
-                      await useWindsurfAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('windsurf');
-                    } else if (platform === 'kiro') {
-                      await useKiroAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('kiro');
-                    } else {
-                      await useAccountStore.getState().switchAccount(targetAccountId);
-                      setPage('overview');
-                    }
-                    closeModal();
-                  } catch (error) {
-                    showModal({
-                      title: t('quotaAlert.modal.switchFailedTitle', '切号失败'),
-                      description: t('quotaAlert.modal.switchFailedBody', '快捷切号失败：{{error}}', {
-                        error: String(error),
-                      }),
-                      width: 'sm',
-                      actions: [
-                        {
-                          id: 'quota-alert-switch-failed-ok',
-                          label: t('common.confirm', '确定'),
-                          variant: 'primary',
-                        },
-                      ],
-                    });
+              id: 'quota-alert-switch',
+              label: t('quotaAlert.modal.switchNow', '快捷切号到 {{email}}', {
+                email: payload.recommended_email as string,
+              }),
+              variant: 'primary' as const,
+              autoClose: false,
+              onClick: async () => {
+                try {
+                  const targetAccountId = payload.recommended_account_id as string;
+                  if (platform === 'codex') {
+                    await useCodexAccountStore.getState().switchAccount(targetAccountId);
+                    setPage('codex');
+                  } else if (platform === 'github_copilot') {
+                    await useGitHubCopilotAccountStore.getState().switchAccount(targetAccountId);
+                    setPage('github-copilot');
+                  } else if (platform === 'windsurf') {
+                    await useWindsurfAccountStore.getState().switchAccount(targetAccountId);
+                    setPage('windsurf');
+                  } else if (platform === 'kiro') {
+                    await useKiroAccountStore.getState().switchAccount(targetAccountId);
+                    setPage('kiro');
+                  } else {
+                    await useAccountStore.getState().switchAccount(targetAccountId);
+                    setPage('overview');
                   }
-                },
-              }]
+                  closeModal();
+                } catch (error) {
+                  showModal({
+                    title: t('quotaAlert.modal.switchFailedTitle', '切号失败'),
+                    description: t('quotaAlert.modal.switchFailedBody', '快捷切号失败：{{error}}', {
+                      error: String(error),
+                    }),
+                    width: 'sm',
+                    actions: [
+                      {
+                        id: 'quota-alert-switch-failed-ok',
+                        label: t('common.confirm', '确定'),
+                        variant: 'primary',
+                      },
+                    ],
+                  });
+                }
+              },
+            }]
             : []),
         ],
       });
@@ -711,9 +733,9 @@ function App() {
               ? config.vscode_app_path
               : appPathMissing.app === 'windsurf'
                 ? config.windsurf_app_path
-              : appPathMissing.app === 'kiro'
-                ? config.kiro_app_path
-              : config.antigravity_app_path;
+                : appPathMissing.app === 'kiro'
+                  ? config.kiro_app_path
+                  : config.antigravity_app_path;
         if (active) {
           setAppPathDraft(currentPath || '');
         }
@@ -818,21 +840,21 @@ function App() {
   useEffect(() => {
     let unlisten: UnlistenFn | undefined;
 
-        listen<string>('tray:navigate', (event) => {
-          const target = String(event.payload || '');
-          switch (target) {
-            case 'overview':
-            case 'codex':
-            case 'github-copilot':
-            case 'windsurf':
-            case 'kiro':
-            case 'settings':
-              setPage(target as Page);
-              break;
-            default:
-              break;
-          }
-        }).then((fn) => { unlisten = fn; });
+    listen<string>('tray:navigate', (event) => {
+      const target = String(event.payload || '');
+      switch (target) {
+        case 'overview':
+        case 'codex':
+        case 'github-copilot':
+        case 'windsurf':
+        case 'kiro':
+        case 'settings':
+          setPage(target as Page);
+          break;
+        default:
+          break;
+      }
+    }).then((fn) => { unlisten = fn; });
 
     return () => {
       if (unlisten) {
@@ -902,9 +924,9 @@ function App() {
                         ? 'VS Code'
                         : appPathMissing.app === 'windsurf'
                           ? 'Windsurf'
-                        : appPathMissing.app === 'kiro'
-                          ? 'Kiro'
-                        : 'Antigravity',
+                          : appPathMissing.app === 'kiro'
+                            ? 'Kiro'
+                            : 'Antigravity',
                 })}
               </p>
               <div style={{ marginTop: 16 }}>
@@ -938,7 +960,7 @@ function App() {
                               ? t('settings.general.windsurfPathReset', '重置默认')
                               : appPathMissing.app === 'kiro'
                                 ? t('settings.general.kiroPathReset', '重置默认')
-                              : t('settings.general.codexPathReset', '重置默认')
+                                : t('settings.general.codexPathReset', '重置默认')
                         )
                     }
                   >
@@ -952,7 +974,7 @@ function App() {
                             ? t('settings.general.windsurfPathReset', '重置默认')
                             : appPathMissing.app === 'kiro'
                               ? t('settings.general.kiroPathReset', '重置默认')
-                            : t('settings.general.codexPathReset', '重置默认')
+                              : t('settings.general.codexPathReset', '重置默认')
                       )}
                   </button>
                 </div>
@@ -977,11 +999,11 @@ function App() {
           </div>
         </div>
       )}
-      
+
       {/* 顶部固定拖拽区域 */}
-      <div 
+      <div
         className="drag-region"
-        data-tauri-drag-region 
+        data-tauri-drag-region
         onMouseDown={handleDragStart}
       />
 
@@ -1017,6 +1039,7 @@ function App() {
           {page === 'fingerprints' && <FingerprintsPage onNavigate={setPage} />}
           {page === 'wakeup' && <WakeupTasksPage onNavigate={setPage} />}
           {page === 'verification' && <WakeupVerificationPage onNavigate={setPage} />}
+          {page === 'chat' && <ChatPage />}
           {page === 'settings' && <SettingsPage />}
         </Suspense>
       </div>

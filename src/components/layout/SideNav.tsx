@@ -1,4 +1,4 @@
-import { Settings, Rocket, GaugeCircle, LayoutGrid, SlidersHorizontal } from 'lucide-react';
+import { Settings, Rocket, GaugeCircle, LayoutGrid, SlidersHorizontal, MessageSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Page } from '../../types/navigation';
@@ -82,36 +82,36 @@ export function SideNav({
   return (
     <nav className="side-nav">
       <div className="nav-brand" style={{ position: 'relative', zIndex: 10 }}>
-         <div 
-           ref={logoRef}
-           className="brand-logo rocket-easter-egg" 
-           onClick={handleLogoClick}
-         >
-           <Rocket size={20} />
-           {/* 点击计数器保持在里面，跟随缩放 */}
-           {easterEggClickCount > 0 && (
-             <span className="rocket-click-count">{easterEggClickCount}</span>
-           )}
-         </div>
+        <div
+          ref={logoRef}
+          className="brand-logo rocket-easter-egg"
+          onClick={handleLogoClick}
+        >
+          <Rocket size={20} />
+          {/* 点击计数器保持在里面，跟随缩放 */}
+          {easterEggClickCount > 0 && (
+            <span className="rocket-click-count">{easterEggClickCount}</span>
+          )}
+        </div>
 
-         {/* 把火箭层移到外面，放在后面以自然层叠在上方，使用 pointer-events-none 防止遮挡点击 */}
-         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-           {flyingRockets.map(rocket => (
-             <span 
-               key={rocket.id} 
-               className="flying-rocket"
-               style={{ '--rocket-x': `${rocket.x}px` } as React.CSSProperties}
-             >
-               🚀
-             </span>
-           ))}
-         </div>
+        {/* 把火箭层移到外面，放在后面以自然层叠在上方，使用 pointer-events-none 防止遮挡点击 */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+          {flyingRockets.map(rocket => (
+            <span
+              key={rocket.id}
+              className="flying-rocket"
+              style={{ '--rocket-x': `${rocket.x}px` } as React.CSSProperties}
+            >
+              🚀
+            </span>
+          ))}
+        </div>
       </div>
-      
+
       <div className="nav-items">
 
-        <button 
-          className={`nav-item ${page === 'dashboard' ? 'active' : ''}`} 
+        <button
+          className={`nav-item ${page === 'dashboard' ? 'active' : ''}`}
           onClick={() => setPage('dashboard')}
           title={t('nav.dashboard')}
         >
@@ -182,6 +182,14 @@ export function SideNav({
       </div>
 
       <div className="nav-footer">
+        <button
+          className={`nav-item ${page === 'chat' ? 'active' : ''}`}
+          onClick={() => setPage('chat')}
+          title="Chat 测试"
+        >
+          <MessageSquare size={20} />
+          <span className="tooltip">Chat</span>
+        </button>
         <button
           className={`nav-item ${page === 'settings' ? 'active' : ''}`}
           onClick={() => setPage('settings')}

@@ -108,6 +108,24 @@ pub fn run() {
                 modules::websocket::start_server().await;
             });
 
+            // 自动启动 API 反向代理（如果配置了 auto_start）
+            tauri::async_runtime::spawn(async {
+                let proxy_config = modules::api_proxy::load_proxy_config();
+                if proxy_config.enabled && proxy_config.auto_start {
+                    match modules::api_proxy::start_proxy_server(proxy_config).await {
+                        Ok(status) => {
+                            logger::log_info(&format!(
+                                "[ApiProxy] 自动启动成功: port={}",
+                                status.actual_port.unwrap_or(0)
+                            ));
+                        }
+                        Err(e) => {
+                            logger::log_error(&format!("[ApiProxy] 自动启动失败: {}", e));
+                        }
+                    }
+                }
+            });
+
             #[cfg(target_os = "macos")]
             apply_macos_activation_policy(&app.handle());
 
@@ -359,6 +377,15 @@ pub fn run() {
             commands::instance::stop_instance,
             commands::instance::open_instance_window,
             commands::instance::close_all_instances,
+            // API Proxy Commands
+            commands::api_proxy::get_api_proxy_config,
+            commands::api_proxy::save_api_proxy_config,
+            commands::api_proxy::get_api_proxy_status,
+            commands::api_proxy::start_api_proxy,
+            commands::api_proxy::stop_api_proxy,
+            commands::api_proxy::restart_api_proxy,
+            commands::api_proxy::fetch_models_for_account,
+            commands::api_proxy::fetch_codex_models,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

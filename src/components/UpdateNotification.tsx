@@ -40,9 +40,10 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
 
   useEffect(() => {
-    checkForUpdates();
+    // checkForUpdates(); // Temporarily disabled per user request
   }, []);
 
+  // @ts-ignore
   const checkForUpdates = async () => {
     try {
       const info = await invoke<UpdateInfo>('check_for_updates');
@@ -94,24 +95,24 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
   const releaseNotes = useMemo(() => {
     if (!updateInfo) return '';
     const isZh = i18n.language.startsWith('zh');
-    return isZh && updateInfo.release_notes_zh 
-      ? updateInfo.release_notes_zh 
+    return isZh && updateInfo.release_notes_zh
+      ? updateInfo.release_notes_zh
       : updateInfo.release_notes;
   }, [updateInfo, i18n.language]);
 
   // 简单的 Markdown 渲染
   const formattedNotes = useMemo(() => {
     if (!releaseNotes) return null;
-    
+
     // 解析 Markdown 格式的更新日志
     const lines = releaseNotes.split('\n');
     const elements: React.ReactNode[] = [];
     let key = 0;
-    
+
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed) continue;
-      
+
       // 标题 (### 或 ##)
       if (trimmed.startsWith('### ')) {
         elements.push(
@@ -129,14 +130,14 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
         const parts = content.split(/\*\*(.*?)\*\*/g);
         elements.push(
           <li key={key++} className="release-notes-item">
-            {parts.map((part, i) => 
+            {parts.map((part, i) =>
               i % 2 === 1 ? <strong key={i}>{part}</strong> : part
             )}
           </li>
         );
       }
     }
-    
+
     return elements.length > 0 ? (
       <ul className="release-notes-list">{elements}</ul>
     ) : null;
@@ -165,7 +166,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
           <p className="update-message">
             {t('update_notification.message', { current: updateInfo.current_version })}
           </p>
-          
+
           {formattedNotes && (
             <div className="release-notes">
               <h3 className="release-notes-title">{t('update_notification.whatsNew', "What's New")}</h3>

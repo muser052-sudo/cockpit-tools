@@ -1,0 +1,10 @@
+    Finished `release` profile [optimized] target(s) in 1.95s
+     Running unittests src\lib.rs (target\release\deps\antigravity_cockpit_tools_lib-7c4117c71428cebb.exe)
+
+running 1 test
+Starting TDD Benchmark for Concurrent JSON Import: E:\韫疆瀛?000\韫疆瀛?000
+Finished Import in 2.96s | Success: 1000, Failed: 0 | ArrayLen: 1000
+test modules::codex_account::tests::test_import_efficiency ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 2.97s
+

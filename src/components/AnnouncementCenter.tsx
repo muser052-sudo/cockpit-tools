@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bell, ChevronLeft, X } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useTranslation } from 'react-i18next';
@@ -87,7 +87,7 @@ export function AnnouncementCenter({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
-  const shownPopupIdsRef = useRef<Set<string>>(new Set());
+
 
   useEffect(() => {
     void fetchState(false);
@@ -104,6 +104,8 @@ export function AnnouncementCenter({
   }, [fetchState]);
 
   useEffect(() => {
+    /* 
+    // 根据用户要求，注释掉自动弹出更新日志/公告的弹窗功能
     const popupAnnouncement = announcementState.popupAnnouncement;
     if (!popupAnnouncement) {
       return;
@@ -114,6 +116,7 @@ export function AnnouncementCenter({
     shownPopupIdsRef.current.add(popupAnnouncement.id);
     setDetailAnnouncement(popupAnnouncement);
     setDetailFromList(false);
+    */
   }, [announcementState.popupAnnouncement]);
 
   useEffect(() => {

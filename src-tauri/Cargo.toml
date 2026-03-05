@@ -25,7 +25,7 @@ serde_json = "1"
 uuid = { version = "1.10", features = ["v4", "serde"] }
 chrono = "0.4"
 dirs = "5.0"
-reqwest = { version = "0.12", features = ["json", "gzip"] }
+reqwest = { version = "0.12", features = ["json", "gzip", "stream"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "time"] }
 tracing-appender = "0.2"
@@ -51,6 +51,13 @@ md5 = "0.7"
 tiny_http = "0.12"
 urlencoding = "2.1"
 lazy_static = "1.5"
+axum = { version = "0.8", features = ["macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors"] }
+hyper = { version = "1", features = ["full"] }
+bytes = "1"
+async-stream = "0.3"
+http-body-util = "0.1"
 
 # VS Code Copilot token injection (Windows only)
 aes-gcm = "0.10"

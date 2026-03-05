@@ -1,5 +1,6 @@
 pub mod account;
 pub mod announcement;
+pub mod api_proxy;
 pub mod codex;
 pub mod codex_instance;
 pub mod device;
