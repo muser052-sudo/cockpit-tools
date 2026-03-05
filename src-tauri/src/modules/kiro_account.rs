@@ -18,6 +18,7 @@ const KIRO_QUOTA_ALERT_COOLDOWN_SECONDS: i64 = 10 * 60;
 lazy_static::lazy_static! {
     static ref KIRO_ACCOUNT_INDEX_LOCK: Mutex<()> = Mutex::new(());
     static ref KIRO_QUOTA_ALERT_LAST_SENT: Mutex<HashMap<String, i64>> = Mutex::new(HashMap::new());
+    static ref KIRO_REFRESH_LOCKS: Mutex<HashMap<String, std::sync::Arc<tokio::sync::Mutex<()>>>> = Mutex::new(HashMap::new());
 }
 
 fn now_ts() -> i64 {
@@ -711,6 +712,15 @@ pub fn upsert_account(payload: KiroOAuthCompletePayload) -> Result<KiroAccount, 
 }
 
 pub async fn refresh_account_token(account_id: &str) -> Result<KiroAccount, String> {
+    // 获取异步锁防止并发重复刷新
+    let lock = {
+        let mut locks = KIRO_REFRESH_LOCKS.lock().unwrap();
+        locks.entry(account_id.to_string())
+             .or_insert_with(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+             .clone()
+    };
+    let _guard = lock.lock().await;
+
     let started_at = Instant::now();
     let mut account = load_account(account_id).ok_or_else(|| "账号不存在".to_string())?;
     logger::log_info(&format!(
@@ -718,23 +728,50 @@ pub async fn refresh_account_token(account_id: &str) -> Result<KiroAccount, Stri
         account.id, account.email
     ));
 
-    let payload = kiro_oauth::refresh_payload_for_account(&account).await?;
-    let tags = account.tags.clone();
-    let created_at = account.created_at;
-    apply_payload(&mut account, payload);
-    account.tags = tags;
-    account.created_at = created_at;
-    account.last_used = now_ts();
+    match kiro_oauth::refresh_payload_for_account(&account).await {
+        Ok(payload) => {
+            let tags = account.tags.clone();
+            let created_at = account.created_at;
+            apply_payload(&mut account, payload);
+            account.tags = tags;
+            account.created_at = created_at;
+            account.last_used = now_ts();
 
-    let updated = account.clone();
-    upsert_account_record(account)?;
-    logger::log_info(&format!(
-        "[Kiro Refresh] 刷新完成: id={}, email={}, elapsed={}ms",
-        updated.id,
-        updated.email,
-        started_at.elapsed().as_millis()
-    ));
-    Ok(updated)
+            let updated = account.clone();
+            upsert_account_record(account)?;
+            
+            // AUTH-1: Token 刷新后回写到 Kiro IDE 本地文件
+            if let Err(e) = crate::modules::kiro_instance::write_local_auth_token_file(&updated) {
+                logger::log_error(&format!("[Kiro Refresh] 回写本地 token 文件失败 ({}): {}", updated.id, e));
+            }
+
+            logger::log_info(&format!(
+                "[Kiro Refresh] 刷新完成: id={}, email={}, elapsed={}ms",
+                updated.id,
+                updated.email,
+                started_at.elapsed().as_millis()
+            ));
+            Ok(updated)
+        }
+        Err(e) => {
+            // AUTH-2: 尝试优雅降级 (如果刷新请求失败，但现有 Token 仍有效，则记录警告并返回现有 Token)
+            let is_valid = match account.expires_at {
+                Some(exp) => exp > now_ts() + 60, // 还有至少60秒有效期
+                None => false,
+            };
+
+            if is_valid {
+                logger::log_warn(&format!(
+                    "[Kiro Refresh] 降级：账号刷新失败 ({})，但 token 仍有效，继续使用。id={}",
+                    e, account.id
+                ));
+                Ok(account)
+            } else {
+                logger::log_error(&format!("[Kiro Refresh] 账号刷新失败，Token 已过期：{} (id={})", e, account_id));
+                Err(e)
+            }
+        }
+    }
 }
 
 pub async fn refresh_all_tokens() -> Result<Vec<(String, Result<KiroAccount, String>)>, String> {
@@ -810,6 +847,17 @@ pub fn update_account_tags(account_id: &str, tags: Vec<String>) -> Result<KiroAc
     let updated = account.clone();
     upsert_account_record(account)?;
     Ok(updated)
+}
+
+/// 基于 contextUsagePercentage 估算并更新当前 Kiro 账号的使用额度
+pub fn update_account_quota(account_id: &str, percentage: f64) -> Result<(), String> {
+    if let Some(mut account) = load_account(account_id) {
+        account.credits_total = Some(10000.0);
+        let p = if percentage < 0.0 { 0.0 } else if percentage > 100.0 { 100.0 } else { percentage };
+        account.credits_used = Some((p * 100.0).round() as f64);
+        upsert_account_record(account)?;
+    }
+    Ok(())
 }
 
 fn clone_object_value(value: Option<&Value>) -> Option<Value> {
@@ -1266,6 +1314,42 @@ pub fn read_local_auth_token_json() -> Result<Option<Value>, String> {
     let parsed = serde_json::from_str::<Value>(&raw)
         .map_err(|e| format!("解析 Kiro 本地授权文件失败({}): {}", path.display(), e))?;
     Ok(Some(parsed))
+}
+
+pub fn read_local_auth_token_from_sqlite() -> Result<Option<Value>, String> {
+    let path = get_default_kiro_state_db_path()?;
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let conn = Connection::open(&path)
+        .map_err(|e| format!("打开 Kiro 本地数据库失败({}): {}", path.display(), e))?;
+
+    // 在实际的 VS Code state DB (SQLite) 中，我们尝试几个可能的 auth token DB key
+    let keys_to_try = [
+        "kiro.authToken",
+        "kiro-auth-token",
+        "aws.sso.auth.token", // 如果存了 AWS 标准配置等
+    ];
+
+    for key in keys_to_try {
+        let raw: Option<String> = conn
+            .query_row(
+                "SELECT value FROM ItemTable WHERE key = ?1",
+                [key],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()
+            .unwrap_or(None);
+
+        if let Some(r) = raw {
+            if let Ok(parsed) = serde_json::from_str::<Value>(&r) {
+                return Ok(Some(parsed));
+            }
+        }
+    }
+    
+    Ok(None)
 }
 
 pub fn read_local_profile_json() -> Result<Option<Value>, String> {

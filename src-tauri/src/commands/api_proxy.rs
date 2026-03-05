@@ -70,3 +70,49 @@ pub async fn fetch_models_for_account(email: String) -> Result<Vec<api_proxy::Qu
 pub fn fetch_codex_models() -> Vec<String> {
     api_proxy::get_codex_model_list()
 }
+
+/// 获取 Kiro 获取模型列表，从远端服务真实拉取
+#[tauri::command]
+pub async fn fetch_kiro_models(email: String) -> Result<Vec<String>, String> {
+    let accounts = crate::modules::kiro_account::list_accounts();
+    let account = accounts.iter()
+        .find(|a| a.email == email && {
+            // 检查账号是否未被禁用
+            let status = a.status.as_deref().unwrap_or("").to_lowercase();
+            status != "banned" && status != "ban" && status != "forbidden"
+        })
+        .ok_or_else(|| format!("未找到可用的Kiro账号: {}", email))?;
+
+    let access_token = &account.access_token;
+    if access_token.is_empty() {
+        return Err("账号 access_token 为空".to_string());
+    }
+
+    // 从 kiro_auth_token_raw 或 kiro_profile_raw 中尝试提取 profileArn
+    let profile_arn = extract_kiro_profile_arn(
+        account.kiro_auth_token_raw.as_ref(),
+        account.kiro_profile_raw.as_ref(),
+    );
+    api_proxy::fetch_kiro_models(access_token, profile_arn.as_deref()).await
+}
+
+/// 从 Kiro 账号的 raw JSON 字段中提取 profileArn
+fn extract_kiro_profile_arn(
+    auth_token_raw: Option<&serde_json::Value>,
+    profile_raw: Option<&serde_json::Value>,
+) -> Option<String> {
+    let paths = &["profileArn", "profile_arn", "arn"];
+    for source in [auth_token_raw, profile_raw] {
+        if let Some(obj) = source.and_then(|v| v.as_object()) {
+            for key in paths {
+                if let Some(val) = obj.get(*key).and_then(|v| v.as_str()) {
+                    let trimmed = val.trim();
+                    if !trimmed.is_empty() {
+                        return Some(trimmed.to_string());
+                    }
+                }
+            }
+        }
+    }
+    None
+}

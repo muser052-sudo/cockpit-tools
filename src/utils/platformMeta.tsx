@@ -19,6 +19,8 @@ export function getPlatformLabel(platformId: PlatformId, _t: TFunction): string 
       return 'Windsurf';
     case 'kiro':
       return 'Kiro';
+    case 'warp':
+      return 'Warp';
     default:
       return platformId;
   }
@@ -36,6 +38,9 @@ export function renderPlatformIcon(platformId: PlatformId, size = 20): ReactNode
       return <WindsurfIcon style={{ width: size, height: size }} />;
     case 'kiro':
       return <KiroIcon style={{ width: size, height: size }} />;
+    case 'warp':
+      // 暂时用 Terminal 图标或其他现成图标替代 Warp 图标
+      return <span style={{ fontSize: size, lineHeight: 1 }}>W</span>;
     default:
       return null;
   }

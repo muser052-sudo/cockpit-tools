@@ -17,3 +17,4 @@ pub mod update;
 pub mod wakeup;
 pub mod windsurf;
 pub mod windsurf_instance;
+pub mod warp;

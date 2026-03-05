@@ -1267,9 +1267,11 @@ pub fn payload_from_account(account: &KiroAccount) -> KiroOAuthCompletePayload {
 }
 
 pub fn build_payload_from_local_files() -> Result<KiroOAuthCompletePayload, String> {
-    let auth_token = kiro_account::read_local_auth_token_json()?.ok_or_else(|| {
-        "未在本机找到 Kiro 登录信息（~/.aws/sso/cache/kiro-auth-token.json）".to_string()
-    })?;
+    let auth_token = kiro_account::read_local_auth_token_json()?
+        .or_else(|| kiro_account::read_local_auth_token_from_sqlite().unwrap_or(None))
+        .ok_or_else(|| {
+            "未在本机找到 Kiro 登录信息（~/.aws/sso/cache/kiro-auth-token.json 或 Kiro SQLite DB）".to_string()
+        })?;
     let profile = kiro_account::read_local_profile_json()?;
     let usage = kiro_account::read_local_usage_snapshot()?;
     build_payload_from_snapshot(auth_token, profile, usage)

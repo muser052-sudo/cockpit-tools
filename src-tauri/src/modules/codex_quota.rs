@@ -1,10 +1,10 @@
 use crate::models::codex::{CodexAccount, CodexQuota, CodexQuotaErrorInfo};
 use crate::modules::{codex_account, logger};
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION};
-use serde::{Deserialize, Serialize};
+
 
 // 使用 wham/usage 端点（Quotio 使用的）
-const USAGE_URL: &str = "https://chatgpt.com/backend-api/wham/usage";
+const USAGE_URL: &str = "https://chatgpt.com/backend-api/codex/responses";
 
 fn get_header_value(headers: &HeaderMap, name: &str) -> String {
     headers
@@ -48,71 +48,12 @@ fn write_quota_error(account: &mut CodexAccount, message: String) {
     });
 }
 
-/// 使用率窗口（5小时/周）
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct WindowInfo {
-    #[serde(rename = "used_percent")]
-    used_percent: Option<i32>,
-    #[serde(rename = "limit_window_seconds")]
-    limit_window_seconds: Option<i64>,
-    #[serde(rename = "reset_after_seconds")]
-    reset_after_seconds: Option<i64>,
-    #[serde(rename = "reset_at")]
-    reset_at: Option<i64>,
-}
-
-/// 速率限制信息
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct RateLimitInfo {
-    allowed: Option<bool>,
-    #[serde(rename = "limit_reached")]
-    limit_reached: Option<bool>,
-    #[serde(rename = "primary_window")]
-    primary_window: Option<WindowInfo>,
-    #[serde(rename = "secondary_window")]
-    secondary_window: Option<WindowInfo>,
-}
-
-/// 使用率响应
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct UsageResponse {
-    #[serde(rename = "plan_type")]
-    plan_type: Option<String>,
-    #[serde(rename = "rate_limit")]
-    rate_limit: Option<RateLimitInfo>,
-    #[serde(rename = "code_review_rate_limit")]
-    code_review_rate_limit: Option<RateLimitInfo>,
-}
-
-fn normalize_remaining_percentage(window: &WindowInfo) -> i32 {
-    let used = window.used_percent.unwrap_or(0).clamp(0, 100);
-    100 - used
-}
-
-fn normalize_window_minutes(window: &WindowInfo) -> Option<i64> {
-    let seconds = window.limit_window_seconds?;
-    if seconds <= 0 {
-        return None;
-    }
-    Some((seconds + 59) / 60)
-}
-
-fn normalize_reset_time(window: &WindowInfo) -> Option<i64> {
-    if let Some(reset_at) = window.reset_at {
-        return Some(reset_at);
-    }
-
-    let reset_after_seconds = window.reset_after_seconds?;
-    if reset_after_seconds < 0 {
-        return None;
-    }
-
-    Some(chrono::Utc::now().timestamp() + reset_after_seconds)
-}
-
 /// 查询单个账号的配额
 pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("构建HTTP客户端失败: {}", e))?;
 
     let mut headers = HeaderMap::new();
     headers.insert(
@@ -142,12 +83,53 @@ pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
         USAGE_URL, account_id
     ));
 
-    let response = client
-        .get(USAGE_URL)
-        .headers(headers)
-        .send()
-        .await
-        .map_err(|e| format!("请求失败: {}", e))?;
+    let mut retries = 0;
+    let max_retries = 2;
+    let mut response = None;
+    let mut last_error = String::new();
+
+    let test_payload = serde_json::json!({
+        "model": "gpt-5.1-codex",
+        "input": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "input_text",
+                        "text": "hi"
+                    }
+                ]
+            }
+        ],
+        "stream": true,
+        "store": false,
+        "instructions": "You are a helpful AI assistant."
+    });
+
+    while retries <= max_retries {
+        match client
+            .post(USAGE_URL)
+            .headers(headers.clone())
+            .json(&test_payload)
+            .send()
+            .await
+        {
+            Ok(res) => {
+                response = Some(res);
+                break;
+            }
+            Err(e) => {
+                last_error = e.to_string();
+                logger::log_warn(&format!("Codex 配额请求失败 (第 {} 次尝试): {}", retries + 1, e));
+                retries += 1;
+                if retries <= max_retries {
+                    tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+                }
+            }
+        }
+    }
+
+    let response = response.ok_or_else(|| format!("请求失败 (已重试 {} 次): {}", max_retries, last_error))?;
 
     let status = response.status();
     let headers = response.headers().clone();
@@ -166,7 +148,16 @@ pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
         USAGE_URL, status, request_id, x_request_id, cf_ray, body_len
     ));
 
-    if !status.is_success() {
+    // 无论响应状体如何，只要 headers 里有 x-codex-* 就尝试解析
+    let primary_used = get_header_value(&headers, "x-codex-primary-used-percent").parse::<f64>().ok();
+    let primary_reset = get_header_value(&headers, "x-codex-primary-reset-after-seconds").parse::<i64>().ok();
+    let primary_window = get_header_value(&headers, "x-codex-primary-window-minutes").parse::<i64>().ok();
+    
+    let secondary_used = get_header_value(&headers, "x-codex-secondary-used-percent").parse::<f64>().ok();
+    let secondary_reset = get_header_value(&headers, "x-codex-secondary-reset-after-seconds").parse::<i64>().ok();
+    let secondary_window = get_header_value(&headers, "x-codex-secondary-window-minutes").parse::<i64>().ok();
+
+    if !status.is_success() && primary_used.is_none() && secondary_used.is_none() {
         let detail_code = extract_detail_code_from_body(&body);
 
         logger::log_error(&format!(
@@ -187,56 +178,70 @@ pub async fn fetch_quota(account: &CodexAccount) -> Result<CodexQuota, String> {
         return Err(error_message);
     }
 
-    // 解析响应
-    let usage: UsageResponse =
-        serde_json::from_str(&body).map_err(|e| format!("解析 JSON 失败: {}", e))?;
+    // 根据窗口大小（分钟）来决定哪个是 5小时（<=360）和 7天
+    let mut use_5h_from_primary = false;
+    let mut use_7d_from_primary = false;
 
-    parse_quota_from_usage(&usage, &body)
-}
-
-/// 从使用率响应中解析配额信息
-fn parse_quota_from_usage(usage: &UsageResponse, raw_body: &str) -> Result<CodexQuota, String> {
-    let rate_limit = usage.rate_limit.as_ref();
-    let primary_window = rate_limit.and_then(|r| r.primary_window.as_ref());
-    let secondary_window = rate_limit.and_then(|r| r.secondary_window.as_ref());
-
-    // Primary window = 5小时配额（session）
-    let (hourly_percentage, hourly_reset_time, hourly_window_minutes) =
-        if let Some(primary) = primary_window {
-            (
-                normalize_remaining_percentage(primary),
-                normalize_reset_time(primary),
-                normalize_window_minutes(primary),
-            )
+    if let (Some(p_min), Some(s_min)) = (primary_window, secondary_window) {
+        if p_min < s_min {
+            use_5h_from_primary = true;
         } else {
-            (100, None, None)
-        };
-
-    // Secondary window = 周配额
-    let (weekly_percentage, weekly_reset_time, weekly_window_minutes) =
-        if let Some(secondary) = secondary_window {
-            (
-                normalize_remaining_percentage(secondary),
-                normalize_reset_time(secondary),
-                normalize_window_minutes(secondary),
-            )
+            use_7d_from_primary = true;
+        }
+    } else if let Some(p_min) = primary_window {
+        if p_min <= 360 {
+            use_5h_from_primary = true;
         } else {
-            (100, None, None)
-        };
+            use_7d_from_primary = true;
+        }
+    } else if let Some(s_min) = secondary_window {
+        if s_min <= 360 {
+            use_7d_from_primary = true;
+        } else {
+            use_5h_from_primary = true;
+        }
+    } else {
+        use_7d_from_primary = true; // 默认
+    }
 
-    // 保存原始响应
-    let raw_data: Option<serde_json::Value> = serde_json::from_str(raw_body).ok();
+    let (used_5h, reset_5h, window_5h, used_7d, reset_7d, window_7d) = if use_5h_from_primary {
+        (primary_used, primary_reset, primary_window, secondary_used, secondary_reset, secondary_window)
+    } else if use_7d_from_primary {
+        (secondary_used, secondary_reset, secondary_window, primary_used, primary_reset, primary_window)
+    } else {
+        (None, None, None, None, None, None)
+    };
+
+    let hourly_percentage = used_5h.map(|v| (100.0 - v).max(0.0).round() as i32).unwrap_or(100);
+    let hourly_reset_time = reset_5h.map(|s| {
+        chrono::Utc::now().timestamp() + s
+    });
+
+    let weekly_percentage = used_7d.map(|v| (100.0 - v).max(0.0).round() as i32).unwrap_or(100);
+    let weekly_reset_time = reset_7d.map(|s| {
+        chrono::Utc::now().timestamp() + s
+    });
+
+    let raw_data = serde_json::json!({
+        "primary_used_percent": primary_used,
+        "primary_reset_after_seconds": primary_reset,
+        "primary_window_minutes": primary_window,
+        "secondary_used_percent": secondary_used,
+        "secondary_reset_after_seconds": secondary_reset,
+        "secondary_window_minutes": secondary_window,
+        "response_body": if status.is_success() { "success_stream_omitted" } else { &body }
+    });
 
     Ok(CodexQuota {
         hourly_percentage,
         hourly_reset_time,
-        hourly_window_minutes,
-        hourly_window_present: Some(primary_window.is_some()),
+        hourly_window_minutes: window_5h,
+        hourly_window_present: Some(window_5h.is_some()),
         weekly_percentage,
         weekly_reset_time,
-        weekly_window_minutes,
-        weekly_window_present: Some(secondary_window.is_some()),
-        raw_data,
+        weekly_window_minutes: window_7d,
+        weekly_window_present: Some(window_7d.is_some()),
+        raw_data: Some(raw_data),
     })
 }
 

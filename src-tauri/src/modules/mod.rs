@@ -40,6 +40,7 @@ pub mod websocket;
 pub mod windsurf_account;
 pub mod windsurf_instance;
 pub mod windsurf_oauth;
+pub mod warp_account;
 
 // 重新导出常用函数
 pub use account::*;

@@ -2,17 +2,17 @@
 
 English · [简体中文](README.md)
 
-[![GitHub stars](https://img.shields.io/github/stars/jlcodes99/cockpit-tools?style=flat&color=gold)](https://github.com/jlcodes99/cockpit-tools)
-[![GitHub downloads](https://img.shields.io/github/downloads/jlcodes99/cockpit-tools/total?style=flat&color=blue)](https://github.com/jlcodes99/cockpit-tools/releases)
-[![GitHub release](https://img.shields.io/github/v/release/jlcodes99/cockpit-tools?style=flat)](https://github.com/jlcodes99/cockpit-tools/releases)
-[![GitHub issues](https://img.shields.io/github/issues/jlcodes99/cockpit-tools)](https://github.com/jlcodes99/cockpit-tools/issues)
-[![License](https://img.shields.io/github/license/jlcodes99/cockpit-tools)](https://github.com/jlcodes99/cockpit-tools)
+[![GitHub stars](https://img.shields.io/github/stars/muser052-sudo/cockpit-tools?style=flat&color=gold)](https://github.com/muser052-sudo/cockpit-tools)
+[![GitHub downloads](https://img.shields.io/github/downloads/muser052-sudo/cockpit-tools/total?style=flat&color=blue)](https://github.com/muser052-sudo/cockpit-tools/releases)
+[![GitHub release](https://img.shields.io/github/v/release/muser052-sudo/cockpit-tools?style=flat)](https://github.com/muser052-sudo/cockpit-tools/releases)
+[![GitHub issues](https://img.shields.io/github/issues/muser052-sudo/cockpit-tools)](https://github.com/muser052-sudo/cockpit-tools/issues)
+[![License](https://img.shields.io/github/license/muser052-sudo/cockpit-tools)](https://github.com/muser052-sudo/cockpit-tools)
 
 A **universal AI IDE account management tool**, currently supporting **Antigravity**, **Codex**, **GitHub Copilot**, **Windsurf**, and **Kiro**, with multi-instance parallel workflows.
 
 > Designed to help users efficiently manage multiple AI IDE accounts, this tool supports one-click switching, quota monitoring, wake-up tasks, and multi-instance parallel runs, helping you fully utilize resources from different accounts.
 
-**Features**: One-click Switch · Multi-account Management · Multi-instance · Quota Monitoring · Wake-up Tasks · Device Fingerprints · Plugin Integration · GitHub Copilot Management · Windsurf Management · Kiro Management
+**Features**: One-click Switch · Multi-account Management · Multi-instance · Quota Monitoring · Wake-up Tasks · Device Fingerprints · Plugin Integration · GitHub Copilot Management · Windsurf Management · Kiro Management · **AI Chat** · **API Reverse Proxy**
 
 **Languages**: Supports 16 languages
 
@@ -119,7 +119,28 @@ Manage Kiro instances with isolated profiles and lifecycle controls.
 - **Quick Lifecycle**: Start/stop/force stop instances
 - **Window Control**: Open instance windows and close all instances
 
-### 7. General Settings
+### 7. AI Chat
+
+Built-in multi-model AI chat interface to interact directly with AI models without leaving the app:
+
+- **Multi-Provider Support**: Switch seamlessly among Antigravity, Codex, Kiro, Windsurf, and Warp
+- **Model Selection**: Automatically lists available models (GPT-5.x, Claude, Gemini, etc.) based on the provider
+- **Streaming Response**: Real-time streaming output with Markdown rendering
+- **Image Attachments**: Supports uploading images for multimodal interactions
+- **Account Binding**: Automatically uses current account credentials and displays real-time quotas
+
+### 8. API Reverse Proxy
+
+Built-in HTTP reverse proxy service forwards AI API requests to upstream services with automatic account management:
+
+- **Multi-Platform Proxy**: Proxies API requests for Antigravity, Codex, Kiro, Windsurf, and Warp
+- **Load Balancing**: Supports Round-Robin, Random, and Fixed account routing strategies
+- **Auto Authentication**: Automatically injects access tokens, no client-side credential management needed
+- **API Key Protection**: Configurable API key protection; clients must provide `Authorization: Bearer <key>`
+- **LAN Access**: Supports sharing the proxy service on the local network for team usage
+- **Connection**: Listens on `http://127.0.0.1:19530` by default (port customizable)
+
+### 9. General Settings
 
 - **Personalized Settings**: Theme switching, language settings, auto-refresh interval
 
@@ -191,7 +212,7 @@ Notes:
 
 ### Option A: Manual Download (Recommended)
 
-Go to [GitHub Releases](https://github.com/jlcodes99/cockpit-tools/releases) to download the package for your system:
+Go to [GitHub Releases](https://github.com/muser052-sudo/cockpit-tools/releases) to download the package for your system:
 
 *   **macOS**: `.dmg` (Apple Silicon & Intel)
 *   **Windows**: `.msi` (Recommended) or `.exe`
@@ -202,7 +223,7 @@ Go to [GitHub Releases](https://github.com/jlcodes99/cockpit-tools/releases) to 
 > Homebrew is required.
 
 ```bash
-brew tap jlcodes99/cockpit-tools https://github.com/jlcodes99/cockpit-tools
+brew tap muser052-sudo/cockpit-tools https://github.com/muser052-sudo/cockpit-tools
 brew install --cask cockpit-tools
 ```
 

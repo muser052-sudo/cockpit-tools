@@ -25,6 +25,7 @@ const PAGE_PLATFORM_MAP: Partial<Record<Page, PlatformId>> = {
   'github-copilot': 'github-copilot',
   windsurf: 'windsurf',
   kiro: 'kiro',
+  warp: 'warp',
 };
 
 export function SideNav({

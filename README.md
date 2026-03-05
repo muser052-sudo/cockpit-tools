@@ -2,16 +2,16 @@
 
 [English](README.en.md) · 简体中文
 
-[![GitHub stars](https://img.shields.io/github/stars/jlcodes99/cockpit-tools?style=flat&color=gold)](https://github.com/jlcodes99/cockpit-tools)
-[![GitHub downloads](https://img.shields.io/github/downloads/jlcodes99/cockpit-tools/total?style=flat&color=blue)](https://github.com/jlcodes99/cockpit-tools/releases)
-[![GitHub release](https://img.shields.io/github/v/release/jlcodes99/cockpit-tools?style=flat)](https://github.com/jlcodes99/cockpit-tools/releases)
-[![GitHub issues](https://img.shields.io/github/issues/jlcodes99/cockpit-tools)](https://github.com/jlcodes99/cockpit-tools/issues)
+[![GitHub stars](https://img.shields.io/github/stars/muser052-sudo/cockpit-tools?style=flat&color=gold)](https://github.com/muser052-sudo/cockpit-tools)
+[![GitHub downloads](https://img.shields.io/github/downloads/muser052-sudo/cockpit-tools/total?style=flat&color=blue)](https://github.com/muser052-sudo/cockpit-tools/releases)
+[![GitHub release](https://img.shields.io/github/v/release/muser052-sudo/cockpit-tools?style=flat)](https://github.com/muser052-sudo/cockpit-tools/releases)
+[![GitHub issues](https://img.shields.io/github/issues/muser052-sudo/cockpit-tools)](https://github.com/muser052-sudo/cockpit-tools/issues)
 
 一款**通用的 AI IDE 账号管理工具**，目前支持 **Antigravity**、**Codex**、**GitHub Copilot**、**Windsurf** 和 **Kiro**，并支持多账号多实例并行运行。
 
 > 本工具旨在帮助用户高效管理多个 AI IDE 账号，支持一键切换、配额监控、自动唤醒与多开实例并行运行，助您充分利用不同账号的资源。
 
-**功能**：一键切号 · 多账号管理 · 多开实例 · 配额监控 · 唤醒任务 · 设备指纹 · 插件联动 · GitHub Copilot 管理 · Windsurf 管理 · Kiro 管理
+**功能**：一键切号 · 多账号管理 · 多开实例 · 配额监控 · 唤醒任务 · 设备指纹 · 插件联动 · GitHub Copilot 管理 · Windsurf 管理 · Kiro 管理 · **Chat 对话** · **API 反向代理**
 
 **语言**：支持 16 种语言
 
@@ -118,7 +118,28 @@ Codex 同样支持多账号多实例并行运行。比如同时打开两个 Code
 - **快速启停**：一键启动/停止/强制关闭实例
 - **窗口管理**：支持打开实例窗口与批量关闭
 
-### 7. 通用设置
+### 7. Chat 对话
+
+内置多模型 AI 对话页面，无需离开应用即可直接与 AI 模型交互：
+
+- **多 Provider 支持**：支持 Antigravity、Codex、Kiro、Windsurf、Warp 五种 Provider 切换
+- **模型选择**：根据所选 Provider 自动列出可用模型（GPT-5.x、Claude、Gemini 等）
+- **流式输出**：实时流式响应，支持 Markdown 渲染
+- **图片附件**：支持上传图片作为多模态输入
+- **账号关联**：自动使用当前选中的账号凭据，配额实时可见
+
+### 8. API 反向代理
+
+内置 HTTP 反向代理服务，将 AI API 请求转发到上游服务并自动管理账号凭据：
+
+- **多平台代理**：支持代理 Antigravity、Codex、Kiro、Windsurf、Warp 的 API 请求
+- **负载均衡**：支持轮询（Round-Robin）、随机（Random）、单账号（Fixed）三种策略
+- **自动鉴权**：自动注入当前账号的 Access Token，无需客户端管理凭据
+- **API Key 保护**：可设置 API Key，客户端需携带 `Authorization: Bearer <key>` 访问
+- **局域网共享**：支持开启局域网访问，团队共享代理服务
+- **地址**：默认监听 `http://127.0.0.1:19530`，端口可自定义
+
+### 9. 通用设置
 
 - **个性化设置**：主题切换、语言设置、自动刷新间隔
 
@@ -188,7 +209,7 @@ Codex 同样支持多账号多实例并行运行。比如同时打开两个 Code
 
 ### 选项 A: 手动下载 (推荐)
 
-前往 [GitHub Releases](https://github.com/jlcodes99/cockpit-tools/releases) 下载对应系统的安装包：
+前往 [GitHub Releases](https://github.com/muser052-sudo/cockpit-tools/releases) 下载对应系统的安装包：
 
 *   **macOS**: `.dmg` (Apple Silicon & Intel)
 *   **Windows**: `.msi` (推荐) 或 `.exe`
@@ -199,7 +220,7 @@ Codex 同样支持多账号多实例并行运行。比如同时打开两个 Code
 > 需要先安装 Homebrew。
 
 ```bash
-brew tap jlcodes99/cockpit-tools https://github.com/jlcodes99/cockpit-tools
+brew tap muser052-sudo/cockpit-tools https://github.com/muser052-sudo/cockpit-tools
 brew install --cask cockpit-tools
 ```
 

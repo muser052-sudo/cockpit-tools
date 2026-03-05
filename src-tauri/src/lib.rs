@@ -386,6 +386,11 @@ pub fn run() {
             commands::api_proxy::restart_api_proxy,
             commands::api_proxy::fetch_models_for_account,
             commands::api_proxy::fetch_codex_models,
+            commands::api_proxy::fetch_kiro_models,
+            // Warp Commands
+            commands::warp::get_warp_accounts,
+            commands::warp::delete_warp_accounts,
+            commands::warp::update_warp_account_tags,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

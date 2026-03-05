@@ -1177,7 +1177,7 @@ fn account_expires_at_iso(account: &KiroAccount) -> Option<String> {
     chrono::DateTime::from_timestamp(expires_at, 0).map(|dt| dt.to_rfc3339())
 }
 
-fn write_local_auth_token_file(account: &KiroAccount) -> Result<(), String> {
+pub fn write_local_auth_token_file(account: &KiroAccount) -> Result<(), String> {
     let token_path = kiro_account::get_default_kiro_auth_token_path()?;
     if let Some(parent) = token_path.parent() {
         if !parent.exists() {

@@ -10,7 +10,7 @@
       "content": "感谢你选择 Cockpit Tools。\n\n这个桌面端目前可以帮助你：\n• 统一管理 Antigravity、Codex、GitHub Copilot、Windsurf、Kiro 账号\n• 实时查看模型配额与重置时间\n• 快速切换当前账号并支持批量刷新\n• 管理设备指纹与多开实例\n• 使用唤醒任务与账号验证能力\n\n如果你有建议或问题，欢迎随时反馈。",
       "action": {
         "type": "url",
-        "target": "https://github.com/jlcodes99/cockpit-tools/issues",
+        "target": "https://github.com/muser052-sudo/cockpit-tools/issues",
         "label": "反馈建议"
       },
       "targetVersions": "*",
@@ -135,7 +135,7 @@
       "content": "Cockpit Tools 最近已升级至 v0.9.0，核心变化如下：\n• Antigravity账号支持一键发起账号有效性验证（可按模型批量验证，进度实时可见，结果可回查）\n• Antigravity唤醒/验证链路已对齐Antigravity官方APP实现：本地网关 + 官方 Language Server 协议\n• 403 场景新增快捷处理：立即验证、复制验证地址、复制调试信息\n建议升级到 v0.9.0 及以上版本，以获得更稳定的使用体验。",
       "action": {
         "type": "url",
-        "target": "https://github.com/jlcodes99/cockpit-tools/releases/latest",
+        "target": "https://github.com/muser052-sudo/cockpit-tools/releases/latest",
         "label": "下载最新版"
       },
       "targetVersions": "*",

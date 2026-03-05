@@ -10,21 +10,25 @@
 
 ### 支付宝
 
-<img src="images/alipay.png" alt="支付宝收款码" width="300" />
+<img src="images/alipay.jpg" alt="支付宝收款码" width="300" />
 
 ### 微信支付
 
-<img src="images/wechat.png" alt="微信收款码" width="300" />
+<img src="images/wechat.jpg" alt="微信收款码" width="300" />
 
-### 💰 Crypto Donation
+### QQ
 
-- **ETH Address**: `0xc75d68fe59e4b44904b1CAa1Da4FDfEddD780aef`
+<img src="images/qq.jpg" alt="QQ收款码" width="300" />
 
-  <img src="images/donation_eth.png" width="300" />
+### 💰 Crypto Donation (USDT)
 
-- **SOLANA Address**: `6yNHzh6e3LLbYrJZg7ayhNZyCKazQZTTYWnfz9i87Zeo`
+- **USDT 1**
 
-  <img src="images/donation_sol.png" width="300" />
+  <img src="images/ustd1.jpg" width="300" />
+
+- **USDT 2**
+
+  <img src="images/ustd2.jpg" width="300" />
 
 ---
 
@@ -39,4 +43,4 @@
 ## 📝 说明
 
 - 赞助完全自愿，不影响您使用本项目的任何功能
-- 如有任何问题或建议，欢迎通过 [GitHub Issues](https://github.com/jlcodes99/cockpit-tools/issues) 反馈
+- 如有任何问题或建议，欢迎通过 [GitHub Issues](https://github.com/muser052-sudo/cockpit-tools/issues) 反馈

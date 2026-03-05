@@ -94,6 +94,7 @@ const FALLBACK_PLATFORM_SETTINGS_ORDER: Record<PlatformId, number> = {
   'github-copilot': 2,
   windsurf: 3,
   kiro: 4,
+  warp: 5,
 };
 type UpdateCheckSource = 'auto' | 'manual';
 type UpdateCheckFinishedDetail = {
@@ -2334,26 +2335,27 @@ export function SettingsPage() {
               </div>
 
               <div className="credits-list">
-                <button className="credit-item" onClick={() => openLink('https://github.com/jlcodes99')}>
-                  <div className="credit-icon"><User size={24} /></div>
-                  <h3>{t('settings.about.author')}</h3>
-                  <p>jlcodes99</p>
+                <button className="credit-item" onClick={() => openLink('https://github.com/muser052-sudo')} style={{ height: 'auto', flexDirection: 'column', gap: '8px', padding: '16px' }}>
+                  <img src="/src/assets/qq.jpg" alt="QQ" style={{ width: '120px', borderRadius: '8px', marginBottom: '8px', objectFit: 'contain' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <User size={18} />
+                    <span style={{ fontWeight: 600 }}>{t('settings.about.author')}</span>
+                  </div>
+                  <p style={{ margin: 0 }}>muser052-sudo</p>
                 </button>
-
-
-                <button className="credit-item" onClick={() => openLink('https://github.com/jlcodes99/cockpit-tools')}>
+                <button className="credit-item" onClick={() => openLink('https://github.com/muser052-sudo/cockpit-tools')}>
                   <div className="credit-icon" style={{ color: '#0f172a' }}><Github size={24} /></div>
                   <h3>{t('settings.about.github')}</h3>
                   <p>cockpit-tools</p>
                 </button>
 
-                <button className="credit-item" onClick={() => openLink('https://github.com/jlcodes99/cockpit-tools/blob/main/docs/DONATE.md')}>
+                <button className="credit-item" onClick={() => openLink('https://github.com/muser052-sudo/cockpit-tools/blob/main/docs/DONATE.md')}>
                   <div className="credit-icon" style={{ color: '#ef4444' }}><Heart size={24} /></div>
                   <h3>{t('settings.about.sponsor')}</h3>
                   <p>{t('settings.about.sponsorDesc', 'Donate')}</p>
                 </button>
 
-                <button className="credit-item" onClick={() => openLink('https://github.com/jlcodes99/cockpit-tools/issues')}>
+                <button className="credit-item" onClick={() => openLink('https://github.com/muser052-sudo/cockpit-tools/issues')}>
                   <div className="credit-icon" style={{ color: '#3b82f6' }}><MessageSquare size={24} /></div>
                   <h3>{t('settings.about.feedback', '意见反馈')}</h3>
                   <p>{t('settings.about.feedbackDesc', 'Issues')}</p>

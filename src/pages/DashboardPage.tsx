@@ -1179,6 +1179,7 @@ export function DashboardPage({ onNavigate, onOpenPlatformLayout, onEasterEggTri
     'github-copilot': stats.githubCopilot,
     windsurf: stats.windsurf,
     kiro: stats.kiro,
+    warp: 0,
   };
 
   const renderPlatformCard = (platformId: PlatformId) => {

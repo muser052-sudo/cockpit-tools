@@ -25,12 +25,16 @@ interface ChatMessage {
     timestamp: number;
     provider?: string;
     streaming?: boolean;
+    thinking?: string;
     images?: { data: string; mime_type: string }[];
 }
 
 const PROVIDER_OPTIONS = [
     { value: 'antigravity', label: 'Antigravity (Gemini)', defaultModel: 'gemini-2.5-flash' },
     { value: 'codex', label: 'Codex (OpenAI)', defaultModel: 'gpt-5.1-codex' },
+    { value: 'kiro', label: 'Kiro (Amazon Q)', defaultModel: 'claude-sonnet-4-5' },
+    { value: 'windsurf', label: 'Windsurf (Copilot)', defaultModel: 'claude-sonnet-4-20250514' },
+    { value: 'warp', label: 'Warp (Multi-Agent)', defaultModel: 'gpt-5' },
 ];
 
 export function ChatPage() {
@@ -47,10 +51,14 @@ export function ChatPage() {
         port: number;
         api_key: string;
         request_timeout: number;
-    }>({ port: 19531, api_key: 'chat-test', request_timeout: 120 });
-    const [providerEnabled, setProviderEnabled] = useState<{ antigravity: boolean; codex: boolean }>({
+        warp_api_url: string;
+    }>({ port: 19531, api_key: 'chat-test', request_timeout: 120, warp_api_url: 'http://127.0.0.1:8010' });
+    const [providerEnabled, setProviderEnabled] = useState<{ antigravity: boolean; codex: boolean; kiro: boolean; windsurf: boolean; warp: boolean; }>({
         antigravity: true,
         codex: true,
+        kiro: true,
+        windsurf: true,
+        warp: true,
     });
     const [showShortcuts, setShowShortcuts] = useState(false);
     const [selectedAccountEmail, setSelectedAccountEmail] = useState('');
@@ -63,10 +71,22 @@ export function ChatPage() {
     const [allCodexAccounts, setAllCodexAccounts] = useState<{ email: string; id: string; quota?: { hourly_percentage: number }; plan_type?: string }[]>([]);
     const [codexModelsList, setCodexModelsList] = useState<string[]>([]);
 
+    // Kiro 状态
+    const [allKiroAccounts, setAllKiroAccounts] = useState<{ email: string; id: string; plan_name?: string }[]>([]);
+    const [kiroModelsList, setKiroModelsList] = useState<string[]>(['claude-sonnet-4-5', 'claude-opus-4-6', 'claude-haiku-4-5', 'claude-sonnet-4-6', 'claude-opus-4-5']);
+
+    // Windsurf 状态
+    const [allWindsurfAccounts, setAllWindsurfAccounts] = useState<{ github_login: string; id: string; copilot_plan?: string }[]>([]);
+    const [windsurfModelsList] = useState<string[]>(['claude-sonnet-4-20250514', 'gpt-4o', 'o3', 'claude-3.5-sonnet']);
+
+    // Warp 状态
+    const [warpModelsList] = useState<string[]>(['gpt-5', 'claude-4-sonnet', 'claude-4.1-opus', 'o3', 'o4-mini', 'gpt-4o', 'gemini-2.5-pro']);
+
     const [attachedImages, setAttachedImages] = useState<{ data: string; mime_type: string }[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // 加载代理状态
     useEffect(() => {
@@ -140,6 +160,44 @@ export function ChatPage() {
                 console.warn('Load Codex models failed:', err);
             }
 
+            // 4. 加载 Kiro 账号以及动态拉取可用模型
+            try {
+                const kiroAccs = await invoke<any[]>('list_kiro_accounts');
+                if (mounted) {
+                    setAllKiroAccounts(kiroAccs || []);
+
+                    // 找到了未被禁用的账号就可以拉取模型列表
+                    const activeKiroAcc = (kiroAccs || []).find((a: any) => {
+                        const status = a.status?.toLowerCase();
+                        const isBanned = status === 'banned' || status === 'ban' || status === 'forbidden';
+                        return !isBanned;
+                    });
+
+                    if (activeKiroAcc) {
+                        try {
+                            const kiroModels = await invoke<string[]>('fetch_kiro_models', { email: activeKiroAcc.email });
+                            if (mounted && kiroModels && kiroModels.length > 0) {
+                                setKiroModelsList(kiroModels);
+                            }
+                        } catch (e) {
+                            console.warn('Failed to fetch real remote Kiro models:', e);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Load Kiro accounts failed:', err);
+            }
+
+            // 5. 加载 Windsurf 账号
+            try {
+                const windsurfAccs = await invoke<any[]>('list_windsurf_accounts');
+                if (mounted) {
+                    setAllWindsurfAccounts(windsurfAccs || []);
+                }
+            } catch (err) {
+                console.warn('Load Windsurf accounts failed:', err);
+            }
+
             if (mounted) {
                 setModelsLoading(false);
             }
@@ -170,10 +228,17 @@ export function ChatPage() {
                 });
             });
             return Array.from(modelMap.values()).sort((a, b) => a.id.localeCompare(b.id));
-        } else {
+        } else if (provider === 'codex') {
             return codexModelsList.map(id => ({ id } as QuotaModelInfo));
+        } else if (provider === 'kiro') {
+            return kiroModelsList.map(id => ({ id } as QuotaModelInfo));
+        } else if (provider === 'windsurf') {
+            return windsurfModelsList.map(id => ({ id } as QuotaModelInfo));
+        } else if (provider === 'warp') {
+            return warpModelsList.map(id => ({ id } as QuotaModelInfo));
         }
-    }, [provider, allAntigravityAccounts, codexModelsList]);
+        return [];
+    }, [provider, allAntigravityAccounts, codexModelsList, kiroModelsList, windsurfModelsList, warpModelsList]);
 
     // 派生适用账号列表及对应额度
     const applicableAccounts = useMemo(() => {
@@ -189,7 +254,7 @@ export function ChatPage() {
                     desc: hasQuota ? (percentage !== null ? `(余额 ${percentage}%)` : '') : '(额度耗尽)'
                 };
             });
-        } else {
+        } else if (provider === 'codex') {
             return allCodexAccounts.map(acc => {
                 // Codex 如果还没查到过 quota，默认允许尝试。一旦获取，按 hourly_percentage 判断
                 const hasQuota = acc.quota ? acc.quota.hourly_percentage > 0 : true;
@@ -202,8 +267,54 @@ export function ChatPage() {
                     plan: acc.plan_type
                 };
             });
+        } else if (provider === 'kiro') {
+            return allKiroAccounts.map(acc => {
+                let hasQuota = true;
+                let desc = acc.plan_name ? `(${acc.plan_name})` : '';
+
+                // 尝试计算剩余额度 (考虑 Prompt Credits 和 Add-on Credits)
+                // TypeScript 类型推导可能不知道 credits_total 的存在，所以使用了 any 或 ts-ignore，
+                // 但为了严谨，我们先通过计算剩余百分比
+                const anyAcc = acc as any;
+                let pct: number | null = null;
+
+                if (anyAcc.credits_total && anyAcc.credits_total > 0) {
+                    const total = anyAcc.credits_total;
+                    const used = anyAcc.credits_used || 0;
+                    const rem = Math.max(0, total - used);
+                    pct = Math.round((rem / total) * 100);
+                } else if (anyAcc.bonus_total && anyAcc.bonus_total > 0) {
+                    const total = anyAcc.bonus_total;
+                    const used = anyAcc.bonus_used || 0;
+                    const rem = Math.max(0, total - used);
+                    pct = Math.round((rem / total) * 100);
+                }
+
+                if (pct !== null) {
+                    hasQuota = pct > 0;
+                    desc += hasQuota ? ` (余额 ${pct}%)` : ' (额度耗尽)';
+                }
+
+                return {
+                    email: acc.email,
+                    id: acc.id,
+                    hasQuota,
+                    desc: desc.trim()
+                };
+            });
+        } else if (provider === 'windsurf') {
+            return allWindsurfAccounts.map(acc => ({
+                email: acc.github_login,
+                id: acc.id,
+                hasQuota: true, // 暂不检查 windsurf 配额
+                desc: acc.copilot_plan ? `(${acc.copilot_plan})` : ''
+            }));
+        } else if (provider === 'warp') {
+            // Warp 只有单一全局会话/凭据（或未来配置项），此列表仅作兼容占位
+            return [{ email: 'Global Warp Pool', id: 'global-warp', hasQuota: true, desc: '' }];
         }
-    }, [provider, model, allAntigravityAccounts, allCodexAccounts]);
+        return [];
+    }, [provider, model, allAntigravityAccounts, allCodexAccounts, allKiroAccounts, allWindsurfAccounts]);
 
     // 切换平台时清空对话，避免不同平台的模型和协议上下文混淆
     useEffect(() => {
@@ -244,10 +355,14 @@ export function ChatPage() {
                     port: proxyConfig?.port || 19531,
                     api_key: proxyConfig?.api_key || '',
                     request_timeout: proxyConfig?.request_timeout || 120,
+                    warp_api_url: proxyConfig?.warp_api_url || 'http://127.0.0.1:8010',
                     auto_start: true,
                     providers: {
                         antigravity: { enabled: providerEnabled.antigravity, strategy: 'round_robin' },
                         codex: { enabled: providerEnabled.codex, strategy: 'round_robin' },
+                        kiro: { enabled: providerEnabled.kiro, strategy: 'round_robin' },
+                        windsurf: { enabled: providerEnabled.windsurf, strategy: 'round_robin' },
+                        warp: { enabled: providerEnabled.warp, strategy: 'round_robin' },
                     },
                     selected_account_email: selectedAccountEmail,
                 },
@@ -349,6 +464,7 @@ export function ChatPage() {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
             content: '',
+            thinking: '', // 新增字段：思考过程
             timestamp: Date.now(),
             provider,
             streaming: true,
@@ -358,6 +474,9 @@ export function ChatPage() {
         setInput('');
         setAttachedImages([]);
         setStreaming(true);
+
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
 
         const buildAnthropicContent = (msg: ChatMessage) => {
             if (!msg.images || msg.images.length === 0) return msg.content;
@@ -382,10 +501,12 @@ export function ChatPage() {
         try {
             const baseUrl = `http://127.0.0.1:${proxyPort}`;
 
-            if (provider === 'antigravity') {
-                // Anthropic Messages API
-                const response = await fetch(`${baseUrl}/antigravity/v1/messages`, {
+            if (provider === 'antigravity' || provider === 'kiro') {
+                // Anthropic Messages API (Antigravity & Kiro)
+                const apiPath = provider === 'antigravity' ? '/antigravity/v1/messages' : '/kiro/v1/messages';
+                const response = await fetch(`${baseUrl}${apiPath}`, {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: {
                         'Content-Type': 'application/json',
                         'x-api-key': 'chat-test',
@@ -413,7 +534,8 @@ export function ChatPage() {
                 // 解析 SSE 流
                 const reader = response.body?.getReader();
                 const decoder = new TextDecoder();
-                let accumulated = '';
+                let accumulatedText = '';
+                let accumulatedThinking = '';
 
                 if (reader) {
                     let buffer = '';
@@ -432,12 +554,24 @@ export function ChatPage() {
 
                             try {
                                 const event = JSON.parse(data);
-                                if (event.type === 'content_block_delta' && event.delta?.text) {
-                                    accumulated += event.delta.text;
+                                // 处理文本块内容
+                                if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta' && event.delta?.text) {
+                                    accumulatedText += event.delta.text;
                                     setMessages(prev =>
                                         prev.map(m =>
                                             m.id === assistantMsg.id
-                                                ? { ...m, content: accumulated }
+                                                ? { ...m, content: accumulatedText }
+                                                : m
+                                        )
+                                    );
+                                }
+                                // 处理思考块内容
+                                else if (event.type === 'content_block_delta' && event.delta?.type === 'thinking_delta' && event.delta?.thinking) {
+                                    accumulatedThinking += event.delta.thinking;
+                                    setMessages(prev =>
+                                        prev.map(m =>
+                                            m.id === assistantMsg.id
+                                                ? { ...m, thinking: accumulatedThinking }
                                                 : m
                                         )
                                     );
@@ -449,9 +583,15 @@ export function ChatPage() {
                     }
                 }
             } else {
-                // OpenAI Chat Completions API
-                const response = await fetch(`${baseUrl}/codex/v1/chat/completions`, {
+                // OpenAI Chat Completions API 兼容格式 (Codex, Windsurf, Warp)
+                // 根据不同 provider 调整请求路径
+                let apiPath = '/codex/v1/chat/completions';
+                if (provider === 'windsurf') apiPath = '/windsurf/v1/chat/completions';
+                else if (provider === 'warp') apiPath = '/warp/v1/chat/completions';
+
+                const response = await fetch(`${baseUrl}${apiPath}`, {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer chat-test',
@@ -522,18 +662,37 @@ export function ChatPage() {
                         : m
                 )
             );
-        } catch (err) {
-            setMessages(prev =>
-                prev.map(m =>
-                    m.id === assistantMsg.id
-                        ? { ...m, content: `❌ 错误: ${err}`, streaming: false }
-                        : m
-                )
-            );
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                // 如果是用户主动取消，则保留内容并标记为结束
+                setMessages(prev =>
+                    prev.map(m =>
+                        m.id === assistantMsg.id
+                            ? { ...m, streaming: false }
+                            : m
+                    )
+                );
+            } else {
+                setMessages(prev =>
+                    prev.map(m =>
+                        m.id === assistantMsg.id
+                            ? { ...m, content: (m.content ? m.content + '\n\n' : '') + `❌ 错误: ${err}`, streaming: false }
+                            : m
+                    )
+                );
+            }
         } finally {
             setStreaming(false);
+            abortControllerRef.current = null;
         }
     }, [input, streaming, proxyStatus, proxyPort, provider, model, messages, attachedImages]);
+
+    const handleStop = () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            abortControllerRef.current = null;
+        }
+    };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -554,6 +713,7 @@ export function ChatPage() {
                 port: savedConfig.port || 19531,
                 api_key: savedConfig.api_key || 'chat-test',
                 request_timeout: savedConfig.request_timeout || 120,
+                warp_api_url: savedConfig.warp_api_url || 'http://127.0.0.1:8010',
             });
             if (savedConfig.selected_account_email) {
                 setSelectedAccountEmail(savedConfig.selected_account_email);
@@ -587,10 +747,14 @@ export function ChatPage() {
                     port: proxyConfig.port,
                     api_key: proxyConfig.api_key,
                     request_timeout: proxyConfig.request_timeout,
+                    warp_api_url: proxyConfig.warp_api_url,
                     auto_start: true,
                     providers: {
                         antigravity: { enabled: providerEnabled.antigravity, strategy: 'round_robin' },
                         codex: { enabled: providerEnabled.codex, strategy: 'round_robin' },
+                        kiro: { enabled: providerEnabled.kiro, strategy: 'round_robin' },
+                        windsurf: { enabled: providerEnabled.windsurf, strategy: 'round_robin' },
+                        warp: { enabled: providerEnabled.warp, strategy: 'round_robin' },
                     },
                     selected_account_email: selectedAccountEmail,
                 },
@@ -728,7 +892,13 @@ export function ChatPage() {
                         </div>
                         <div className="chat-message-body">
                             <div className="chat-message-content">
-                                {msg.content || (msg.streaming && (
+                                {msg.thinking && (
+                                    <details className="chat-thinking-block">
+                                        <summary>🤔 思考过程</summary>
+                                        <div className="chat-thinking-content">{msg.thinking}</div>
+                                    </details>
+                                )}
+                                {msg.content || (msg.streaming && !msg.thinking && (
                                     <span className="chat-typing">
                                         <Loader size={14} className="spin" /> 思考中...
                                     </span>
@@ -798,13 +968,23 @@ export function ChatPage() {
                         rows={2}
                         disabled={streaming}
                     />
-                    <button
-                        className="chat-btn chat-btn-send"
-                        onClick={handleSend}
-                        disabled={(!input.trim() && attachedImages.length === 0) || streaming || !proxyStatus?.running}
-                    >
-                        {streaming ? <Loader size={18} className="spin" /> : <Send size={18} />}
-                    </button>
+                    {streaming ? (
+                        <button
+                            className="chat-btn chat-btn-stop-gen"
+                            onClick={handleStop}
+                            title="停止生成"
+                        >
+                            <StopCircle size={18} />
+                        </button>
+                    ) : (
+                        <button
+                            className="chat-btn chat-btn-send"
+                            onClick={handleSend}
+                            disabled={(!input.trim() && attachedImages.length === 0) || !proxyStatus?.running}
+                        >
+                            <Send size={18} />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -845,6 +1025,15 @@ export function ChatPage() {
                                 />
                             </div>
                             <div className="chat-modal-field">
+                                <label>Warp API 服务地址</label>
+                                <input
+                                    type="text"
+                                    value={proxyConfig.warp_api_url}
+                                    onChange={e => setProxyConfig(c => ({ ...c, warp_api_url: e.target.value }))}
+                                    placeholder="默认: http://127.0.0.1:8010"
+                                />
+                            </div>
+                            <div className="chat-modal-field">
                                 <label>使用账号</label>
                                 <select
                                     value={selectedAccountEmail}
@@ -872,6 +1061,30 @@ export function ChatPage() {
                                         onChange={e => setProviderEnabled(p => ({ ...p, codex: e.target.checked }))}
                                     />
                                     <span>Codex (OpenAI)</span>
+                                </label>
+                                <label className="chat-toggle-row">
+                                    <input
+                                        type="checkbox"
+                                        checked={providerEnabled.kiro}
+                                        onChange={e => setProviderEnabled(p => ({ ...p, kiro: e.target.checked }))}
+                                    />
+                                    <span>Kiro (Amazon Q)</span>
+                                </label>
+                                <label className="chat-toggle-row">
+                                    <input
+                                        type="checkbox"
+                                        checked={providerEnabled.windsurf}
+                                        onChange={e => setProviderEnabled(p => ({ ...p, windsurf: e.target.checked }))}
+                                    />
+                                    <span>Windsurf (GitHub Copilot)</span>
+                                </label>
+                                <label className="chat-toggle-row">
+                                    <input
+                                        type="checkbox"
+                                        checked={providerEnabled.warp}
+                                        onChange={e => setProviderEnabled(p => ({ ...p, warp: e.target.checked }))}
+                                    />
+                                    <span>Warp (Multi-Agent)</span>
                                 </label>
                             </div>
                         </div>

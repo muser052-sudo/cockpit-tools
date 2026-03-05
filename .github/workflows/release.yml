@@ -153,7 +153,7 @@ jobs:
           tagName: "v${{ steps.app_version.outputs.VERSION }}"
           releaseName: "Cockpit Tools v${{ steps.app_version.outputs.VERSION }}"
           releaseBody: ${{ steps.release_notes.outputs.body }}
-          releaseDraft: false
+          releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
 
@@ -312,3 +312,27 @@ jobs:
             exit 1
           fi
           gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
+  publish-release:
+    name: Publish Release
+    needs:
+      - update-homebrew-cask
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Determine version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Publish draft as latest
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        shell: bash
+        run: |
+          gh release edit "v$VERSION" --draft=false
