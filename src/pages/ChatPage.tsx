@@ -32,7 +32,7 @@ interface ChatMessage {
 const PROVIDER_OPTIONS = [
     { value: 'antigravity', label: 'Antigravity (Gemini)', defaultModel: 'gemini-2.5-flash' },
     { value: 'codex', label: 'Codex (OpenAI)', defaultModel: 'gpt-5.1-codex' },
-    { value: 'kiro', label: 'Kiro (Amazon Q)', defaultModel: 'claude-sonnet-4-5' },
+    { value: 'kiro', label: 'Kiro (Amazon Q)', defaultModel: 'claude-sonnet-4.5' },
     { value: 'windsurf', label: 'Windsurf (Copilot)', defaultModel: 'claude-sonnet-4-20250514' },
     { value: 'warp', label: 'Warp (Multi-Agent)', defaultModel: 'gpt-5' },
 ];
@@ -73,7 +73,7 @@ export function ChatPage() {
 
     // Kiro 状态
     const [allKiroAccounts, setAllKiroAccounts] = useState<{ email: string; id: string; plan_name?: string }[]>([]);
-    const [kiroModelsList, setKiroModelsList] = useState<string[]>(['claude-sonnet-4-5', 'claude-opus-4-6', 'claude-haiku-4-5', 'claude-sonnet-4-6', 'claude-opus-4-5']);
+    const [kiroModelsList, setKiroModelsList] = useState<string[]>(['auto', 'claude-sonnet-4.5', 'claude-sonnet-4', 'claude-haiku-4.5', 'deepseek-3.2', 'minimax-m2.1', 'qwen3-coder-next']);
 
     // Windsurf 状态
     const [allWindsurfAccounts, setAllWindsurfAccounts] = useState<{ github_login: string; id: string; copilot_plan?: string }[]>([]);
