@@ -1037,6 +1037,11 @@ pub async fn fetch_kiro_models(
     let response = client
         .get(&url)
         .header("Authorization", format!("Bearer {}", access_token))
+        .header("Content-Type", "application/json")
+        .header("User-Agent", "aws-sdk-js/1.0.27 ua/2.1 os/win32#10.0.19044 lang/js md/nodejs#22.21.1 api/codewhispererstreaming#1.0.27 m/E KiroIDE-0.7.45-fetch")
+        .header("x-amz-user-agent", "aws-sdk-js/1.0.27 KiroIDE-0.7.45-fetch")
+        .header("x-amzn-codewhisperer-optout", "true")
+        .header("x-amzn-kiro-agent-mode", "vibe")
         .timeout(std::time::Duration::from_secs(10)) // 稍微短一点的超时
         .send()
         .await
@@ -2422,8 +2427,9 @@ async fn proxy_handler(
                 .header("X-Amz-Target", "AmazonCodeWhispererStreamingService.GenerateAssistantResponse")
                 .header("amz-sdk-request", format!("attempt={}; max={}", attempt + 1, max_retries))
                 .header("x-amzn-kiro-agent-mode", "vibe")
-                .header("x-amz-user-agent", "aws-sdk-js/1.0.0 KiroIDE-0.8.140-Proxy")
-                .header("User-Agent", "aws-sdk-js/1.0.0 ua/2.1 os/windows lang/js APIProxy KiroIDE-0.8.140-Proxy")
+                .header("x-amzn-codewhisperer-optout", "true")
+                .header("x-amz-user-agent", "aws-sdk-js/1.0.27 KiroIDE-0.7.45-fetch")
+                .header("User-Agent", "aws-sdk-js/1.0.27 ua/2.1 os/win32#10.0.19044 lang/js md/nodejs#22.21.1 api/codewhispererstreaming#1.0.27 m/E KiroIDE-0.7.45-fetch")
                 .json(&kiro_payload);
 
             match req_builder.send().await {
