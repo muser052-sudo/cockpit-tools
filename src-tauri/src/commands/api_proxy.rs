@@ -65,9 +65,27 @@ pub async fn fetch_models_for_account(email: String) -> Result<Vec<api_proxy::Qu
     api_proxy::fetch_available_models(access_token, &project_id).await
 }
 
-/// 获取 Codex (OpenAI) 的可用模型列表
+/// 获取 Codex (OpenAI) 的可用模型列表（优先从后端 /codex/models 拉取，失败则用硬编码兜底）
 #[tauri::command]
-pub fn fetch_codex_models() -> Vec<String> {
+pub async fn fetch_codex_models() -> Vec<String> {
+    let account = crate::modules::codex_account::get_current_account()
+        .or_else(|| {
+            crate::modules::codex_account::list_accounts()
+                .into_iter()
+                .find(|a| !a.tokens.access_token.is_empty())
+        });
+    if let Some(ref acc) = account {
+        let account_id: Option<String> = acc.account_id.clone().or_else(|| {
+            crate::modules::codex_account::extract_chatgpt_account_id_from_access_token(&acc.tokens.access_token)
+        });
+        match api_proxy::fetch_codex_models_remote(&acc.tokens.access_token, account_id.as_deref()).await {
+            Ok(list) if !list.is_empty() => return list,
+            Ok(_) => {}
+            Err(e) => {
+                crate::modules::logger::log_warn(&format!("[ApiProxy] 拉取 Codex 模型列表失败，使用兜底列表: {}", e));
+            }
+        }
+    }
     api_proxy::get_codex_model_list()
 }
 

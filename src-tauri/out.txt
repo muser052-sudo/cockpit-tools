@@ -1,0 +1,16 @@
+
+
+========================================
+ === 5. 指定账号 Codex 远程测试 ===
+========================================
+找到指定账号: aagejegeoeeenenjekwhelwkwkgwke@gmail.com, 开始直接远程请求...
+
+========================================
+4. 测试向 Codex 上游发对话请求 (chat/completions -> responses) - gpt-5.1-codex
+========================================
+Status: 200
+data: {"type":"response.created","response":{"id":"resp_06140b8baa81b7dc0169aa854f2d2c81939a0433014f3181fa","object":"response","created_at":1772782927,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":"You are a helpful assistant.","max_output_tokens":null,"max_tool_calls":null,"model":"gpt-5.1-codex","output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":"cd153abc-1661-4019-a5b0-214f3a07f188","prompt_cache_retention":null,"reasoning":{"effort":"medium","summary":null},"safety_identifier":"user-pfiLNZlPZwDDJbfYNzPr3FhP","service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tools":[],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":0}
+data: {"type":"response.in_progress","response":{"id":"resp_06140b8baa81b7dc0169aa854f2d2c81939a0433014f3181fa","object":"response","created_at":1772782927,"status":"in_progress","background":false,"completed_at":null,"error":null,"frequency_penalty":0.0,"incomplete_details":null,"instructions":"You are a helpful assistant.","max_output_tokens":null,"max_tool_calls":null,"model":"gpt-5.1-codex","output":[],"parallel_tool_calls":true,"presence_penalty":0.0,"previous_response_id":null,"prompt_cache_key":"cd153abc-1661-4019-a5b0-214f3a07f188","prompt_cache_retention":null,"reasoning":{"effort":"medium","summary":null},"safety_identifier":"user-pfiLNZlPZwDDJbfYNzPr3FhP","service_tier":"auto","store":false,"temperature":1.0,"text":{"format":{"type":"text"},"verbosity":"medium"},"tool_choice":"auto","tools":[],"top_logprobs":0,"top_p":1.0,"truncation":"disabled","usage":null,"user":null,"metadata":{}},"sequence_number":1}
+data: {"type":"response.output_item.added","item":{"id":"rs_06140b8baa81b7dc0169aa854f86148193a2e4ea528b279a53","type":"reasoning","summary":[]},"output_index":0,"sequence_number":2}
+data: {"type":"response.output_item.done","item":{"id":"rs_06140b8baa81b7dc0169aa854f86148193a2e4ea528b279a53","type":"reasoning","summary":[]},"output_index":0,"sequence_number":3}
+... stopping after 3 chunks ...

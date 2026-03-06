@@ -43,5 +43,8 @@ pub mod windsurf_instance;
 pub mod windsurf_oauth;
 pub mod warp_account;
 
+#[cfg(test)]
+mod api_proxy_provider_tests;
+
 // 重新导出常用函数
 pub use account::*;

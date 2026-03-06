@@ -88,13 +88,24 @@ export function ChatPage() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
-    // 加载代理状态
+    // 加载代理状态与配置（端口用于请求与展示，配置端口在 actual_port 未同步时作为回退）
     useEffect(() => {
         const checkStatus = async () => {
             try {
-                const status = await invoke<ApiProxyStatus>('get_api_proxy_status');
+                const [status, config] = await Promise.all([
+                    invoke<ApiProxyStatus>('get_api_proxy_status'),
+                    invoke<any>('get_api_proxy_config').catch(() => null),
+                ]);
                 setProxyStatus(status);
                 setProxyPort(status.actual_port);
+                if (config && !proxyConfig) {
+                    setProxyConfig({
+                        port: config.port ?? 19531,
+                        api_key: config.api_key ?? 'chat-test',
+                        request_timeout: config.request_timeout ?? 120,
+                        warp_api_url: config.warp_api_url ?? 'http://127.0.0.1:8010',
+                    });
+                }
             } catch (err) {
                 console.error('获取代理状态失败:', err);
             }
@@ -335,6 +346,9 @@ export function ChatPage() {
     // 自动选择账号联动
     useEffect(() => {
         if (applicableAccounts.length > 0) {
+            // 允许用户显式选择“自动分配” (空字符串)
+            if (selectedAccountEmail === '') return;
+
             // 当前选中的账号是否在新模型的列表中，并且有额度
             const hasSelected = applicableAccounts.find(a => a.email === selectedAccountEmail);
             if (!hasSelected || !hasSelected.hasQuota) {
@@ -348,7 +362,7 @@ export function ChatPage() {
 
     // 当选中账号改变，更新代理配置以确保发往正确账号
     useEffect(() => {
-        if (proxyStatus?.running && selectedAccountEmail) {
+        if (proxyStatus?.running && selectedAccountEmail !== undefined) {
             invoke('save_api_proxy_config', {
                 config: {
                     enabled: true,
@@ -446,8 +460,14 @@ export function ChatPage() {
     const handleSend = useCallback(async () => {
         if (!input.trim() && attachedImages.length === 0) return;
         if (streaming) return;
-        if (!proxyStatus?.running || !proxyPort) {
-            alert('代理服务未启动，请先去设置页启动 API 反向代理');
+        if (!proxyStatus?.running) {
+            alert('代理服务未启动，请先点击「启动代理」或去设置页启动 API 反向代理');
+            return;
+        }
+        // 优先用 actual_port，若未同步则用配置端口，确保「运行中」时一定能发请求
+        const port = proxyPort ?? proxyConfig?.port ?? 19531;
+        if (!port) {
+            alert('无法确定代理端口，请重新启动代理');
             return;
         }
 
@@ -499,19 +519,24 @@ export function ChatPage() {
         };
 
         try {
-            const baseUrl = `http://127.0.0.1:${proxyPort}`;
+            const baseUrl = `http://127.0.0.1:${port}`;
 
             if (provider === 'antigravity' || provider === 'kiro') {
                 // Anthropic Messages API (Antigravity & Kiro)
                 const apiPath = provider === 'antigravity' ? '/antigravity/v1/messages' : '/kiro/v1/messages';
+                const headers: Record<string, string> = {
+                    'Content-Type': 'application/json',
+                    'x-api-key': 'chat-test',
+                    'anthropic-version': '2023-06-01',
+                };
+                // 仅当当前选中的账号属于本 provider 的列表时才带该头，避免带上 Antigravity 邮箱导致 Kiro 侧过滤不到账号
+                if (selectedAccountEmail && applicableAccounts.some(a => a.email === selectedAccountEmail)) {
+                    headers['x-selected-account-email'] = selectedAccountEmail;
+                }
                 const response = await fetch(`${baseUrl}${apiPath}`, {
                     method: 'POST',
                     signal: controller.signal,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': 'chat-test',
-                        'anthropic-version': '2023-06-01',
-                    },
+                    headers,
                     body: JSON.stringify({
                         model,
                         max_tokens: 4096,
@@ -544,110 +569,105 @@ export function ChatPage() {
                         if (done) break;
 
                         buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop() || '';
+                        let p = 0;
+                        while ((p = buffer.indexOf('\n\n')) !== -1) {
+                            const chunk = buffer.slice(0, p);
+                            buffer = buffer.slice(p + 2);
 
-                        for (const line of lines) {
-                            if (!line.startsWith('data: ')) continue;
-                            const data = line.slice(6).trim();
-                            if (data === '[DONE]') continue;
-
-                            try {
-                                const event = JSON.parse(data);
-                                // 处理文本块内容
-                                if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta' && event.delta?.text) {
-                                    accumulatedText += event.delta.text;
-                                    setMessages(prev =>
-                                        prev.map(m =>
-                                            m.id === assistantMsg.id
-                                                ? { ...m, content: accumulatedText }
-                                                : m
-                                        )
-                                    );
+                            const dataLines = chunk.split('\n');
+                            for (const line of dataLines) {
+                                if (line.startsWith('data: ')) {
+                                    const dataStr = line.slice(6).trim();
+                                    if (dataStr === '[DONE]') continue;
+                                    try {
+                                        const event = JSON.parse(dataStr);
+                                        if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta' && event.delta?.text) {
+                                            accumulatedText += event.delta.text;
+                                            setMessages(prev => prev.map(m => m.id === assistantMsg.id ? { ...m, content: accumulatedText } : m));
+                                        }
+                                        // 处理思考块内容
+                                        else if (event.type === 'content_block_delta' && event.delta?.type === 'thinking_delta' && event.delta?.thinking) {
+                                            accumulatedThinking += event.delta.thinking;
+                                            setMessages(prev =>
+                                                prev.map(m =>
+                                                    m.id === assistantMsg.id
+                                                        ? { ...m, thinking: accumulatedThinking }
+                                                        : m
+                                                )
+                                            );
+                                        }
+                                    } catch (e) {
+                                        console.warn("Failed to parse SSE JSON:", dataStr, e);
+                                    }
                                 }
-                                // 处理思考块内容
-                                else if (event.type === 'content_block_delta' && event.delta?.type === 'thinking_delta' && event.delta?.thinking) {
-                                    accumulatedThinking += event.delta.thinking;
-                                    setMessages(prev =>
-                                        prev.map(m =>
-                                            m.id === assistantMsg.id
-                                                ? { ...m, thinking: accumulatedThinking }
-                                                : m
-                                        )
-                                    );
-                                }
-                            } catch {
-                                // 跳过非 JSON 行
                             }
                         }
                     }
-                }
-            } else {
-                // OpenAI Chat Completions API 兼容格式 (Codex, Windsurf, Warp)
-                // 根据不同 provider 调整请求路径
-                let apiPath = '/codex/v1/chat/completions';
-                if (provider === 'windsurf') apiPath = '/windsurf/v1/chat/completions';
-                else if (provider === 'warp') apiPath = '/warp/v1/chat/completions';
+                } else {
+                    // OpenAI Chat Completions API 兼容格式 (Codex, Windsurf, Warp)
+                    // 根据不同 provider 调整请求路径
+                    let apiPath = '/codex/v1/chat/completions';
+                    const prov = provider as string;
+                    if (prov === 'windsurf') apiPath = '/windsurf/v1/chat/completions';
+                    else if (prov === 'warp') apiPath = '/warp/v1/chat/completions';
 
-                const response = await fetch(`${baseUrl}${apiPath}`, {
-                    method: 'POST',
-                    signal: controller.signal,
-                    headers: {
+                    const headers: Record<string, string> = {
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer chat-test',
-                    },
-                    body: JSON.stringify({
-                        model,
-                        stream: true,
-                        messages: [
-                            ...messages.filter(m => !m.streaming).map(m => ({
-                                role: m.role,
-                                content: buildCodexContent(m),
-                            })),
-                            { role: 'user', content: buildCodexContent(userMsg) },
-                        ],
-                    }),
-                });
+                    };
+                    if (selectedAccountEmail && applicableAccounts.some(a => a.email === selectedAccountEmail)) {
+                        headers['x-selected-account-email'] = selectedAccountEmail;
+                    }
+                    const response = await fetch(`${baseUrl}${apiPath}`, {
+                        method: 'POST',
+                        signal: controller.signal,
+                        headers,
+                        body: JSON.stringify({
+                            model,
+                            stream: true,
+                            messages: [
+                                ...messages.filter(m => !m.streaming).map(m => ({
+                                    role: m.role,
+                                    content: buildCodexContent(m),
+                                })),
+                                { role: 'user', content: buildCodexContent(userMsg) },
+                            ],
+                        }),
+                    });
 
-                if (!response.ok) {
-                    const errText = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errText}`);
-                }
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errText}`);
+                    }
 
-                const reader = response.body?.getReader();
-                const decoder = new TextDecoder();
-                let accumulated = '';
+                    const reader = response.body?.getReader();
+                    const decoder = new TextDecoder();
+                    let accumulated = '';
 
-                if (reader) {
-                    let buffer = '';
-                    while (true) {
-                        const { done, value } = await reader.read();
-                        if (done) break;
+                    if (reader) {
+                        let buffer = '';
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
 
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop() || '';
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            buffer = lines.pop() || '';
+                            for (const line of lines) {
+                                if (!line.startsWith('data: ')) continue;
+                                const data = line.slice(6).trim();
+                                if (data === '[DONE]') continue;
 
-                        for (const line of lines) {
-                            if (!line.startsWith('data: ')) continue;
-                            const data = line.slice(6).trim();
-                            if (data === '[DONE]') continue;
-
-                            try {
-                                const event = JSON.parse(data);
-                                const delta = event.choices?.[0]?.delta?.content;
-                                if (delta) {
-                                    accumulated += delta;
-                                    setMessages(prev =>
-                                        prev.map(m =>
-                                            m.id === assistantMsg.id
-                                                ? { ...m, content: accumulated }
-                                                : m
-                                        )
-                                    );
+                                try {
+                                    const event = JSON.parse(data);
+                                    const delta = event.choices?.[0]?.delta?.content;
+                                    if (delta) {
+                                        accumulated += delta;
+                                        setMessages(prev => prev.map(m => m.id === assistantMsg.id ? { ...m, content: accumulated } : m));
+                                    }
+                                } catch {
+                                    // 跳过
                                 }
-                            } catch {
-                                // 跳过
                             }
                         }
                     }
@@ -664,19 +684,23 @@ export function ChatPage() {
             );
         } catch (err: any) {
             if (err.name === 'AbortError') {
-                // 如果是用户主动取消，则保留内容并标记为结束
                 setMessages(prev =>
                     prev.map(m =>
-                        m.id === assistantMsg.id
-                            ? { ...m, streaming: false }
-                            : m
+                        m.id === assistantMsg.id ? { ...m, streaming: false } : m
                     )
                 );
             } else {
+                const msg = String(err?.message || err);
+                let hint = msg;
+                if (/Failed to fetch|NetworkError|Load failed|ECONNREFUSED|连接被拒绝/i.test(msg)) {
+                    hint = '无法连接代理（连接被拒绝或超时）。请确认：1) 已在本页或设置页点击「启动代理」且显示「代理运行中」；2) 端口与页面显示一致。';
+                } else if (/403|token|invalid|permission/i.test(msg) && (provider === 'kiro' || provider === 'codex')) {
+                    hint = `当前选中账号可能 token 已失效或无权访问。请在下拉框中选择与 IDE 中能正常使用相同的账号，或在账号管理里重新登录后再试。\n\n原始错误: ${msg}`;
+                }
                 setMessages(prev =>
                     prev.map(m =>
                         m.id === assistantMsg.id
-                            ? { ...m, content: (m.content ? m.content + '\n\n' : '') + `❌ 错误: ${err}`, streaming: false }
+                            ? { ...m, content: (m.content ? m.content + '\n\n' : '') + `❌ ${hint}`, streaming: false }
                             : m
                     )
                 );
@@ -685,7 +709,7 @@ export function ChatPage() {
             setStreaming(false);
             abortControllerRef.current = null;
         }
-    }, [input, streaming, proxyStatus, proxyPort, provider, model, messages, attachedImages]);
+    }, [input, streaming, proxyStatus, proxyPort, proxyConfig, provider, model, messages, attachedImages, selectedAccountEmail, applicableAccounts]);
 
     const handleStop = () => {
         if (abortControllerRef.current) {
@@ -793,7 +817,7 @@ export function ChatPage() {
                             <>
                                 <span className="status-badge status-online">
                                     <Server size={14} />
-                                    代理运行中 :{proxyPort}
+                                    代理运行中 :{proxyPort ?? proxyConfig?.port ?? '—'}
                                 </span>
                                 <button className="chat-btn chat-btn-stop" onClick={handleStopProxy} title="停止代理">
                                     <StopCircle size={14} /> 停止

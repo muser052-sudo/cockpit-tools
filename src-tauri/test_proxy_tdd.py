@@ -14,6 +14,10 @@ def get_account(email):
 
 VALID_PREFIXES = ["gemini-", "claude-", "gpt-", "o1", "o3", "o4", "tab_"]
 
+# 测试使用的账号
+TEST_CODEX_EMAIL = "aagejegeoeeenenjekwhelwkwkgwke@gmail.com"
+
+
 def test_google_fetch_models(access_token, project_id):
     print("\n========================================")
     print("1. 测试向 Google 上游获取模型列表 (fetchAvailableModels) ")
@@ -150,30 +154,213 @@ def test_codex_chat(access_token, model="gpt-5.1-codex"):
         opener = urllib.request.build_opener(ph)
         resp = opener.open(req, timeout=30)
         print(f"Status: {resp.getcode()}")
-        body = resp.read(300).decode('utf-8')
-        print(f"Success: 对话成功，收到数据")
-        print(f"  预览: {body}")
+        
+        has_content = False
+        empty_chunks = 0
+        
+        for line in resp:
+            line_str = line.decode('utf-8').strip()
+            if not line_str or line_str == "data: [DONE]":
+                continue
+            if line_str.startswith("data: "):
+                try:
+                    data = json.loads(line_str[6:])
+                    if 'choices' in data and len(data['choices']) > 0:
+                        delta = data['choices'][0].get('delta', {})
+                        content = delta.get('content', '')
+                        if content:
+                            print(f"  Chunk: {repr(content)}")
+                            has_content = True
+                        else:
+                            empty_chunks += 1
+                except Exception as ex:
+                    print(f"  Parse Error: {ex} - {line_str}")
+        
+        print(f"\nResult: {'✅ 成功' if has_content else '❌ 失败 (无文本内容)'}, 收到 {empty_chunks} 个空片段")
+        if not has_content:
+            raise Exception("No content received from Codex Proxy Stream")
+
     except urllib.error.HTTPError as e:
         print(f"HTTPError: {e.code}")
         print(e.read().decode('utf-8')[:300])
     except Exception as e:
         print(f"Failed: {e}")
 
+def test_codex_chat_via_proxy(model="gpt-5.1-codex", email=None):
+    print("\n========================================")
+    print(f"4.5 测试向本地代理发 Codex 对话请求 (/codex/v1/chat/completions) - {model}")
+    print("========================================")
+    
+    url = "http://127.0.0.1:19531/codex/v1/chat/completions"
+    
+    payload = json.dumps({
+        "model": model,
+        "messages": [
+            {
+                "role": "user",
+                "content": "Hi"
+            },
+            {
+                "role": "assistant",
+                "content": "Hello! How can I help you today?"
+            },
+            {
+                "role": "user",
+                "content": "Say pong in exact 2 words"
+            }
+        ],
+        "stream": True,
+        "store": False,
+        "max_tokens": 100,
+        "instructions": "You are a helpful assistant."
+    }).encode('utf-8')
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer chat-test',
+        'Accept': 'text/event-stream'
+    }
+    if email:
+        headers["x-selected-account-email"] = email
+
+    req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+
+    try:
+        ph = urllib.request.ProxyHandler({}) # Don't use system proxy for localhost
+        opener = urllib.request.build_opener(ph)
+        resp = opener.open(req, timeout=30)
+        print(f"Status: {resp.getcode()}")
+        
+        has_content = False
+        empty_chunks = 0
+        
+        for line in resp:
+            line_str = line.decode('utf-8').strip()
+            if not line_str or line_str == "data: [DONE]":
+                continue
+            if line_str.startswith("data: "):
+                try:
+                    data = json.loads(line_str[6:])
+                    if 'choices' in data and len(data['choices']) > 0:
+                        delta = data['choices'][0].get('delta', {})
+                        content = delta.get('content', '')
+                        if content:
+                            print(f"  Chunk: {repr(content)}")
+                            has_content = True
+                        else:
+                            empty_chunks += 1
+                except Exception as ex:
+                    print(f"  Parse Error: {ex} - {line_str}")
+        
+        print(f"\nResult: {'✅ 成功' if has_content else '❌ 失败 (无文本内容)'}, 收到 {empty_chunks} 个空片段")
+        if not has_content:
+            raise Exception("No content received from Codex Proxy Stream")
+        
+    except urllib.error.HTTPError as e:
+        print(f"❌ HTTPError: {e.code}")
+        print(e.read().decode('utf-8')[:300])
+        raise
+    except Exception as e:
+        print(f"❌ Failed: {e}")
+        raise
+
+def test_kiro_chat_via_proxy(model="claude-sonnet-4.5", email=None):
+    print("\n========================================")
+    print(f"4.6 测试向本地代理发 Kiro 对话请求 (/kiro/v1/messages) - {model}")
+    print("========================================")
+    
+    url = "http://127.0.0.1:19531/kiro/v1/messages"
+    
+    payload = json.dumps({
+        "model": model,
+        "messages": [{
+            "role": "user",
+            "content": "Say exactly: 'Hello Amazon'"
+        }],
+        "stream": True,
+        "max_tokens": 100
+    }).encode('utf-8')
+
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': 'chat-test',
+        'anthropic-version': '2023-06-01',
+        'Accept': 'text/event-stream'
+    }
+    if email:
+        headers["x-selected-account-email"] = email
+
+    req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+
+    try:
+        ph = urllib.request.ProxyHandler({}) # Don't use system proxy for localhost
+        opener = urllib.request.build_opener(ph)
+        resp = opener.open(req, timeout=30)
+        print(f"Status: {resp.getcode()}")
+        
+        full_text = ""
+        has_truncation_warning = False
+        has_stop = False
+        
+        for line in resp:
+            line_str = line.decode('utf-8').strip()
+            if not line_str:
+                continue
+                
+            if line_str.startswith("event: message_stop"):
+                has_stop = True
+                print("  Received message_stop")
+                
+            if line_str.startswith("data: "):
+                try:
+                    data = json.loads(line_str[6:])
+                    if data.get('type') == 'content_block_delta':
+                        delta = data.get('delta', {})
+                        if delta.get('type') == 'text_delta':
+                            text = delta.get('text', '')
+                            print(f"  Text: {repr(text)}")
+                            full_text += text
+                            if "似被截断" in text or "若需接续可回复" in text:
+                                has_truncation_warning = True
+                except:
+                    pass
+        
+        print("\n=== Kiro 结果 ===")
+        print(f"完整回复: {repr(full_text)}")
+        
+        if has_truncation_warning:
+            print("❌ 收到异常截断报警 (回答似被截断...)")
+            raise Exception("Kiro stream injected artificial truncation warning")
+        elif not has_stop:
+            print("❌ 未收到 message_stop")
+            raise Exception("Kiro stream missing message_stop event")
+        elif not full_text.strip():
+            print("❌ 收到空文本")
+            raise Exception("Kiro stream returned empty text")
+        else:
+            print("✅ 成功")
+            
+    except urllib.error.HTTPError as e:
+        print(f"❌ HTTPError: {e.code}")
+        print(e.read().decode('utf-8')[:300])
+        raise
+    except Exception as e:
+        print(f"❌ Failed: {e}")
+        raise
+
+
 # 参考 Codex2API DefaultModels (gpt-5.x 系列)
 CODEX_DEFAULT_MODELS = [
-    "gpt-5.3",
     "gpt-5.3-codex",
-    "gpt-5.2",
+    "gpt-5.4",
     "gpt-5.2-codex",
     "gpt-5.1-codex-max",
-    "gpt-5.1-codex",
-    "gpt-5.1",
+    "gpt-5.2",
     "gpt-5.1-codex-mini",
-    "gpt-5",
 ]
 
 # 默认测试模型
-CODEX_DEFAULT_TEST_MODEL = "gpt-5.1-codex"
+CODEX_DEFAULT_TEST_MODEL = "gpt-5.3-codex"
 
 def test_codex_fetch_models():
     """获取 Codex 模型列表 (参考 Codex2API DefaultModels)"""
@@ -278,55 +465,39 @@ def check_codex_accounts():
     print(f"All {checked} accounts checked, none have available quota.")
     return None
 
+def get_codex_account_by_email(email):
+    data_dir = os.path.join(os.getenv("LOCALAPPDATA"), "com.antigravity.cockpit-tools", "codex_accounts")
+    if not os.path.exists(data_dir): return None
+    for f in os.listdir(data_dir):
+        if not f.endswith(".json"): continue
+        try:
+            acc = json.load(open(os.path.join(data_dir, f), encoding="utf-8"))
+            if acc.get('email') == email:
+                return acc
+        except: pass
+    return None
+
 def test_proxy_chain():
-    """主测试流程"""
-    email = "chenyiding01@gmail.com"
-    acc = get_account(email)
-    if not acc:
-        print(f"账号 {email} 不存在")
-        exit(1)
-        
-    token = acc.get("token", {})
-    access_token = token.get("access_token", "")
-    project_id = token.get("project_id", "")
-    
-    print(f"Test antigravity with Account: {email}")
-    print(f"Project ID: {project_id}")
-    
-    # 测试 1: 直接向 Google 远程获取模型
-    models = test_google_fetch_models(access_token, project_id)
-    
-    # 测试 2: 直接向 Google 远程对话
-    if models:
-        test_model = models[0]
-        if "gemini-2.5-flash-lite" in models:
-            test_model = "gemini-2.5-flash-lite"
-        elif "gemini-2.5-flash" in models:
-            test_model = "gemini-2.5-flash"
-        test_google_chat(access_token, project_id, test_model)
-        
-        # 测试 2.5 已根据用户要求移除，不再测试 19531 本地代理。
-        
-    # 测试 3: Codex 模型列表
-    codex_models = test_codex_fetch_models()
-    
-    # 测试 4: Codex 账号配额检测 + 对话
-    print("\n========================================")
-    print("4. 测试 Codex 账号配额检测")
+    print("\n\n========================================")
+    print(" === 5. 指定账号 Kiro 代理测试 ===")
     print("========================================")
-    
-    account_result = check_codex_accounts()
-    
-    if not account_result:
-        print("\n未找到有可用额度的 Codex 账号，跳过对话测试")
-        return
-    
-    selected_acc, selected_email = account_result
-    codex_token = selected_acc["tokens"]["access_token"]
-    print(f"\nSelected Codex account for chat: {selected_email}")
-    
-    # 测试 5: 使用有额度的账号发对话
-    test_codex_chat(codex_token, model=CODEX_DEFAULT_TEST_MODEL)
+    try:
+        test_kiro_chat_via_proxy()
+    except Exception as e:
+        print(f"Kiro 测试失败: {e}")
+
+    print("\n\n========================================")
+    print(" === 6. 指定账号 Codex 远程测试 ===")
+    print("========================================")
+    target_email = "aagejegeoeeenenjekwhelwkwkgwke@gmail.com"
+    target_acc = get_codex_account_by_email(target_email)
+    if target_acc and "tokens" in target_acc and "access_token" in target_acc["tokens"]:
+        print(f"找到指定账号: {target_email}, 开始本地代理请求...")
+        
+        # Test with local codex request
+        test_codex_chat_via_proxy(model=CODEX_DEFAULT_TEST_MODEL, email=target_email)
+    else:
+        print(f"未能找到账号 {target_email} 或缺少 access_token")
 
 if __name__ == "__main__":
     test_proxy_chain()

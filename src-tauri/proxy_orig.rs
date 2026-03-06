@@ -11,11 +11,10 @@ use axum::{
     routing::{any, get},
     Json, Router,
 };
-use reqwest::{Client, Proxy};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
-use std::env;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, OnceLock, RwLock};
@@ -24,115 +23,6 @@ use tower_http::cors::{Any, CorsLayer};
 
 use super::config;
 use super::logger;
-
-/// 获取应使用的 HTTP(S) 代理 URL（环境变量优先，其次 Windows 系统代理），与浏览器/反重力一致
-fn resolve_http_proxy() -> Option<String> {
-    // 1) 环境变量（与 curl、反重力等一致）
-    let env_proxy = env::var("HTTPS_PROXY")
-        .ok()
-        .or_else(|| env::var("https_proxy").ok())
-        .or_else(|| env::var("HTTP_PROXY").ok())
-        .or_else(|| env::var("http_proxy").ok())
-        .or_else(|| env::var("ALL_PROXY").ok())
-        .or_else(|| env::var("all_proxy").ok());
-    if let Some(ref u) = env_proxy {
-        let trimmed = u.trim();
-        if !trimmed.is_empty() {
-            return Some(trimmed.to_string());
-        }
-    }
-    // 2) Windows 系统代理（Internet 选项），与界面测试一致
-    #[cfg(target_os = "windows")]
-    {
-        if let Some(u) = read_windows_system_proxy() {
-            return Some(u);
-        }
-    }
-    None
-}
-
-#[cfg(target_os = "windows")]
-fn read_windows_system_proxy() -> Option<String> {
-    use windows::Win32::System::Registry::{
-        RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY, HKEY_CURRENT_USER, KEY_READ,
-    };
-    use windows::core::PCWSTR;
-    const INTERNET_SETTINGS: &[u16] = &[
-        'S' as u16, 'o' as u16, 'f' as u16, 't' as u16, 'w' as u16, 'a' as u16, 'r' as u16, 'e' as u16,
-        '\\' as u16, 'M' as u16, 'i' as u16, 'c' as u16, 'r' as u16, 'o' as u16, 's' as u16, 'o' as u16,
-        'f' as u16, 't' as u16, '\\' as u16, 'W' as u16, 'i' as u16, 'n' as u16, 'd' as u16, 'o' as u16,
-        'w' as u16, 's' as u16, '\\' as u16, 'C' as u16, 'u' as u16, 'r' as u16, 'r' as u16, 'e' as u16,
-        'n' as u16, 't' as u16, 'V' as u16, 'e' as u16, 'r' as u16, 's' as u16, 'i' as u16, 'o' as u16,
-        'n' as u16, '\\' as u16, 'I' as u16, 'n' as u16, 't' as u16, 'e' as u16, 'r' as u16, 'n' as u16,
-        'e' as u16, 't' as u16, ' ' as u16, 'S' as u16, 'e' as u16, 't' as u16, 't' as u16, 'i' as u16,
-        'n' as u16, 'g' as u16, 's' as u16, 0,
-    ];
-    const PROXY_SERVER: &[u16] = &[
-        'P' as u16, 'r' as u16, 'o' as u16, 'x' as u16, 'y' as u16, 'S' as u16, 'e' as u16, 'r' as u16,
-        'v' as u16, 'e' as u16, 'r' as u16, 0,
-    ];
-    const PROXY_ENABLE: &[u16] = &[
-        'P' as u16, 'r' as u16, 'o' as u16, 'x' as u16, 'y' as u16, 'E' as u16, 'n' as u16, 'a' as u16,
-        'b' as u16, 'l' as u16, 'e' as u16, 0,
-    ];
-    unsafe {
-        let mut key = HKEY::default();
-        if RegOpenKeyExW(
-            HKEY_CURRENT_USER,
-            PCWSTR(INTERNET_SETTINGS.as_ptr()),
-            0,
-            KEY_READ,
-            &mut key,
-        )
-        .is_err()
-        {
-            return None;
-        }
-        let mut enable_buf = [0u8; 4];
-        let mut enable_len = 4u32;
-        let _ = RegQueryValueExW(
-            key,
-            PCWSTR(PROXY_ENABLE.as_ptr()),
-            None,
-            None,
-            Some(enable_buf.as_mut_ptr()),
-            Some(&mut enable_len),
-        );
-        let enable = u32::from_le_bytes(enable_buf);
-        if enable != 1 {
-            let _ = RegCloseKey(key);
-            return None;
-        }
-        let mut buf = [0u16; 256];
-        let mut len = (buf.len() as u32) * 2;
-        if RegQueryValueExW(
-            key,
-            PCWSTR(PROXY_SERVER.as_ptr()),
-            None,
-            None,
-            Some(buf.as_mut_ptr() as *mut u8),
-            Some(&mut len),
-        )
-        .is_err()
-        {
-            let _ = RegCloseKey(key);
-            return None;
-        }
-        let _ = RegCloseKey(key);
-        let s = String::from_utf16_lossy(&buf[..(len as usize / 2).min(buf.len())]);
-        let s = s.trim_matches('\0').trim();
-        if s.is_empty() {
-            return None;
-        }
-        let url = if s.contains("://") {
-            s.to_string()
-        } else {
-            format!("http://{}", s)
-        };
-        Some(url)
-    }
-}
-
 
 // ============================================================================
 // 配置类型
@@ -355,55 +245,31 @@ struct AccountCredential {
     is_gcp_tos: bool,
     /// Kiro profileArn（用于 Kiro API 鉴权）
     profile_arn: Option<String>,
-    /// Codex/ChatGPT 的 account_id（用于 ChatGPT-Account-Id 请求头）
-    chatgpt_account_id: Option<String>,
 }
 
 /// 代理服务器内部状态
-/// 使用双客户端：Antigravity/Kiro 等直连，Codex 单独可选走代理，避免代理影响 Google 等上游
 struct ProxyServerState {
     config: RwLock<ApiProxyConfig>,
-    /// 直连客户端，用于 Antigravity、Kiro、Windsurf 等（不走系统代理，避免代理仅允许 ChatGPT 时导致 Google 不可用）
     http_client: Client,
-    /// 仅 Codex 使用：若配置了系统代理则走代理，否则与 http_client 行为一致
-    codex_http_client: Client,
+    /// 各 Provider 的轮询计数器
     round_robin_counters: RwLock<HashMap<String, AtomicUsize>>,
 }
 
 impl ProxyServerState {
     fn new(config: ApiProxyConfig) -> Self {
         let timeout = config.request_timeout;
-        let http_client = Client::builder()
-            .timeout(std::time::Duration::from_secs(timeout))
-            .build()
-            .unwrap_or_default();
-
-        let codex_http_client = if let Some(proxy_url) = resolve_http_proxy() {
-            let mut builder = Client::builder().timeout(std::time::Duration::from_secs(timeout));
-            if let Ok(proxy) = Proxy::all(&proxy_url) {
-                builder = builder.proxy(proxy);
-                logger::log_info(&format!("[ApiProxy] Codex 使用网络代理: {}", proxy_url));
-            }
-            builder.build().unwrap_or_else(|_| http_client.clone())
-        } else {
-            http_client.clone()
-        };
-
         Self {
             config: RwLock::new(config),
-            http_client,
-            codex_http_client,
+            http_client: Client::builder()
+                .timeout(std::time::Duration::from_secs(timeout))
+                .build()
+                .unwrap_or_default(),
             round_robin_counters: RwLock::new(HashMap::new()),
         }
     }
 
     /// 获取下一个要使用的账号凭据
-    /// override_account_email: 请求头 X-Selected-Account-Email，优先于配置中的 selected_account_email，确保本次请求使用指定账号
-    async fn get_next_credential(
-        &self,
-        provider: &str,
-        override_account_email: Option<&str>,
-    ) -> Result<AccountCredential, String> {
+    async fn get_next_credential(&self, provider: &str) -> Result<AccountCredential, String> {
         let (enabled, strategy) = {
             let config = self.config.read().map_err(|e| format!("锁读取失败: {}", e))?;
             let provider_config = config
@@ -417,7 +283,7 @@ impl ProxyServerState {
             return Err(format!("Provider '{}' 未启用", provider));
         }
 
-        let creds = self.get_available_credentials(provider, override_account_email).await?;
+        let creds = self.get_available_credentials(provider).await?;
 
         if creds.is_empty() {
             return Err(format!("Provider '{}' 没有可用的账号", provider));
@@ -443,29 +309,16 @@ impl ProxyServerState {
         Ok(creds[idx].clone())
     }
 
-    /// 按账号 ID 获取指定凭据（用于 403 刷新后重试同一账号）
-    async fn get_credential_by_id(&self, provider: &str, account_id: &str) -> Result<Option<AccountCredential>, String> {
-        let creds = self.get_available_credentials(provider, None).await?;
-        Ok(creds.into_iter().find(|c| c.id == account_id))
-    }
-
     /// 获取 Provider 的可用凭据列表
-    /// override_account_email: 若为 Some，则仅返回该邮箱的凭据（请求头 X-Selected-Account-Email 优先于配置）
-    async fn get_available_credentials(
-        &self,
-        provider: &str,
-        override_account_email: Option<&str>,
-    ) -> Result<Vec<AccountCredential>, String> {
+    async fn get_available_credentials(&self, provider: &str) -> Result<Vec<AccountCredential>, String> {
         match provider {
             "antigravity" => {
                 let accounts = super::account::list_accounts()
                     .map_err(|e| format!("获取账号失败: {}", e))?;
-                let selected_email = override_account_email
-                    .map(|s| s.to_string())
-                    .or_else(|| {
-                        self.config.read().ok().map(|c| c.selected_account_email.clone())
-                    })
-                    .unwrap_or_default();
+                let selected_email = {
+                    let config = self.config.read().map_err(|e| format!("锁读取失败: {}", e))?;
+                    config.selected_account_email.clone()
+                };
                 let creds: Vec<AccountCredential> = accounts
                     .iter()
                     .filter(|a| !a.disabled && !a.token.access_token.is_empty())
@@ -483,7 +336,6 @@ impl ProxyServerState {
                         project_id: a.token.project_id.clone().unwrap_or_default(),
                         is_gcp_tos: a.token.is_gcp_tos.unwrap_or(false),
                         profile_arn: None,
-                        chatgpt_account_id: None,
                     })
                     .collect();
                 if creds.is_empty() && !selected_email.is_empty() {
@@ -493,39 +345,17 @@ impl ProxyServerState {
             }
             "codex" => {
                 let accounts = super::codex_account::list_accounts();
-                let selected_email = override_account_email
-                    .map(|s| s.to_string())
-                    .or_else(|| {
-                        self.config.read().ok().map(|c| c.selected_account_email.clone())
-                    })
-                    .unwrap_or_default();
                 let creds: Vec<AccountCredential> = accounts
                     .iter()
                     .filter(|a| !a.tokens.access_token.is_empty())
-                    .filter(|a| {
-                        if selected_email.is_empty() {
-                            true
-                        } else {
-                            a.email == selected_email
-                        }
-                    })
-                    .map(|a| {
-                        let chatgpt_account_id = a.account_id.clone().or_else(|| {
-                            super::codex_account::extract_chatgpt_account_id_from_access_token(&a.tokens.access_token)
-                        });
-                        AccountCredential {
-                            id: a.id.clone(),
-                            access_token: a.tokens.access_token.clone(),
-                            project_id: String::new(),
-                            is_gcp_tos: false,
-                            profile_arn: None,
-                            chatgpt_account_id,
-                        }
+                    .map(|a| AccountCredential {
+                        id: a.id.clone(),
+                        access_token: a.tokens.access_token.clone(),
+                        project_id: String::new(),
+                        is_gcp_tos: false,
+                        profile_arn: None,
                     })
                     .collect();
-                if creds.is_empty() && !selected_email.is_empty() {
-                    return Err(format!("指定 Codex 账号 {} 不可用或未找到", selected_email));
-                }
                 Ok(creds)
             }
             "kiro" => {
@@ -541,22 +371,10 @@ impl ProxyServerState {
                         }
                     }
                 }
-                let selected_email = override_account_email
-                    .map(|s| s.to_string())
-                    .or_else(|| {
-                        self.config.read().ok().map(|c| c.selected_account_email.clone())
-                    })
-                    .unwrap_or_default();
+                
                 let creds: Vec<AccountCredential> = accounts
                     .iter()
                     .filter(|a| !a.access_token.is_empty())
-                    .filter(|a| {
-                        if selected_email.is_empty() {
-                            true
-                        } else {
-                            a.email == selected_email
-                        }
-                    })
                     .map(|a| {
                         // 从 kiro_auth_token_raw 或 kiro_profile_raw 提取 profileArn
                         let profile_arn = a.kiro_auth_token_raw.as_ref()
@@ -569,13 +387,9 @@ impl ProxyServerState {
                             project_id: a.idc_region.clone().unwrap_or_else(|| "us-east-1".to_string()),
                             is_gcp_tos: false,
                             profile_arn,
-                            chatgpt_account_id: None,
                         }
                     })
                     .collect();
-                if creds.is_empty() && !selected_email.is_empty() {
-                    return Err(format!("指定 Kiro 账号 {} 不可用或未找到", selected_email));
-                }
                 Ok(creds)
             }
             "windsurf" => {
@@ -601,7 +415,6 @@ impl ProxyServerState {
                         project_id: String::new(),
                         is_gcp_tos: false,
                         profile_arn: None,
-                        chatgpt_account_id: None,
                     })
                     .collect();
                 Ok(creds)
@@ -617,7 +430,6 @@ impl ProxyServerState {
                         project_id: String::new(),
                         is_gcp_tos: false,
                         profile_arn: None,
-                        chatgpt_account_id: None,
                     })
                     .collect();
                 Ok(creds)
@@ -1898,7 +1710,6 @@ struct KiroEvent {
     context_usage_percentage: Option<f64>,
 }
 
-#[allow(dead_code)]
 struct KiroStreamParser {
     stream_buffer: Vec<u8>,
     current_tool_call: Option<serde_json::Map<String, serde_json::Value>>,
@@ -1914,7 +1725,26 @@ impl KiroStreamParser {
         }
     }
 
-
+    /// 诊断截断的 JSON
+    fn diagnose_json_truncation(&self, raw: &str) -> String {
+        let text = raw.trim();
+        if text.is_empty() { return "空字符串".to_string(); }
+        if !text.ends_with('}') && !text.ends_with(']') && !text.ends_with('"') { return "非正常尾字符截断".to_string(); }
+        let mut open_braces = 0; let mut close_braces = 0;
+        let mut in_string = false; let mut escape = false;
+        for c in text.chars() {
+            if escape { escape = false; continue; }
+            match c {
+                '\\' => escape = true,
+                '"' => in_string = !in_string,
+                '{' if !in_string => open_braces += 1,
+                '}' if !in_string => close_braces += 1,
+                _ => {}
+            }
+        }
+        if open_braces > close_braces { return "嵌套深度不匹配(左大括号超长)".to_string(); }
+        "未知截断原因".to_string()
+    }
 
     /// 从 Kiro AWS Event Stream 二进制帧中提取 JSON 事件（带有状态维护）
     fn feed(&mut self, chunk: &[u8]) -> Vec<KiroEvent> {
@@ -1948,7 +1778,6 @@ impl KiroStreamParser {
                 if let Ok(payload_str) = std::str::from_utf8(&self.stream_buffer[payload_start..payload_start + payload_length]) {
                     let trimmed = payload_str.trim();
                     if !trimmed.is_empty() {
-                        crate::modules::logger::log_info(&format!("[Kiro Raw JSON] {}", trimmed));
                         if let Ok(v) = serde_json::from_str::<serde_json::Value>(trimmed) {
                             if let Some(ev) = self.process_kiro_json_event(v) {
                                 // Token 计数和上下文比例提取 STREAM-3 准备
@@ -1973,44 +1802,99 @@ impl KiroStreamParser {
     }
 
     fn process_kiro_json_event(&mut self, v: serde_json::Value) -> Option<KiroEvent> {
+        let Some(t) = v.get("type").and_then(|t| t.as_str()) else { return None; };
+        
+        // STREAM-3: 提取 Token 计数比例
+        let context_pct = v.get("contextUsagePercentage").and_then(|v| v.as_f64());
+        
         let mut event = KiroEvent {
-            event_type: String::new(),
+            event_type: t.to_string(),
             content: String::new(),
             thinking_content: String::new(),
             tool_use: None,
-            context_usage_percentage: v.get("contextUsagePercentage").and_then(|v| v.as_f64()),
+            context_usage_percentage: context_pct,
         };
 
-        // Kiro 原始流直接返回 content 字段
-        if let Some(content) = v.get("content").and_then(|c| c.as_str()) {
-            if !content.is_empty() {
-                event.event_type = "content".to_string();
-                event.content = content.to_string();
+        match t {
+            "message_start" => {
+                // message start
+            }
+            "content_block_start" => {
+                if let Some(content_block) = v.get("contentBlock").and_then(|cb| cb.get("toolUse")) {
+                    // Start of tool call
+                    if let Some(tool_id) = content_block.get("toolUseId").and_then(|i| i.as_str()) {
+                        let mut tool_obj = serde_json::Map::new();
+                        tool_obj.insert("id".to_string(), serde_json::Value::String(tool_id.to_string()));
+                        tool_obj.insert("type".to_string(), serde_json::Value::String("function".to_string()));
+                        
+                        let mut func_obj = serde_json::Map::new();
+                        if let Some(name) = content_block.get("name").and_then(|n| n.as_str()) {
+                            func_obj.insert("name".to_string(), serde_json::Value::String(name.to_string()));
+                        }
+                        func_obj.insert("arguments".to_string(), serde_json::Value::String(String::new()));
+                        
+                        tool_obj.insert("function".to_string(), serde_json::Value::Object(func_obj));
+                        self.current_tool_call = Some(tool_obj);
+                    }
+                }
+            }
+            "content_block_delta" => {
+                if let Some(delta) = v.get("delta") {
+                    if let Some(text) = delta.get("text").and_then(|t| t.as_str()) {
+                        event.event_type = "content".to_string();
+                        event.content = text.to_string();
+                        return Some(event);
+                    } else if let Some(thinking) = delta.get("thinking").and_then(|t| t.as_str()) {
+                        event.event_type = "thinking".to_string();
+                        event.thinking_content = thinking.to_string();
+                        return Some(event);
+                    } else if let Some(tool_use_delta) = delta.get("toolUse") {
+                        if let Some(input_frag) = tool_use_delta.get("input").and_then(|i| i.as_str()) {
+                            if let Some(tool_obj) = &mut self.current_tool_call {
+                                if let Some(func) = tool_obj.get_mut("function").and_then(|f| f.as_object_mut()) {
+                                    if let Some(args) = func.get_mut("arguments") {
+                                        if let Some(old_args) = args.as_str() {
+                                            let new_args = format!("{}{}", old_args, input_frag);
+                                            *args = serde_json::Value::String(new_args);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            "content_block_stop" => {
+                if let Some(mut tool_obj) = self.current_tool_call.take() {
+                    let tool_id = tool_obj.get("id").and_then(|i| i.as_str()).unwrap_or("").to_string();
+                    if !self.emitted_tool_ids.contains(&tool_id) {
+                        self.emitted_tool_ids.insert(tool_id.clone());
+                        
+                        // STREAM-1: Tool 截断诊断
+                        if let Some(func) = tool_obj.get_mut("function").and_then(|f| f.as_object_mut()) {
+                            if let Some(args_val) = func.get("arguments") {
+                                if let Some(args_str) = args_val.as_str() {
+                                    // 尝试解析 JSON 来验证是否截断
+                                    if serde_json::from_str::<serde_json::Value>(args_str).is_err() && !args_str.trim().is_empty() {
+                                        let diag = self.diagnose_json_truncation(args_str);
+                                        crate::modules::logger::log_warn(&format!("[Kiro] Tool 参数解析失败，可能被截断。诊断：{}: {}", diag, args_str));
+                                    }
+                                }
+                            }
+                        }
+                        
+                        event.event_type = "tool_use".to_string();
+                        event.tool_use = Some(serde_json::Value::Object(tool_obj));
+                        return Some(event);
+                    }
+                }
+            }
+            "message_stop" => {
+                event.event_type = "message_stop".to_string();
                 return Some(event);
             }
+            _ => {}
         }
-
-        // Kiro toolUse 处理 (通常为包含 toolUse 的对象)
-        if let Some(tool_use) = v.get("toolUse") {
-            // 目前简化处理，将整个 toolUse 返回，后续逻辑需要的话可以在此封装为函数调用的 JSON 格式
-            event.event_type = "tool_use".to_string();
-            event.tool_use = Some(tool_use.clone());
-            return Some(event);
-        }
-
-        // 判断是否有结束信号
-        let t = v.get("type").and_then(|t| t.as_str())
-            .or_else(|| v.get("eventType").and_then(|t| t.as_str()));
-        if let Some(t) = t {
-            match t {
-                "message_stop" | "end_turn" | "messageStop" => {
-                    event.event_type = "message_stop".to_string();
-                    return Some(event);
-                }
-                _ => {}
-            }
-        }
-
         None
     }
 }
@@ -2057,95 +1941,19 @@ fn kiro_parse_event_stream_frames(buffer: &[u8]) -> (Vec<String>, usize) {
     (events, consumed)
 }
 
-/// 解析 Codex 模型列表 API 返回的 JSON（支持多种后端结构）
-/// 单元测试见本模块底部 tests
-pub fn parse_codex_models_response(body: &str) -> Result<Vec<String>, String> {
-    let v: serde_json::Value =
-        serde_json::from_str(body).map_err(|e| format!("JSON 解析失败: {}", e))?;
-    let mut ids = Vec::new();
-    // 结构1: { "data": [ { "model": "gpt-5.3-codex" } ] } 或 { "data": [ { "id": "..." } ] }
-    if let Some(arr) = v.get("data").and_then(|a| a.as_array()) {
-        for m in arr {
-            let id = m.get("model").and_then(|x| x.as_str())
-                .or_else(|| m.get("id").and_then(|x| x.as_str()));
-            if let Some(s) = id {
-                ids.push(s.to_string());
-            }
-        }
-    }
-    // 结构2: CodexMonitor 风格 { "result": { "data": [ { "model": "..." } ] } }
-    if ids.is_empty() {
-        if let Some(arr) = v.get("result").and_then(|r| r.get("data")).and_then(|a| a.as_array()) {
-            for m in arr {
-                let id = m.get("model").and_then(|x| x.as_str())
-                    .or_else(|| m.get("id").and_then(|x| x.as_str()));
-                if let Some(s) = id {
-                    ids.push(s.to_string());
-                }
-            }
-        }
-    }
-    // 结构3: { "models": [ "id1", "id2" ] }
-    if ids.is_empty() {
-        if let Some(arr) = v.get("models").and_then(|a| a.as_array()) {
-            for m in arr {
-                if let Some(s) = m.as_str() {
-                    ids.push(s.to_string());
-                }
-            }
-        }
-    }
-    if ids.is_empty() {
-        return Err("响应中未找到模型列表 (data/result.data/models 均无)".to_string());
-    }
-    Ok(ids)
-}
-
-/// 从 ChatGPT 后端 GET /backend-api/codex/models 拉取当前账号可用模型列表
-pub async fn fetch_codex_models_remote(
-    access_token: &str,
-    chatgpt_account_id: Option<&str>,
-) -> Result<Vec<String>, String> {
-    let url = "https://chatgpt.com/backend-api/codex/models";
-    let mut builder = Client::builder().timeout(std::time::Duration::from_secs(15));
-    if let Some(proxy_url) = resolve_http_proxy() {
-        if let Ok(proxy) = Proxy::all(proxy_url) {
-            builder = builder.proxy(proxy);
-        }
-    }
-    let client = builder.build().map_err(|e| format!("构建 HTTP 客户端失败: {}", e))?;
-    let mut req = client
-        .get(url)
-        .header("Authorization", format!("Bearer {}", access_token))
-        .header("User-Agent", "codex_cli_rs/0.104.0")
-        .header("Origin", "https://chatgpt.com")
-        .header("Referer", "https://chatgpt.com/")
-        .header("originator", "codex_cli_rs")
-        .header("Accept", "application/json");
-    if let Some(acc_id) = chatgpt_account_id {
-        if !acc_id.is_empty() {
-            req = req.header("ChatGPT-Account-Id", acc_id);
-        }
-    }
-    let resp = req.send().await.map_err(|e| format!("请求失败: {}", e))?;
-    let status = resp.status();
-    let body = resp.text().await.unwrap_or_default();
-    if !status.is_success() {
-        return Err(format!("HTTP {}: {}", status, body.chars().take(200).collect::<String>()));
-    }
-    parse_codex_models_response(&body)
-}
-
-/// 获取 Codex (OpenAI) 支持的模型列表（硬编码兜底）
-/// 参考: Codex2API DefaultModels、PRD codex_model_and_quota.md
+/// 获取 Codex (OpenAI) 支持的模型列表
+/// 参考: sub2api/frontend/src/composables/useModelWhitelist.ts -> openaiModels
 pub fn get_codex_model_list() -> Vec<String> {
     vec![
+        "gpt-5.3".to_string(),
         "gpt-5.3-codex".to_string(),
-        "gpt-5.4".to_string(),
+        "gpt-5.2".to_string(),
         "gpt-5.2-codex".to_string(),
         "gpt-5.1-codex-max".to_string(),
-        "gpt-5.2".to_string(),
+        "gpt-5.1-codex".to_string(),
+        "gpt-5.1".to_string(),
         "gpt-5.1-codex-mini".to_string(),
+        "gpt-5".to_string(),
     ]
 }
 
@@ -2281,12 +2089,8 @@ async fn proxy_handler(
         }
     };
 
-    // 3. 获取凭据（请求头 X-Selected-Account-Email 优先，确保使用用户在 Chat 页选中的账号）
-    let override_account_email = headers
-        .get("x-selected-account-email")
-        .and_then(|v| v.to_str().ok())
-        .filter(|s| !s.trim().is_empty());
-    let cred = match state.get_next_credential(&provider, override_account_email).await {
+    // 3. 获取凭据（轮询）
+    let cred = match state.get_next_credential(&provider).await {
         Ok(c) => c,
         Err(e) => {
             return (
@@ -2610,15 +2414,14 @@ async fn proxy_handler(
             client_body.get("tools").and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0),
         ));
 
-        // 发送请求（支持 403 自动刷新 token 重试 + 429 指数退避）
+        // 发送请求（支持 403 自动刷新重试 + 429 指数退避）
         let max_retries = 3u32;
         let mut last_error = String::new();
         let mut resp_result: Option<reqwest::Response> = None;
-        let mut current_cred = cred.clone();
 
         for attempt in 0..max_retries {
             let req_builder = state.http_client.post(&url)
-                .header("Authorization", format!("Bearer {}", current_cred.access_token))
+                .header("Authorization", format!("Bearer {}", cred.access_token))
                 .header("Content-Type", "application/x-amzn-json-1.0")
                 .header("Accept", "application/json")
                 .header("X-Amz-Target", "AmazonCodeWhispererStreamingService.GenerateAssistantResponse")
@@ -2633,42 +2436,29 @@ async fn proxy_handler(
                 Ok(resp) => {
                     let status_code = resp.status().as_u16();
 
-                    // 403 → 刷新该账号 token 并用新凭据重试
+                    // 403 → 刷新 token 并重试
                     if status_code == 403 && attempt + 1 < max_retries {
                         let err_text = resp.text().await.unwrap_or_default();
                         logger::log_warn(&format!(
-                            "[ApiProxy] Kiro 403 (attempt {}/{}), 尝试刷新 token: {}",
+                            "[ApiProxy] Kiro 403 (attempt {}/{}): {}",
                             attempt + 1, max_retries, err_text
                         ));
-                        if let Ok(()) = super::kiro_account::refresh_account_token(&current_cred.id).await.map(|_| ()) {
-                            if let Ok(Some(refreshed_cred)) = state.get_credential_by_id("kiro", &current_cred.id).await {
-                                current_cred = refreshed_cred;
-                                logger::log_info("[ApiProxy] Kiro token 已刷新，使用新凭据重试");
-                            }
-                        }
+                        // 注意：token 刷新已在 get_available_credentials 中通过 expires_at 预刷新
+                        // 这里可以再次尝试（使用相同的 token）
                         last_error = format!("403 Forbidden: {}", err_text);
                         continue;
                     }
 
-                    // 429 → 额度不足/限流，切换账号重试
+                    // 429 → 指数退避
                     if status_code == 429 && attempt + 1 < max_retries {
-                        let err_text = resp.text().await.unwrap_or_default();
+                        let delay = std::time::Duration::from_secs(2u64.pow(attempt));
                         logger::log_warn(&format!(
-                            "[ApiProxy] Kiro 账号 {} 限速 (HTTP {}), 准备切换账号重试...",
-                            current_cred.id, status_code
+                            "[ApiProxy] Kiro 429 限速 (attempt {}/{}), 等待 {:?}",
+                            attempt + 1, max_retries, delay
                         ));
-                        last_error = format!("429 Too Many Requests: {}", err_text);
-                        
-                        match state.get_next_credential("kiro", None).await {
-                            Ok(new_cred) => {
-                                current_cred = new_cred;
-                                continue;
-                            }
-                            Err(e) => {
-                                logger::log_warn(&format!("[ApiProxy] Kiro 无法获取下一个账号用于重试: {}", e));
-                                break;
-                            }
-                        }
+                        tokio::time::sleep(delay).await;
+                        last_error = "429 Too Many Requests".to_string();
+                        continue;
                     }
 
                     if !resp.status().is_success() {
@@ -2883,8 +2673,18 @@ async fn proxy_handler(
                     }
                 }
 
-                // STREAM-4: 正常结束但没有 message_stop 时，补发停止信号
+                // STREAM-4: 如果并没有发过 message_stop（流截断），则补发提醒与停止块
                 if !has_stop_event {
+                    let trunc_msg = serde_json::json!({
+                        "type": "content_block_delta",
+                        "index": 0,
+                        "delta": {
+                            "type": "text_delta",
+                            "text": "\n\n[回答似被截断，若需接续可回复“继续”]"
+                        }
+                    });
+                    yield Ok(bytes::Bytes::from(format!("event: content_block_delta\ndata: {}\n\n", trunc_msg)));
+
                     let block_stop = serde_json::json!({"type": "content_block_stop", "index": 0});
                     yield Ok(bytes::Bytes::from(format!("event: content_block_stop\ndata: {}\n\n", block_stop)));
                     let msg_stop = serde_json::json!({"type": "message_stop"});
@@ -3004,225 +2804,6 @@ async fn proxy_handler(
         }
     }
 
-    // ===== Codex: OpenAI chat/completions → ChatGPT /responses 协议转换 =====
-    if provider == "codex" && rest == "v1/chat/completions" {
-        let client_body: Value = match serde_json::from_slice(&body_bytes) {
-            Ok(v) => v,
-            Err(e) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(serde_json::json!({"error": format!("JSON 解析失败: {}", e)})),
-                )
-                    .into_response();
-            }
-        };
-        let model = client_body
-            .get("model")
-            .and_then(|v| v.as_str())
-            .unwrap_or("gpt-5.1-codex")
-            .to_string();
-        let stream = client_body.get("stream").and_then(|v| v.as_bool()).unwrap_or(true);
-        let messages = client_body
-            .get("messages")
-            .and_then(|v| v.as_array())
-            .ok_or_else(|| "缺少 messages")
-            .map_err(|e| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    Json(serde_json::json!({"error": e})),
-                )
-                    .into_response()
-            });
-        let messages = match messages {
-            Ok(m) => m,
-            Err(r) => return r,
-        };
-        // 转换为 ChatGPT /responses 的 input 格式
-        let input: Vec<Value> = messages
-            .iter()
-            .filter_map(|m| {
-                let role = m.get("role")?.as_str()?;
-                let content = m.get("content")?;
-                let text = match content {
-                    Value::String(s) => s.clone(),
-                    Value::Array(arr) => {
-                        let parts: Vec<String> = arr
-                            .iter()
-                            .filter_map(|p| {
-                                p.get("text").and_then(|t| t.as_str()).map(|s| s.to_string())
-                            })
-                            .collect();
-                        parts.join("")
-                    }
-                    _ => return None,
-                };
-                if text.is_empty() {
-                    return None;
-                }
-                let text_type = if role == "assistant" { "output_text" } else { "input_text" };
-                Some(serde_json::json!({
-                    "role": role,
-                    "content": [{"type": text_type, "text": text}]
-                }))
-            })
-            .collect();
-        if input.is_empty() {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({"error": "messages 无有效文本内容"})),
-            )
-                .into_response();
-        }
-        let codex_payload = serde_json::json!({
-            "model": model,
-            "input": input,
-            "stream": stream,
-            "store": false,
-            "instructions": "You are a helpful assistant."
-        });
-        let mut current_cred = cred.clone();
-        let max_retries = 3;
-        let mut last_error_response = None;
-
-        for attempt in 0..max_retries {
-            let codex_url = "https://chatgpt.com/backend-api/codex/responses";
-            let mut codex_req = state.codex_http_client.post(codex_url)
-                .header("Authorization", format!("Bearer {}", current_cred.access_token))
-                .header("Content-Type", "application/json")
-                .header("User-Agent", "codex_cli_rs/0.104.0")
-                .header("Accept", "text/event-stream")
-                .header("Origin", "https://chatgpt.com")
-                .header("Referer", "https://chatgpt.com/")
-                .header("originator", "codex_cli_rs")
-                .json(&codex_payload);
-            if let Some(ref acc_id) = current_cred.chatgpt_account_id {
-                if !acc_id.is_empty() {
-                    codex_req = codex_req.header("ChatGPT-Account-Id", acc_id.as_str());
-                }
-            }
-            logger::log_info(&format!(
-                "[ApiProxy] Codex chat -> /responses (model={}, stream={}, attempt={})",
-                model, stream, attempt + 1
-            ));
-            let resp = match codex_req.send().await {
-                Ok(r) => r,
-                Err(e) => {
-                    return (
-                        StatusCode::BAD_GATEWAY,
-                        Json(serde_json::json!({
-                            "error": format!("上游请求失败: {}", e)
-                        })),
-                    )
-                        .into_response();
-                }
-            };
-            let status = resp.status();
-            
-            if status == StatusCode::TOO_MANY_REQUESTS || status == StatusCode::PAYMENT_REQUIRED || status == StatusCode::FORBIDDEN {
-                logger::log_warn(&format!("[ApiProxy] Codex 账号 {} 额度不足/限流 (HTTP {}), 准备切换账号重试...", current_cred.id, status));
-                let err_text = resp.text().await.unwrap_or_default();
-                last_error_response = Some((
-                    StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-                    Json(serde_json::json!({"error": err_text.clone(), "detail": err_text})),
-                ).into_response());
-                
-                if attempt < max_retries - 1 {
-                    // 获取下一个账号用于重试，忽略 override
-                    match state.get_next_credential(&provider, None).await {
-                        Ok(new_cred) => {
-                            current_cred = new_cred;
-                            continue;
-                        }
-                        Err(e) => {
-                            logger::log_warn(&format!("[ApiProxy] Codex 无法获取下一个账号用于重试: {}", e));
-                            break; // 无法获取新账号，终止重试
-                        }
-                    }
-                } else {
-                    break;
-                }
-            } else if !status.is_success() {
-                let err_text = resp.text().await.unwrap_or_default();
-                return (
-                    StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-                    Json(serde_json::json!({"error": err_text.clone(), "detail": err_text})),
-                )
-                    .into_response();
-            }
-
-            if stream {
-                let codex_stream = resp.bytes_stream();
-                let openai_stream = async_stream::stream! {
-                    use futures_util::StreamExt;
-                    let mut buffer = String::new();
-                    let mut stream = codex_stream;
-                    while let Some(chunk) = stream.next().await {
-                        match chunk {
-                            Ok(bytes) => {
-                                buffer.push_str(&String::from_utf8_lossy(&bytes));
-                                while let Some(pos) = buffer.find('\n') {
-                                    let line = buffer[..pos].trim().to_string();
-                                    buffer = buffer[pos + 1..].to_string();
-                                    if !line.starts_with("data: ") {
-                                        continue;
-                                    }
-                                    let data = line.strip_prefix("data: ").map(|s| s.trim()).unwrap_or("");
-                                    if data == "[DONE]" {
-                                        yield Ok::<bytes::Bytes, String>(bytes::Bytes::from("data: [DONE]\n\n"));
-                                        continue;
-                                    }
-                                    if let Ok(val) = serde_json::from_str::<Value>(data) {
-                                        // ChatGPT: delta.text | OpenAI: choices[0].delta.content | 或嵌套在 output 等
-                                        let content_delta = val
-                                            .get("delta")
-                                            .and_then(|d| d.get("text").and_then(|t| t.as_str()))
-                                            .or_else(|| val.get("delta").and_then(|d| d.get("content").and_then(|c| c.as_str())))
-                                            .or_else(|| val.get("delta").and_then(|d| d.as_str()))
-                                            .or_else(|| val.get("output").and_then(|o| o.get("delta")).and_then(|d| d.get("text").and_then(|t| t.as_str())))
-                                            .or_else(|| val.get("choices").and_then(|c| c.get(0)).and_then(|c| c.get("delta")).and_then(|d| d.get("content")).and_then(|c| c.as_str()));
-                                        if let Some(text) = content_delta {
-                                            if !text.is_empty() {
-                                                let openai_chunk = serde_json::json!({
-                                                    "choices": [{"delta": {"content": text}, "index": 0}]
-                                                });
-                                                yield Ok(bytes::Bytes::from(format!("data: {}\n\n", openai_chunk)));
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                logger::log_warn(&format!("[ApiProxy] Codex 流读取错误: {}", e));
-                                break;
-                            }
-                        }
-                    }
-                    yield Ok(bytes::Bytes::from("data: [DONE]\n\n"));
-                };
-                return Response::builder()
-                    .status(200)
-                    .header("Content-Type", "text/event-stream")
-                    .header("Cache-Control", "no-cache")
-                    .header("Connection", "keep-alive")
-                    .body(Body::from_stream(openai_stream))
-                    .unwrap()
-                    .into_response();
-            } else {
-                let body = resp.bytes().await.unwrap_or_default();
-                let mut response = Response::new(Body::from(body));
-                *response.status_mut() = StatusCode::OK;
-                response.headers_mut().insert(
-                    axum::http::header::CONTENT_TYPE,
-                    axum::http::header::HeaderValue::from_static("application/json"),
-                );
-                return response.into_response();
-            }
-        } // end of retry loop
-
-        if let Some(err_resp) = last_error_response {
-            return err_resp;
-        }
-    }
 
     // ===== Codex / Windsurf / 其他 Provider: 简单转发 =====
     let upstream_url = if provider == "warp" {
@@ -3260,15 +2841,6 @@ async fn proxy_handler(
     // 设置认证头
     let auth_value = format!("{}{}", upstream.auth_prefix, cred.access_token);
     req_builder = req_builder.header(upstream.auth_header, &auth_value);
-
-    // Codex 上游需要 ChatGPT-Account-Id 头，否则可能 502/404
-    if provider == "codex" {
-        if let Some(ref acc_id) = cred.chatgpt_account_id {
-            if !acc_id.is_empty() {
-                req_builder = req_builder.header("ChatGPT-Account-Id", acc_id.as_str());
-            }
-        }
-    }
 
     if !body_bytes.is_empty() {
         req_builder = req_builder.body(body_bytes.to_vec());
@@ -3489,37 +3061,5 @@ pub fn get_proxy_status() -> ProxyStatus {
         port: config.port,
         actual_port: get_proxy_actual_port(),
         enabled_providers,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::parse_codex_models_response;
-
-    #[test]
-    fn test_parse_codex_models_response_data_model() {
-        let body = r#"{"data":[{"model":"gpt-5.3-codex"},{"model":"gpt-5.2-codex"}]}"#;
-        let list = parse_codex_models_response(body).unwrap();
-        assert_eq!(list, ["gpt-5.3-codex", "gpt-5.2-codex"]);
-    }
-
-    #[test]
-    fn test_parse_codex_models_response_result_data() {
-        let body = r#"{"result":{"data":[{"model":"gpt-5.3-codex-spark"},{"id":"gpt-5.2"}]}}"#;
-        let list = parse_codex_models_response(body).unwrap();
-        assert_eq!(list, ["gpt-5.3-codex-spark", "gpt-5.2"]);
-    }
-
-    #[test]
-    fn test_parse_codex_models_response_models_array() {
-        let body = r#"{"models":["gpt-5.1-codex","gpt-5"]}"#;
-        let list = parse_codex_models_response(body).unwrap();
-        assert_eq!(list, ["gpt-5.1-codex", "gpt-5"]);
-    }
-
-    #[test]
-    fn test_parse_codex_models_response_empty_fails() {
-        let body = r#"{}"#;
-        assert!(parse_codex_models_response(body).is_err());
     }
 }
