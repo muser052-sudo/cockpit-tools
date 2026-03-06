@@ -38,6 +38,12 @@ Every bit of support motivates me to keep improving this project. Thank you for 
 
 ---
 
+## ✈️ Telegram
+
+<img src="images/telegram.jpg" alt="Telegram" width="200" />
+
+---
+
 ## 📝 Note
 
 - Donations are completely voluntary and do not affect your ability to use any features of this project.
